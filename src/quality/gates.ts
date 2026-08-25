@@ -90,7 +90,13 @@ function gateSpec(gateId: LocalQualityGateId): GateSpec {
       },
       configFiles: ["package.json", "stryker.config.mjs", "tsconfig.json", "vitest.config.ts"],
       scope: ["src/**/*.ts", "!src/**/*.d.ts"],
-      thresholds: { killed: 100, survived: 0, uncovered: 0, errors: 0 },
+      thresholds: {
+        runnableMutationScore: 100,
+        survived: 0,
+        uncovered: 0,
+        runtimeErrors: 0,
+        compileErrors: "reported separately",
+      },
       cleanPaths: ["reports/mutation", ".stryker-tmp"],
     },
   }[gateId];

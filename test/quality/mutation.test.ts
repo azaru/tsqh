@@ -8,7 +8,26 @@ describe("mutation evidence", () => {
   it("accepts a fresh nonzero all-killed inventory", async () => {
     const fixture = await createMutationFixture();
 
-    await expect(validate(fixture.root, 0)).resolves.toMatchObject({ files: 1, killed: 1 });
+    await expect(validate(fixture.root, 0)).resolves.toMatchObject({
+      files: 1,
+      killed: 1,
+      compileErrors: 0,
+    });
+  });
+
+  it("accepts checker-rejected CompileError mutants separately from runnable mutants", async () => {
+    const fixture = await createMutationFixture({
+      mutants: [
+        mutant("Killed", "0"),
+        mutant("CompileError", "1", "TypeScript rejected the generated mutation."),
+      ],
+    });
+
+    await expect(validate(fixture.root, 0)).resolves.toMatchObject({
+      files: 1,
+      killed: 1,
+      compileErrors: 1,
+    });
   });
 
   it("propagates native process failure", async () => {
@@ -39,22 +58,49 @@ describe("mutation evidence", () => {
   it("rejects a zero-mutant inventory", async () => {
     const fixture = await createMutationFixture({ mutants: [] });
 
-    await expect(validate(fixture.root, 0)).rejects.toThrow(/zero generated mutants/u);
+    await expect(validate(fixture.root, 0)).rejects.toThrow(/zero runnable mutants/u);
+  });
+
+  it("rejects an inventory containing only checker-rejected mutants", async () => {
+    const fixture = await createMutationFixture({
+      mutants: [mutant("CompileError", "0", "TypeScript rejected it.")],
+    });
+
+    await expect(validate(fixture.root, 0)).rejects.toThrow(/zero runnable mutants/u);
   });
 
   it.each([
     "Survived",
     "NoCoverage",
-    "CompileError",
     "RuntimeError",
     "Timeout",
+    "TestFailure",
     "Ignored",
     "Pending",
     "Unknown",
-  ])("rejects non-killed status %s", async (status) => {
+  ])("rejects runnable status %s", async (status) => {
     const fixture = await createMutationFixture({ mutants: [mutant(status)] });
 
-    await expect(validate(fixture.root, 0)).rejects.toThrow(`non-killed status '${status}'`);
+    await expect(validate(fixture.root, 0)).rejects.toThrow(`rejected runnable status '${status}'`);
+  });
+
+  it.each([undefined, "", "   ", 1])(
+    "rejects a CompileError without a nonempty statusReason (%s)",
+    async (statusReason) => {
+      const fixture = await createMutationFixture({
+        mutants: [mutant("Killed", "0"), mutant("CompileError", "1", statusReason)],
+      });
+
+      await expect(validate(fixture.root, 0)).rejects.toThrow(/nonempty statusReason/u);
+    },
+  );
+
+  it("labels invalid coverage analysis configuration exactly", async () => {
+    const fixture = await createMutationFixture(configChange("coverageAnalysis", "perTest"));
+
+    await expect(validate(fixture.root, 0)).rejects.toThrow(
+      /config\.coverageAnalysis must be "all"/u,
+    );
   });
 
   it("rejects contradictory or incremental configuration", async () => {
@@ -200,6 +246,10 @@ function configChange(key: string, value: unknown): MutationFixtureOptions {
   return { config: { ...configuration(), [key]: value } };
 }
 
-function mutant(status: string): Record<string, unknown> {
-  return { id: "0", status };
+function mutant(
+  status: string,
+  id = "0",
+  statusReason?: unknown,
+): Record<string, unknown> {
+  return { id, status, ...(statusReason === undefined ? {} : { statusReason }) };
 }

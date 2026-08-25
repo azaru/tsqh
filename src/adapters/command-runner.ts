@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { pipeline, Readable } from "node:stream";
 import type { CommandRequest, CommandRunner } from "../application/ports.js";
 import type { ProcessArtifact } from "../domain/types.js";
 
@@ -45,8 +46,7 @@ export class SpawnCommandRunner implements CommandRunner {
 
       child.stdout.on("data", (chunk: Buffer) => captureChunk(stdout, chunk));
       child.stderr.on("data", (chunk: Buffer) => captureChunk(stderr, chunk));
-      child.stdin.on("error", () => undefined);
-      child.stdin.end(request.stdin ?? "", "utf8");
+      pipeline(Readable.from([request.stdin ?? ""]), child.stdin, () => undefined);
 
       const timeout = setTimeout(() => {
         timedOut = true;

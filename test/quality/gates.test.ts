@@ -26,7 +26,7 @@ interface ExpectedGate {
   readonly toolVersions: Readonly<Record<string, string>>;
   readonly configFiles: readonly string[];
   readonly scope: readonly string[];
-  readonly thresholds: Readonly<Record<string, number>>;
+  readonly thresholds: Readonly<Record<string, number | string>>;
   readonly cleanPaths: readonly string[];
   readonly outputFiles: readonly string[];
 }
@@ -87,7 +87,13 @@ const EXPECTED_GATES: Readonly<Record<LocalQualityGateId, ExpectedGate>> = {
     },
     configFiles: ["package.json", "stryker.config.mjs", "tsconfig.json", "vitest.config.ts"],
     scope: ["src/**/*.ts", "!src/**/*.d.ts"],
-    thresholds: { killed: 100, survived: 0, uncovered: 0, errors: 0 },
+    thresholds: {
+      runnableMutationScore: 100,
+      survived: 0,
+      uncovered: 0,
+      runtimeErrors: 0,
+      compileErrors: "reported separately",
+    },
     cleanPaths: ["reports/mutation", ".stryker-tmp"],
     outputFiles: ["reports/mutation/mutation.json"],
   },
@@ -404,7 +410,14 @@ async function writeMutationReport(root: string): Promise<void> {
       "src/domain/value.ts": {
         language: "typescript",
         source: "export const value = 1;\n",
-        mutants: [{ id: "0", status: "Killed" }],
+        mutants: [
+          { id: "0", status: "Killed" },
+          {
+            id: "1",
+            status: "CompileError",
+            statusReason: "TypeScript rejected the generated mutation.",
+          },
+        ],
       },
     },
   });

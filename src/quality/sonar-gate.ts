@@ -49,7 +49,8 @@ export async function runSonarQualityGate(
 ): Promise<QualityGateRunResult> {
   const workspace = resolve(workspacePath);
   const invocationStartedAtMs = runtime.now();
-  const token = runtime.environment.SONAR_TOKEN ?? "";
+  const token = runtime.environment.SONAR_TOKEN;
+  const secrets = [token].filter((secret): secret is string => secret !== undefined);
   let process: ProcessArtifact | null = null;
   let toolVersions: Readonly<Record<string, string>> = {};
   let configDigests: Readonly<Record<string, string>> = {};
@@ -64,6 +65,7 @@ export async function runSonarQualityGate(
     await assertQualityWorkspace(workspace);
     await cleanQualityPaths(workspace, "sonar", [".scannerwork"]);
     const preflight = await validateSonarPreflight(workspace, runtime.environment);
+    const validatedToken = token!;
     configDigests = await digestQualityFiles(workspace, CONFIG_FILES);
     toolVersions = await loadPinnedToolVersions(workspace, { "@sonar/scan": "5.0.0" });
     inputDigests = { "coverage/lcov.info": preflight.coverageDigest };
@@ -76,7 +78,7 @@ export async function runSonarQualityGate(
       timeoutMs: 360_000,
       environmentKeys: ENVIRONMENT_KEYS,
     });
-    process = redactProcess(rawProcess, token);
+    process = redactProcess(rawProcess, secrets);
     assertNativeQualitySuccess("sonar", process);
 
     const task = await readSonarTaskIdentity({
@@ -84,27 +86,35 @@ export async function runSonarQualityGate(
       invocationStartedAtMs,
       hostUrl: preflight.hostUrl,
       projectKey: preflight.projectKey,
-      token,
+      token: validatedToken,
     });
-    const computeTask = await request(runtime.sonarApi, preflight.hostUrl, token, "/api/ce/task", {
+    const computeTask = await request(runtime.sonarApi, preflight.hostUrl, validatedToken, "/api/ce/task", {
       id: task.taskId,
     });
     const analysisId = validateSonarComputeTask(
       computeTask,
       task.taskId,
       preflight.projectKey,
-      token,
+      validatedToken,
     );
     const qualityGate = await request(
       runtime.sonarApi,
       preflight.hostUrl,
-      token,
+      validatedToken,
       "/api/qualitygates/project_status",
       { analysisId },
     );
-    validateSonarQualityGate(qualityGate, token);
-    const policyResponses = await readPolicyResponses(runtime.sonarApi, preflight.hostUrl, token, preflight.projectKey);
-    validateSonarPolicy(preflight.expectedPolicy, readRemoteSonarPolicy(policyResponses, token));
+    validateSonarQualityGate(qualityGate, validatedToken);
+    const policyResponses = await readPolicyResponses(
+      runtime.sonarApi,
+      preflight.hostUrl,
+      validatedToken,
+      preflight.projectKey,
+    );
+    validateSonarPolicy(
+      preflight.expectedPolicy,
+      readRemoteSonarPolicy(policyResponses, validatedToken),
+    );
 
     outputDigests = {
       ".scannerwork/report-task.txt": task.digest,
@@ -118,7 +128,7 @@ export async function runSonarQualityGate(
   } catch (error) {
     const failure = classifyQualityFailure(error, process);
     status = failure.status;
-    reason = redactSecrets(failure.reason, [token]);
+    reason = redactSecrets(failure.reason, secrets);
     exitCode = failure.exitCode;
   }
 
@@ -149,7 +159,7 @@ export async function runSonarQualityGate(
     workspace,
     invocationStartedAtMs,
     expected: summary,
-    secrets: [token],
+    secrets,
   });
   return { exitCode, process, summary, summaryDigest };
 }
@@ -183,11 +193,11 @@ function request(
   return api.getJson({ hostUrl, path, parameters, token });
 }
 
-function redactProcess(process: ProcessArtifact, token: string): ProcessArtifact {
+function redactProcess(process: ProcessArtifact, secrets: readonly string[]): ProcessArtifact {
   return {
     ...process,
-    stdout: redactSecrets(process.stdout, [token]),
-    stderr: redactSecrets(process.stderr, [token]),
+    stdout: redactSecrets(process.stdout, secrets),
+    stderr: redactSecrets(process.stderr, secrets),
   };
 }
 

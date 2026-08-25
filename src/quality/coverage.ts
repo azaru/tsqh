@@ -123,19 +123,21 @@ async function discoverSources(workspace: string): Promise<SourceInventory> {
 
 async function walkTypeScript(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
-  const paths: string[] = [];
+  const files: string[] = [];
+  const directories: string[] = [];
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isSymbolicLink()) {
       throw new EvidenceError(`Production source scope contains a symbolic link: ${path}`);
     }
     if (entry.isDirectory()) {
-      paths.push(...(await walkTypeScript(path)));
+      directories.push(path);
     } else if (entry.isFile() && entry.name.endsWith(".ts")) {
-      paths.push(path);
+      files.push(path);
     }
   }
-  return paths;
+  const descendants = await Promise.all(directories.map(walkTypeScript));
+  return [...files, ...descendants.flat()];
 }
 
 function hasRuntimeCode(source: string, fileName: string): boolean {

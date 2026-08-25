@@ -40,9 +40,11 @@
   Checker-produced `CompileError` mutations remain visible as type-invalid, non-runnable mutations;
   every runnable mutant must be `Killed`, and every other runtime status fails. The validator,
   summaries, tests, and full run now implement and prove that fail-closed distinction. Remaining
-  runtime findings are in `src/quality/coverage.ts`, `src/quality/mutation.ts`,
+  runtime findings from that report were in `src/quality/coverage.ts`, `src/quality/mutation.ts`,
   `src/quality/sonar-gate.ts` (two survivors), `src/quality/cli.ts` (no coverage), and
-  `src/adapters/command-runner.ts` (runtime error).
+  `src/adapters/command-runner.ts` (runtime error). Focused repairs now give every affected range a
+  100% runtime mutation score with checker rejections reported separately. A fresh complete-project
+  run remains required before replacing the baseline or claiming the mutation gate green.
 - Sonar is reachable and authorized. The first real MVP analysis completed on the server and the
   strict gate correctly reported `ERROR`: coverage was 99.8%, duplication 0.0%, and 19 open issues
   failed the zero-issue condition. These are actionable code findings, not an infrastructure or
@@ -54,7 +56,7 @@
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 651 tests across 24 files, and the
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 660 tests across 25 files, and the
   four-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
   (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
@@ -81,6 +83,12 @@
   84 killed, 0 survived/uncovered/timeout, 49 checker errors.
 - `pnpm exec stryker run --mutate src/cli.ts --coverageAnalysis all` — exit 0; 1 killed and no
   other status.
+- `pnpm exec stryker run --mutate 'src/quality/mutation.ts' --coverageAnalysis perTest` — exit 0;
+  171 killed, 0 survived/uncovered/timeout, and 46 checker errors.
+- `pnpm exec stryker run --mutate 'src/quality/coverage.ts:95-145,src/quality/sonar-gate.ts:46-165'
+  --coverageAnalysis perTest` — exit 0; 64 killed, 0 survived/uncovered/timeout, and 21 checker
+  errors. The preceding combined diagnostic also proved the changed command-runner and quality CLI
+  entrypoint ranges at 100% before it exposed and prompted repair of the coverage/Sonar findings.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior
@@ -121,7 +129,6 @@
 - Exact local next action: launch `GOAL.md` against active `TSQH-MVP-002`, preserve all concurrent
   hardening work, and implement only bounded role handoff, candidate-stable gates, and the separate
   Swarm Forge Lite example.
-- Release next action: fix the four surviving mutants, the one uncovered mutant, and the one
-  runtime-error mutant from the fresh complete-project report; fix every real Sonar issue;
-  reconcile the validator with the actual Sonar policy endpoints; and keep iterating through
-  `pnpm quality:full` until it exits zero.
+- Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
+  remaining runnable finding; fix every real Sonar issue; reconcile the validator with the actual
+  Sonar policy endpoints; and keep iterating through `pnpm quality:full` until it exits zero.

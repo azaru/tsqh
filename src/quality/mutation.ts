@@ -17,6 +17,7 @@ export interface MutationValidation {
   readonly digest: string;
   readonly files: number;
   readonly killed: number;
+  readonly compileErrors: number;
 }
 
 export interface MutationValidationOptions {
@@ -66,7 +67,10 @@ function validateFramework(report: Record<string, unknown>): void {
   requireEqual(framework.version, "10.0.0", "framework.version");
 }
 
-function validateFiles(value: unknown, workspace: string): Pick<MutationValidation, "files" | "killed"> {
+function validateFiles(
+  value: unknown,
+  workspace: string,
+): Pick<MutationValidation, "files" | "killed" | "compileErrors"> {
   const files = record(value, "files");
   if (Object.keys(files).length === 0) {
     throw new EvidenceError("Mutation report contains no mutated files.");
@@ -74,15 +78,18 @@ function validateFiles(value: unknown, workspace: string): Pick<MutationValidati
   const seenPaths = new Set<string>();
   const seenIds = new Set<string>();
   let killed = 0;
+  let compileErrors = 0;
   for (const [reportedPath, value] of Object.entries(files)) {
     const path = validateMutationPath(workspace, reportedPath, seenPaths);
-    killed += validateMutationFile(value, path, seenIds);
+    const counts = validateMutationFile(value, path, seenIds);
+    killed += counts.killed;
+    compileErrors += counts.compileErrors;
   }
   if (killed === 0) {
-    throw new EvidenceError("Mutation report contains zero generated mutants.");
+    throw new EvidenceError("Mutation report contains zero runnable mutants.");
   }
 
-  return { files: seenPaths.size, killed };
+  return { files: seenPaths.size, killed, compileErrors };
 }
 
 function validateMutationPath(
@@ -101,7 +108,16 @@ function validateMutationPath(
   return path;
 }
 
-function validateMutationFile(value: unknown, path: string, seenIds: Set<string>): number {
+interface MutationCounts {
+  readonly killed: number;
+  readonly compileErrors: number;
+}
+
+function validateMutationFile(
+  value: unknown,
+  path: string,
+  seenIds: Set<string>,
+): MutationCounts {
   const file = record(value, `files.${path}`);
   requireEqual(file.language, "typescript", `files.${path}.language`);
   if (typeof file.source !== "string" || file.source.length === 0) {
@@ -111,19 +127,37 @@ function validateMutationFile(value: unknown, path: string, seenIds: Set<string>
     throw new EvidenceError(`Mutation report files.${path}.mutants must be an array.`);
   }
   let killed = 0;
+  let compileErrors = 0;
   for (const [index, value] of file.mutants.entries()) {
-    validateMutant(value, path, index, seenIds);
-    killed += 1;
+    const status = validateMutant(value, path, index, seenIds);
+    killed += status === "Killed" ? 1 : 0;
+    compileErrors += status === "CompileError" ? 1 : 0;
   }
-  return killed;
+  return { killed, compileErrors };
 }
 
-function validateMutant(value: unknown, path: string, index: number, seenIds: Set<string>): void {
+function validateMutant(
+  value: unknown,
+  path: string,
+  index: number,
+  seenIds: Set<string>,
+): "Killed" | "CompileError" {
   const mutant = record(value, `files.${path}.mutants[${String(index)}]`);
   const id = requireMutantId(mutant.id, path, seenIds);
-  if (mutant.status !== "Killed") {
-    const status = typeof mutant.status === "string" ? mutant.status : "missing";
-    throw new EvidenceError(`Mutation report contains non-killed status '${status}' for ${id}.`);
+  if (mutant.status === "Killed") {
+    return "Killed";
+  }
+  if (mutant.status === "CompileError") {
+    requireCompileErrorReason(mutant.statusReason, id);
+    return "CompileError";
+  }
+  const status = typeof mutant.status === "string" ? mutant.status : "missing";
+  throw new EvidenceError(`Mutation report contains rejected runnable status '${status}' for ${id}.`);
+}
+
+function requireCompileErrorReason(value: unknown, id: string): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new EvidenceError(`CompileError mutant ${id} must have a nonempty statusReason.`);
   }
 }
 

@@ -74,6 +74,15 @@ describe("coverage evidence", () => {
     );
   });
 
+  it("returns the executable production inventory in canonical path order", async () => {
+    const fixture = await createCoverageFixture();
+
+    await expect(validateCoverage({ workspace: fixture.root, invocationStartedAtMs: 0 }))
+      .resolves.toMatchObject({
+        productionFiles: ["src/domain/rule.ts", "src/value.ts"],
+      });
+  });
+
   it("rejects ambiguous report paths", async () => {
     const fixture = await createCoverageFixture({ duplicateValuePath: true });
 

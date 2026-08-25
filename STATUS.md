@@ -59,15 +59,16 @@
 - Sonar is reachable and authorized. The first real MVP analysis completed on the server and the
   strict gate correctly reported `ERROR`: coverage was 99.8%, duplication 0.0%, and 19 open issues
   failed the zero-issue condition. These are actionable code findings, not an infrastructure or
-  authority blocker. Remote-policy validation must also be aligned with Sonar's actual API split:
-  configured conditions come from the gate-definition endpoint, while `project_status` may omit
-  conditions that have no computed measure; explicit `PREVIOUS_VERSION` is currently visible on
-  the main-branch new-code assignment.
+  authority blocker. Remote-policy validation is now aligned with Sonar's actual API split:
+  `project_status` proves computed `OK` and disabled ignored conditions, the assigned gate and
+  gate-definition endpoints prove exactly eight configured conditions, and the project `main`
+  branch response proves the explicit `PREVIOUS_VERSION` assignment. Missing, duplicate, stale,
+  malformed, red, and computed-condition-omission cases have deterministic fake-API coverage.
 - `pnpm quality:full` remains required and has not been claimed green for `TSQH-MVP-002`.
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 678 tests across 25 files, and the
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 692 tests across 25 files, and the
   four-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
   (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
@@ -105,6 +106,9 @@
   survived/uncovered/timeout and 21 checker errors.
 - The candidate-stable gate controller range reported 10 killed runnable mutants with zero
   survived/uncovered/timeout and 2 checker errors after its focused regression tests passed.
+- The reconciled Sonar policy and wrapper ranges reported 137 killed runnable mutants with zero
+  survived/uncovered/timeout and 30 checker errors. The checked definition remains exact even when
+  the computed status omits conditions without measures.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior
@@ -152,8 +156,8 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: preserve the completed bounded Lite behavior while reconciling Sonar
-  remote-policy validation with its actual endpoints and fixing all real Sonar findings.
+- Exact local next action: preserve the reconciled Sonar policy checks while fixing all 19 real
+  findings reported for the dedicated MVP project.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
-  remaining runnable finding; fix every real Sonar issue; reconcile the validator with the actual
-  Sonar policy endpoints; and keep iterating through `pnpm quality:full` until it exits zero.
+  remaining runnable finding; fix every real Sonar issue; and keep iterating through
+  `pnpm quality:full` until it exits zero.

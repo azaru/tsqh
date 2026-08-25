@@ -259,13 +259,11 @@ describe("Sonar evidence", () => {
     await expect(validateSonarResult(options)).rejects.toThrow(/computed quality gate must be "OK"/u);
   });
 
-  it("rejects an incomplete remote policy", async () => {
+  it("accepts a computed gate that omits conditions without computed measures", async () => {
     const options = await createResultOptions();
-    options.qualityGateResponse = {
-      projectStatus: { status: "OK", ignoredConditions: false, conditions: conditions().slice(1) },
-    };
+    delete projectStatus(options).conditions;
 
-    await expect(validateSonarResult(options)).rejects.toThrow(/missing required condition violations/u);
+    await expect(validateSonarResult(options)).resolves.toMatchObject({ gateStatus: "OK" });
   });
 
   it("rejects a mismatched profile or new-code definition", async () => {
@@ -284,13 +282,11 @@ describe("Sonar evidence", () => {
     ["analysis id", (options: MutableResultOptions) => task(options).analysisId = "", /analysis id is missing/u],
     ["quality response", (options: MutableResultOptions) => options.qualityGateResponse = null, /quality-gate response must be an object/u],
     ["ignored conditions", (options: MutableResultOptions) => projectStatus(options).ignoredConditions = true, /ignored conditions/u],
-    ["condition inventory", (options: MutableResultOptions) => projectStatus(options).conditions = null, /conditions are missing/u],
+    ["condition inventory", (options: MutableResultOptions) => projectStatus(options).conditions = null, /conditions are malformed/u],
     ["condition object", (options: MutableResultOptions) => projectStatus(options).conditions = [null], /condition must be an object/u],
     ["condition key", (options: MutableResultOptions) => projectStatus(options).conditions = [{ metricKey: "" }], /metric key is missing/u],
     ["duplicate condition", (options: MutableResultOptions) => projectStatus(options).conditions = [...conditions(), conditions()[0]], /repeats condition/u],
-    ["condition comparator", (options: MutableResultOptions) => condition(options, "coverage").comparator = "GT", /coverage comparator/u],
-    ["condition threshold", (options: MutableResultOptions) => condition(options, "coverage").errorThreshold = "80", /coverage threshold/u],
-    ["condition status", (options: MutableResultOptions) => condition(options, "coverage").status = "ERROR", /coverage status/u],
+    ["condition status", (options: MutableResultOptions) => condition(options, "coverage").status = "ERROR", /computed coverage status/u],
     ["empty approved policy", (options: MutableResultOptions) => options.expectedPolicy = { ...options.expectedPolicy, qualityGate: "" }, /qualityGate.*approved policy/u],
   ])("rejects invalid Sonar result: %s", async (_label, mutate, message) => {
     const options = await createResultOptions();
@@ -337,7 +333,7 @@ describe("Sonar evidence", () => {
   });
 
   it("reads the assigned remote policy identity", () => {
-    expect(readRemoteSonarPolicy(policyResponses(), token)).toEqual({
+    expect(readRemoteSonarPolicy(policyResponses(), token, "tsqh-test")).toEqual({
       qualityGate: "TSQH strict",
       typescriptProfile: "TSQH TypeScript",
       newCodeDefinition: "PREVIOUS_VERSION",
@@ -346,25 +342,42 @@ describe("Sonar evidence", () => {
 
   it("retains the assigned value in a parameterized new-code definition", () => {
     const responses = policyResponses();
-    responses.newCodePeriod = { type: "NUMBER_OF_DAYS", value: "30", inherited: false };
+    responses.newCodePeriod = {
+      projectKey: "tsqh-test",
+      branchKey: "main",
+      type: "NUMBER_OF_DAYS",
+      value: "30",
+      inherited: false,
+    };
 
-    expect(readRemoteSonarPolicy(responses, token).newCodeDefinition).toBe("NUMBER_OF_DAYS:30");
+    expect(readRemoteSonarPolicy(responses, token, "tsqh-test").newCodeDefinition).toBe("NUMBER_OF_DAYS:30");
   });
 
   it("treats an empty new-code value as absent", () => {
     const responses = policyResponses();
-    responses.newCodePeriod = { type: "PREVIOUS_VERSION", value: "", inherited: false };
+    responses.newCodePeriod = {
+      projectKey: "tsqh-test",
+      branchKey: "main",
+      type: "PREVIOUS_VERSION",
+      value: "",
+      inherited: false,
+    };
 
-    expect(readRemoteSonarPolicy(responses, token).newCodeDefinition).toBe("PREVIOUS_VERSION");
+    expect(readRemoteSonarPolicy(responses, token, "tsqh-test").newCodeDefinition).toBe("PREVIOUS_VERSION");
   });
 
   it("rejects a secret in the remote policy response and ignores an empty token", () => {
     const secretBearing = policyResponses();
-    secretBearing.newCodePeriod = { type: "PREVIOUS_VERSION", inherited: false, note: token };
-    expect(() => readRemoteSonarPolicy(secretBearing, token)).toThrow(
+    secretBearing.newCodePeriod = {
+      projectKey: "tsqh-test",
+      branchKey: "main",
+      type: "PREVIOUS_VERSION",
+      note: token,
+    };
+    expect(() => readRemoteSonarPolicy(secretBearing, token, "tsqh-test")).toThrow(
       /Sonar remote policy response contains a secret/u,
     );
-    expect(() => readRemoteSonarPolicy(policyResponses(), "")).not.toThrow();
+    expect(() => readRemoteSonarPolicy(policyResponses(), "", "tsqh-test")).not.toThrow();
   });
 
   it("rejects matching empty approved and remote policy identities", () => {
@@ -374,20 +387,32 @@ describe("Sonar evidence", () => {
   });
 
   it.each([
-    ["gate", { ...policyResponses(), qualityGate: {} }, /quality gate must be an object/u],
-    ["gate response", { ...policyResponses(), qualityGate: null }, /quality-gate policy response must be an object/u],
-    ["gate name", { ...policyResponses(), qualityGate: { qualityGate: {} } }, /Sonar quality-gate name is missing/u],
+    ["gate", { ...policyResponses(), qualityGateAssignment: {} }, /assigned quality gate must be an object/u],
+    ["gate response", { ...policyResponses(), qualityGateAssignment: null }, /quality-gate assignment response must be an object/u],
+    ["gate name", { ...policyResponses(), qualityGateAssignment: { qualityGate: {} } }, /assigned quality-gate name is missing/u],
+    ["definition response", { ...policyResponses(), qualityGateDefinition: null }, /quality-gate definition response must be an object/u],
+    ["stale definition", { ...policyResponses(), qualityGateDefinition: { name: "Old gate", conditions: configuredConditions() } }, /definition name/u],
+    ["definition conditions", { ...policyResponses(), qualityGateDefinition: { name: "TSQH strict", conditions: null } }, /definition conditions are missing/u],
+    ["definition condition", { ...policyResponses(), qualityGateDefinition: { name: "TSQH strict", conditions: [null] } }, /definition condition must be an object/u],
+    ["condition metric", { ...policyResponses(), qualityGateDefinition: { name: "TSQH strict", conditions: [{ op: "GT", error: "0" }] } }, /condition metric key is missing/u],
+    ["duplicate condition", duplicateConfiguredConditionResponses(), /repeats condition/u],
+    ["missing condition", missingConfiguredConditionResponses(), /missing required condition violations/u],
+    ["stale comparator", staleConfiguredConditionResponses("coverage", { op: "GT" }), /coverage comparator/u],
+    ["stale threshold", staleConfiguredConditionResponses("coverage", { error: "80" }), /coverage threshold/u],
+    ["unapproved condition", extraConfiguredConditionResponses(), /unapproved conditions/u],
     ["profile response", { ...policyResponses(), qualityProfiles: null }, /quality-profile response must be an object/u],
     ["profiles", { ...policyResponses(), qualityProfiles: { profiles: [] } }, /missing or ambiguous/u],
     ["profile object", { ...policyResponses(), qualityProfiles: { profiles: [null] } }, /TypeScript quality profile must be an object/u],
     ["profile name", { ...policyResponses(), qualityProfiles: { profiles: [{ language: "ts" }] } }, /TypeScript quality-profile name is missing/u],
     ["profile language", { ...policyResponses(), qualityProfiles: { profiles: [{ name: "TSQH TypeScript", language: "js" }] } }, /profile language/u],
     ["new-code response", { ...policyResponses(), newCodePeriod: null }, /new-code definition response must be an object/u],
-    ["inherited new code", { ...policyResponses(), newCodePeriod: { type: "PREVIOUS_VERSION", inherited: true } }, /inheritance/u],
-    ["new-code type", { ...policyResponses(), newCodePeriod: { inherited: false } }, /new-code definition type is missing/u],
-    ["new-code value", { ...policyResponses(), newCodePeriod: { type: "NUMBER_OF_DAYS", value: 30, inherited: false } }, /new-code definition value is missing/u],
+    ["stale project", { ...policyResponses(), newCodePeriod: { projectKey: "other", branchKey: "main", type: "PREVIOUS_VERSION" } }, /definition project key/u],
+    ["stale branch", { ...policyResponses(), newCodePeriod: { projectKey: "tsqh-test", branchKey: "old", type: "PREVIOUS_VERSION" } }, /definition branch key/u],
+    ["inherited new code", { ...policyResponses(), newCodePeriod: { projectKey: "tsqh-test", branchKey: "main", type: "PREVIOUS_VERSION", inherited: true } }, /inheritance/u],
+    ["new-code type", { ...policyResponses(), newCodePeriod: { projectKey: "tsqh-test", branchKey: "main" } }, /new-code definition type is missing/u],
+    ["new-code value", { ...policyResponses(), newCodePeriod: { projectKey: "tsqh-test", branchKey: "main", type: "NUMBER_OF_DAYS", value: 30 } }, /new-code definition value is missing/u],
   ])("rejects invalid remote policy: %s", (_label, responses, message) => {
-    expect(() => readRemoteSonarPolicy(responses, token)).toThrow(message);
+    expect(() => readRemoteSonarPolicy(responses, token, "tsqh-test")).toThrow(message);
   });
 
   it("ignores empty redaction values", () => {
@@ -517,15 +542,56 @@ function sonarPolicy(): Record<string, unknown> {
 }
 
 function policyResponses(): {
-  qualityGate: unknown;
+  qualityGateAssignment: unknown;
+  qualityGateDefinition: unknown;
   qualityProfiles: unknown;
   newCodePeriod: unknown;
 } {
   return {
-    qualityGate: { qualityGate: { name: "TSQH strict" } },
+    qualityGateAssignment: { qualityGate: { name: "TSQH strict" } },
+    qualityGateDefinition: { name: "TSQH strict", conditions: configuredConditions() },
     qualityProfiles: { profiles: [{ name: "TSQH TypeScript", language: "ts" }] },
-    newCodePeriod: { type: "PREVIOUS_VERSION", inherited: false },
+    newCodePeriod: {
+      projectKey: "tsqh-test",
+      branchKey: "main",
+      type: "PREVIOUS_VERSION",
+    },
   };
+}
+
+function duplicateConfiguredConditionResponses(): ReturnType<typeof policyResponses> {
+  const responses = policyResponses();
+  definitionConditions(responses).push({ ...definitionConditions(responses)[0]! });
+  return responses;
+}
+
+function missingConfiguredConditionResponses(): ReturnType<typeof policyResponses> {
+  const responses = policyResponses();
+  definitionConditions(responses).shift();
+  return responses;
+}
+
+function staleConfiguredConditionResponses(
+  metric: string,
+  replacement: Readonly<Record<string, unknown>>,
+): ReturnType<typeof policyResponses> {
+  const responses = policyResponses();
+  const condition = definitionConditions(responses).find((item) => item.metric === metric)!;
+  Object.assign(condition, replacement);
+  return responses;
+}
+
+function extraConfiguredConditionResponses(): ReturnType<typeof policyResponses> {
+  const responses = policyResponses();
+  definitionConditions(responses).push({ metric: "reliability_rating", op: "GT", error: "1" });
+  return responses;
+}
+
+function definitionConditions(
+  responses: ReturnType<typeof policyResponses>,
+): Record<string, unknown>[] {
+  const definition = responses.qualityGateDefinition as Record<string, unknown>;
+  return definition.conditions as Record<string, unknown>[];
 }
 
 async function writePolicy(
@@ -555,5 +621,13 @@ function conditions(): readonly Record<string, unknown>[] {
     comparator,
     errorThreshold,
     status: "OK",
+  }));
+}
+
+function configuredConditions(): Record<string, unknown>[] {
+  return conditions().map(({ metricKey, comparator, errorThreshold }) => ({
+    metric: metricKey,
+    op: comparator,
+    error: errorThreshold,
   }));
 }

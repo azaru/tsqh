@@ -110,10 +110,11 @@ export async function runSonarQualityGate(
       preflight.hostUrl,
       validatedToken,
       preflight.projectKey,
+      preflight.expectedPolicy.qualityGate,
     );
     validateSonarPolicy(
       preflight.expectedPolicy,
-      readRemoteSonarPolicy(policyResponses, validatedToken),
+      readRemoteSonarPolicy(policyResponses, validatedToken, preflight.projectKey),
     );
 
     outputDigests = {
@@ -169,18 +170,23 @@ async function readPolicyResponses(
   hostUrl: string,
   token: string,
   projectKey: string,
+  qualityGateName: string,
 ): Promise<SonarPolicyResponses> {
-  const qualityGate = await request(api, hostUrl, token, "/api/qualitygates/get_by_project", {
+  const qualityGateAssignment = await request(api, hostUrl, token, "/api/qualitygates/get_by_project", {
     project: projectKey,
+  });
+  const qualityGateDefinition = await request(api, hostUrl, token, "/api/qualitygates/show", {
+    name: qualityGateName,
   });
   const qualityProfiles = await request(api, hostUrl, token, "/api/qualityprofiles/search", {
     language: "ts",
     project: projectKey,
   });
   const newCodePeriod = await request(api, hostUrl, token, "/api/new_code_periods/show", {
+    branch: "main",
     project: projectKey,
   });
-  return { qualityGate, qualityProfiles, newCodePeriod };
+  return { qualityGateAssignment, qualityGateDefinition, qualityProfiles, newCodePeriod };
 }
 
 function request(

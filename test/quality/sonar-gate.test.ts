@@ -64,11 +64,15 @@ describe("Sonar quality gate wrapper", () => {
       { path: "/api/ce/task", parameters: { id: "task-1" } },
       { path: "/api/qualitygates/project_status", parameters: { analysisId: "analysis-1" } },
       { path: "/api/qualitygates/get_by_project", parameters: { project: "tsqh-test" } },
+      { path: "/api/qualitygates/show", parameters: { name: "TSQH strict" } },
       {
         path: "/api/qualityprofiles/search",
         parameters: { language: "ts", project: "tsqh-test" },
       },
-      { path: "/api/new_code_periods/show", parameters: { project: "tsqh-test" } },
+      {
+        path: "/api/new_code_periods/show",
+        parameters: { branch: "main", project: "tsqh-test" },
+      },
     ]);
     expect(api.requests.every((request) => request.token === token)).toBe(true);
   });
@@ -161,7 +165,37 @@ describe("Sonar quality gate wrapper", () => {
 
     const result = await runSonarQualityGate(root, runtime(taskWritingRunner(root), api));
 
-    expect(result.summary.reason).toMatch(/qualityGate.*approved policy/u);
+    expect(result.summary.reason).toMatch(/quality-gate definition name/u);
+  });
+
+  it.each([
+    ["missing", undefined, /definition response must be an object/u],
+    [
+      "duplicate",
+      { name: "TSQH strict", conditions: [...configuredConditions(), configuredConditions()[0]] },
+      /repeats condition/u,
+    ],
+    [
+      "stale",
+      {
+        name: "TSQH strict",
+        conditions: configuredConditions().map((condition) =>
+          condition.metric === "coverage" ? { ...condition, error: "80" } : condition
+        ),
+      },
+      /coverage threshold/u,
+    ],
+    ["malformed", { name: "TSQH strict", conditions: null }, /conditions are missing/u],
+  ] as const)("blocks a %s gate-definition response", async (_label, response, message) => {
+    const root = await createFixture();
+    const api = passingApi({ "/api/qualitygates/show": response });
+
+    const result = await runSonarQualityGate(root, runtime(taskWritingRunner(root), api));
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      summary: { status: "blocked", reason: expect.stringMatching(message) },
+    });
   });
 
   it("redacts secrets from API failures and the summary", async () => {
@@ -217,13 +251,18 @@ function passingApi(overrides: Readonly<Record<string, unknown>> = {}): FakeApi 
       task: { id: "task-1", componentKey: "tsqh-test", status: "SUCCESS", analysisId: "analysis-1" },
     },
     "/api/qualitygates/project_status": {
-      projectStatus: { status: "OK", ignoredConditions: false, conditions: conditions() },
+      projectStatus: { status: "OK", ignoredConditions: false },
     },
     "/api/qualitygates/get_by_project": { qualityGate: { name: "TSQH strict" } },
+    "/api/qualitygates/show": { name: "TSQH strict", conditions: configuredConditions() },
     "/api/qualityprofiles/search": {
       profiles: [{ name: "TSQH TypeScript", language: "ts" }],
     },
-    "/api/new_code_periods/show": { type: "PREVIOUS_VERSION", inherited: false },
+    "/api/new_code_periods/show": {
+      projectKey: "tsqh-test",
+      branchKey: "main",
+      type: "PREVIOUS_VERSION",
+    },
     ...overrides,
   };
   return new FakeApi(async ({ path }) => responses[path]);
@@ -341,6 +380,14 @@ function conditions(): readonly Record<string, unknown>[] {
     comparator,
     errorThreshold,
     status: "OK",
+  }));
+}
+
+function configuredConditions(): readonly Record<string, unknown>[] {
+  return conditions().map(({ metricKey, comparator, errorThreshold }) => ({
+    metric: metricKey,
+    op: comparator,
+    error: errorThreshold,
   }));
 }
 

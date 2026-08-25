@@ -145,6 +145,12 @@ pnpm quality:sonar
 Do not commit an environment file or token. A fresh server must reproduce the exact identities in
 the active specification and must not modify the sibling `azaru_tsqh` project.
 
+The fail-closed wrapper checks three distinct kinds of remote evidence: `project_status` proves the
+computed result is `OK` with ignored conditions disabled; the assigned gate and its definition
+prove the exact eight approved conditions; and the project `main` branch response proves its
+explicit `PREVIOUS_VERSION` new-code assignment. Conditions without computed measures may be absent
+from `project_status`; they remain mandatory in the gate definition.
+
 ## Configuration
 
 [`schemas/workflow.schema.json`](schemas/workflow.schema.json) is the strict version 1 JSON schema.

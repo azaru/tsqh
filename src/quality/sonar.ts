@@ -29,6 +29,8 @@ const REQUIRED_CONDITIONS = {
   new_duplicated_lines_density: ["GT", "3"],
 } as const;
 
+const MAIN_BRANCH = "main";
+
 export interface SonarEnvironment {
   readonly SONAR_HOST_URL?: string;
   readonly SONAR_ORGANIZATION?: string;
@@ -186,7 +188,8 @@ export interface SonarTaskIdentity {
 
 export interface SonarPolicyResponses {
   readonly newCodePeriod: unknown;
-  readonly qualityGate: unknown;
+  readonly qualityGateAssignment: unknown;
+  readonly qualityGateDefinition: unknown;
   readonly qualityProfiles: unknown;
 }
 
@@ -295,15 +298,29 @@ export function validateSonarQualityGate(response: unknown, token: string): void
   );
   requireEqual(projectStatus.status, "OK", "Sonar computed quality gate");
   requireEqual(projectStatus.ignoredConditions, false, "Sonar ignored conditions");
-  validateConditions(projectStatus.conditions);
+  if (Object.hasOwn(projectStatus, "conditions")) {
+    validateComputedConditions(projectStatus.conditions);
+  }
 }
 
 export function readRemoteSonarPolicy(
   responses: SonarPolicyResponses,
   token: string,
+  projectKey: string,
 ): SonarPolicyIdentity {
   assertNoSecret(JSON.stringify(responses), token, "Sonar remote policy response");
-  const gate = record(record(responses.qualityGate, "quality-gate policy response").qualityGate, "quality gate");
+  const assignment = record(
+    record(responses.qualityGateAssignment, "quality-gate assignment response").qualityGate,
+    "assigned quality gate",
+  );
+  const assignedGateName = requiredString(assignment.name, "Sonar assigned quality-gate name");
+  const gateDefinition = record(responses.qualityGateDefinition, "quality-gate definition response");
+  requireEqual(
+    gateDefinition.name,
+    assignedGateName,
+    "Sonar quality-gate definition name",
+  );
+  validateConfiguredConditions(gateDefinition.conditions);
   const profileResponse = record(responses.qualityProfiles, "quality-profile response");
   if (!Array.isArray(profileResponse.profiles) || profileResponse.profiles.length !== 1) {
     throw new EvidenceError("Sonar TypeScript quality-profile assignment is missing or ambiguous.");
@@ -311,11 +328,15 @@ export function readRemoteSonarPolicy(
   const profile = record(profileResponse.profiles[0], "TypeScript quality profile");
   requireEqual(profile.language, "ts", "Sonar quality-profile language");
   const period = record(responses.newCodePeriod, "new-code definition response");
-  requireEqual(period.inherited, false, "Sonar new-code definition inheritance");
+  requireEqual(period.projectKey, projectKey, "Sonar new-code definition project key");
+  requireEqual(period.branchKey, MAIN_BRANCH, "Sonar new-code definition branch key");
+  if (Object.hasOwn(period, "inherited")) {
+    requireEqual(period.inherited, false, "Sonar new-code definition inheritance");
+  }
   const type = requiredString(period.type, "Sonar new-code definition type");
   const value = optionalString(period.value, "Sonar new-code definition value");
   return {
-    qualityGate: requiredString(gate.name, "Sonar quality-gate name"),
+    qualityGate: assignedGateName,
     typescriptProfile: requiredString(profile.name, "Sonar TypeScript quality-profile name"),
     newCodeDefinition: value === null ? type : `${type}:${value}`,
   };
@@ -360,14 +381,14 @@ function parseProperties(content: string): Readonly<Record<string, string>> {
   return properties;
 }
 
-function validateConditions(value: unknown): void {
+function validateConfiguredConditions(value: unknown): void {
   if (!Array.isArray(value)) {
-    throw new EvidenceError("Sonar quality-gate conditions are missing.");
+    throw new EvidenceError("Sonar quality-gate definition conditions are missing.");
   }
   const conditions = new Map<string, Record<string, unknown>>();
   for (const item of value) {
-    const condition = record(item, "quality-gate condition");
-    const metricKey = requiredString(condition.metricKey, "Sonar condition metric key");
+    const condition = record(item, "quality-gate definition condition");
+    const metricKey = requiredString(condition.metric, "Sonar condition metric key");
     if (conditions.has(metricKey)) {
       throw new EvidenceError(`Sonar quality gate repeats condition ${metricKey}.`);
     }
@@ -378,9 +399,27 @@ function validateConditions(value: unknown): void {
     if (condition === undefined) {
       throw new EvidenceError(`Sonar quality gate is missing required condition ${metricKey}.`);
     }
-    requireEqual(condition.comparator, comparator, `Sonar ${metricKey} comparator`);
-    requireEqual(condition.errorThreshold, threshold, `Sonar ${metricKey} threshold`);
-    requireEqual(condition.status, "OK", `Sonar ${metricKey} status`);
+    requireEqual(condition.op, comparator, `Sonar ${metricKey} comparator`);
+    requireEqual(condition.error, threshold, `Sonar ${metricKey} threshold`);
+  }
+  if (conditions.size !== Object.keys(REQUIRED_CONDITIONS).length) {
+    throw new EvidenceError("Sonar quality gate contains unapproved conditions.");
+  }
+}
+
+function validateComputedConditions(value: unknown): void {
+  if (!Array.isArray(value)) {
+    throw new EvidenceError("Sonar computed quality-gate conditions are malformed.");
+  }
+  const metricKeys = new Set<string>();
+  for (const item of value) {
+    const condition = record(item, "computed quality-gate condition");
+    const metricKey = requiredString(condition.metricKey, "Sonar computed condition metric key");
+    if (metricKeys.has(metricKey)) {
+      throw new EvidenceError(`Sonar computed quality gate repeats condition ${metricKey}.`);
+    }
+    metricKeys.add(metricKey);
+    requireEqual(condition.status, "OK", `Sonar computed ${metricKey} status`);
   }
 }
 

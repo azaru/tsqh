@@ -260,6 +260,56 @@ describe("trace guards", () => {
     expect(reduceTrace(cleared).mostRecentGateFailure).toBeNull();
   });
 
+  it("tracks successful agent stdout and preserves it across native gates", () => {
+    const completedAgent = [
+      created(),
+      started(2),
+      finishedStep(3, {
+        process: { ...exited(0), stdout: "bounded handoff", stdoutTruncated: true },
+      }),
+    ];
+    expect(reduceTrace(completedAgent).mostRecentAgentHandoff).toEqual({
+      sourceStepId: "work",
+      sourceVisit: 1,
+      text: "bounded handoff",
+      truncated: true,
+    });
+
+    const afterGate = [
+      ...completedAgent,
+      started(4, { stepId: "gate", stepType: "gate" }),
+      finishedStep(5, { stepId: "gate", stepType: "gate", outcome: "passed" }),
+    ];
+    expect(reduceTrace(afterGate).mostRecentAgentHandoff).toEqual(
+      reduceTrace(completedAgent).mostRecentAgentHandoff,
+    );
+  });
+
+  it.each([
+    ["blocked outcome", { outcome: "blocked", process: exited(0), blocker: blocker() }],
+    ["nonzero process", { outcome: "completed", process: exited(1) }],
+    ["missing process", { outcome: "completed", process: null }],
+  ] as const)("does not create a handoff for a %s", (_label, overrides) => {
+    const state = reduceTrace([created(), started(2), finishedStep(3, overrides)]);
+
+    expect(state.mostRecentAgentHandoff).toBeNull();
+  });
+
+  it("does not interpret a non-agent process artifact as a handoff", () => {
+    const state = reduceTrace([
+      created(),
+      started(2, { stepId: "gate", stepType: "gate" }),
+      finishedStep(3, {
+        stepId: "gate",
+        stepType: "gate",
+        outcome: "completed",
+        process: { ...exited(0), stdout: "nextStep=passed" },
+      }),
+    ]);
+
+    expect(state.mostRecentAgentHandoff).toBeNull();
+  });
+
   it("accepts both valid terminal states", () => {
     expect(reduceTrace([created(), finishedRun(2, "passed")])).toMatchObject({
       phase: "finished",
@@ -622,6 +672,7 @@ function plannerState(overrides: Partial<RunState> = {}): RunState {
     currentStepId: "work",
     visitCounts: { work: 1 },
     latestOutcome: null,
+    mostRecentAgentHandoff: null,
     mostRecentGateFailure: null,
     terminalState: null,
     blocker: null,

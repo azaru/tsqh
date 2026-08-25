@@ -274,6 +274,7 @@ async function runAgentProcess(
       roleId: action.roleId,
       providerId: definition.role.provider,
       allowedPathPrefixes: definition.role.allowedPathPrefixes,
+      mostRecentAgentHandoff: state.mostRecentAgentHandoff,
       mostRecentGateFailure: state.mostRecentGateFailure,
     }),
     timeoutMs: definition.provider.timeoutMs ?? DEFAULT_AGENT_TIMEOUT_MS,

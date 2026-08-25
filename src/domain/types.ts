@@ -132,6 +132,13 @@ export interface GateFailure {
   readonly process: ProcessArtifact;
 }
 
+export interface AgentHandoff {
+  readonly sourceStepId: string;
+  readonly sourceVisit: number;
+  readonly text: string;
+  readonly truncated: boolean;
+}
+
 export interface RunState {
   readonly runId: string;
   readonly workflowId: string;
@@ -140,6 +147,7 @@ export interface RunState {
   readonly currentStepId: string;
   readonly visitCounts: Readonly<Record<string, number>>;
   readonly latestOutcome: LatestOutcome | null;
+  readonly mostRecentAgentHandoff: AgentHandoff | null;
   readonly mostRecentGateFailure: GateFailure | null;
   readonly terminalState: TerminalState | null;
   readonly blocker: Blocker | null;

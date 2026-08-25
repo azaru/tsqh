@@ -1,4 +1,10 @@
-import type { GateFailure, RunEvent, RunState, StepFinishedEvent } from "./types.js";
+import type {
+  AgentHandoff,
+  GateFailure,
+  RunEvent,
+  RunState,
+  StepFinishedEvent,
+} from "./types.js";
 
 export class TraceValidationError extends Error {
   public constructor(message: string) {
@@ -75,6 +81,7 @@ function applyRunCreated(
     currentStepId: event.entryStepId,
     visitCounts: { [event.entryStepId]: 1 },
     latestOutcome: null,
+    mostRecentAgentHandoff: null,
     mostRecentGateFailure: null,
     terminalState: null,
     blocker: null,
@@ -117,6 +124,7 @@ function applyStepFinished(state: RunState, event: StepFinishedEvent): RunState 
       outcome: event.outcome,
       blocker: event.blocker,
     },
+    mostRecentAgentHandoff: updatedAgentHandoff(state.mostRecentAgentHandoff, event),
     mostRecentGateFailure: updatedGateFailure(state.mostRecentGateFailure, event),
     blocker: event.blocker,
   };
@@ -146,6 +154,26 @@ function applyRunFinished(
     phase: "finished",
     terminalState: event.terminalState,
     blocker: event.blocker,
+  };
+}
+
+function updatedAgentHandoff(
+  previous: AgentHandoff | null,
+  event: StepFinishedEvent,
+): AgentHandoff | null {
+  if (
+    event.stepType !== "agent" ||
+    event.outcome !== "completed" ||
+    event.process?.kind !== "exited" ||
+    event.process.exitCode !== 0
+  ) {
+    return previous;
+  }
+  return {
+    sourceStepId: event.stepId,
+    sourceVisit: event.visit,
+    text: event.process.stdout,
+    truncated: event.process.stdoutTruncated,
   };
 }
 

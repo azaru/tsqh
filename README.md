@@ -60,13 +60,12 @@ is provisioned and the first real scan reached its strict gate. It is red for 19
 missing infrastructure. Consequently `quality:full` is wired but cannot yet be claimed green. See
 [`STATUS.md`](STATUS.md) for exact evidence and work.
 
-The active specification now continues with the smallest useful Swarm Forge collaboration
-primitive: bounded output from one successfully completed agent becomes untrusted context for the
-next configured agent. It also makes native gates candidate-stable by blocking any gate that
-changes the Git snapshot, and adds a separate sequential example inspired by Swarm Forge `main`,
-`six-pack`, and `squad`. This approved local work can proceed while the release evidence remains
-pending. The planner remains the only transition authority; there is no peer messaging, persistent
-leader, dynamic spawning, daemon, or per-role worktree.
+The active specification now includes the smallest useful Swarm Forge collaboration primitive:
+bounded output from one successfully completed agent becomes untrusted context for the next
+configured agent. Candidate-stable native gates and a separate sequential example inspired by
+Swarm Forge `main`, `six-pack`, and `squad` remain in progress. The planner remains the only
+transition authority; there is no peer messaging, persistent leader, dynamic spawning, daemon, or
+per-role worktree.
 
 The repository already contains an original attributed role catalog at
 [`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md), informed by the `main`,
@@ -171,9 +170,11 @@ Codex command provider, six native pnpm quality profiles, and explicit bounded r
 provider arguments match the locally inspected Codex CLI 0.149.1 interface; they remain ordinary
 configuration and may need adjustment for another Codex release.
 
-The active continuation will add a separate Swarm Forge Lite example rather than rewriting this
-verified hardening example. Until that work is implemented, bounded previous-role context and
-candidate-stable gate inspection are target behavior, not current CLI claims.
+The controller now supplies the latest successfully completed agent's bounded, sanitized stdout to
+the next configured agent with source identity and truncation state. Gates preserve that handoff,
+and its text cannot alter task, provider, write authority, transitions, visits, or gate outcomes.
+The active continuation will still add a separate Swarm Forge Lite example rather than rewriting
+this verified hardening example; candidate-stable gate inspection remains target behavior.
 
 ## Run and status
 

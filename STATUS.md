@@ -25,8 +25,11 @@
   sanitized stdout to the next configured agent as untrusted context; block gates that mutate the
   candidate; and add a separate sequential `implementer -> cleaner -> reviewer -> hardener -> qa`
   example followed by the unchanged six-gate quality chain.
-- The continuation is not implemented yet. Existing CLI behavior does not yet provide previous-role
-  handoff context or snapshot the candidate around native gates.
+- Bounded previous-role handoff is implemented without a trace migration: reduction derives the
+  latest successful agent stdout, source step, visit, and truncation state from the existing bounded
+  process artifact. Gates preserve it; blocked or nonzero agents do not create one; and prompt text
+  labels it as untrusted context with no task, permission, provider, transition, visit, or gate
+  authority. Candidate-stable native gates and the separate Lite example remain to implement.
 - A dedicated local Sonar target is now provisioned on the existing localhost service: project
   `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
@@ -56,7 +59,7 @@
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 660 tests across 25 files, and the
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 670 tests across 25 files, and the
   four-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
   (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
@@ -89,6 +92,9 @@
   --coverageAnalysis perTest` — exit 0; 64 killed, 0 survived/uncovered/timeout, and 21 checker
   errors. The preceding combined diagnostic also proved the changed command-runner and quality CLI
   entrypoint ranges at 100% before it exposed and prompted repair of the coverage/Sonar findings.
+- The bounded-handoff controller and prompt ranges reported 60 killed runnable mutants with zero
+  survived/uncovered/timeout; a follow-up reducer scan reported 13 killed runnable mutants with zero
+  survived/uncovered/timeout and 21 checker errors.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior
@@ -99,6 +105,9 @@
   `quick`; after the one-time failure, every gate is rerun in order and the workflow passes.
 - Exhaustion trace: a persistent mutation-gate failure consumes the finite repair budget, blocks
   at `repair`, and never starts `sonar`.
+- Handoff trace: `implement` output reaches `review` across `quick`; `review` output then replaces it
+  and reaches `verify` across `full`. Empty and truncated output retain source identity, and embedded
+  pass, skip, transition, task, and permission claims do not affect configured execution.
 - Existing version 0 authenticated smoke remains historical evidence only: Codex CLI 0.149.1 ran
   `implement(completed) -> quick(passed) -> review(completed) -> full(passed) -> verify(completed) -> passed`
   in disposable run `454a9357-a181-40dc-acca-f950b4ec53d9`.
@@ -126,9 +135,8 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: launch `GOAL.md` against active `TSQH-MVP-002`, preserve all concurrent
-  hardening work, and implement only bounded role handoff, candidate-stable gates, and the separate
-  Swarm Forge Lite example.
+- Exact local next action: preserve bounded handoff and implement candidate-stable gates plus the
+  separate Swarm Forge Lite example without expanding the version 0 runtime.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
   remaining runnable finding; fix every real Sonar issue; reconcile the validator with the actual
   Sonar policy endpoints; and keep iterating through `pnpm quality:full` until it exits zero.

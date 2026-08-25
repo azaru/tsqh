@@ -27,7 +27,7 @@ describe("shell-disabled command execution", () => {
       kind: "exited",
       exitCode: 0,
       stdout: "",
-      stderr: "red�\t\n��",
+      stderr: "red\uFFFD\t\n\uFFFD\uFFFD",
       stdoutTruncated: false,
       stderrTruncated: false,
     });
@@ -45,7 +45,7 @@ describe("shell-disabled command execution", () => {
     expect(Buffer.byteLength(overflow.stdout)).toBe(65_536);
     expect(overflow.stdoutTruncated).toBe(true);
     expect(Buffer.byteLength(exactAfterExpansion.stdout)).toBe(65_536);
-    expect(exactAfterExpansion.stdout).toMatch(/�$/u);
+    expect(exactAfterExpansion.stdout).toMatch(/\uFFFD$/u);
   });
 
   it("rebounds replacement-character expansion to the encoded byte limit", async () => {
@@ -62,7 +62,7 @@ describe("shell-disabled command execution", () => {
     ]);
 
     expect(Buffer.byteLength(artifact.stdout)).toBe(65_536);
-    expect(artifact.stdout).toMatch(/^�x+$/u);
+    expect(artifact.stdout).toMatch(/^\uFFFDx+$/u);
     expect(artifact.stdoutTruncated).toBe(false);
   });
 

@@ -56,10 +56,9 @@
   `src/adapters/command-runner.ts` (runtime error). Focused repairs now give every affected range a
   100% runtime mutation score with checker rejections reported separately. A fresh complete-project
   run remains required before replacing the baseline or claiming the mutation gate green.
-- Sonar is reachable and authorized. The first real MVP analysis completed on the server and the
-  strict gate correctly reported `ERROR`: coverage was 99.8%, duplication 0.0%, and 19 open issues
-  failed the zero-issue condition. These are actionable code findings, not an infrastructure or
-  authority blocker. Remote-policy validation is now aligned with Sonar's actual API split:
+- Sonar is reachable and authorized. All 19 initial findings are fixed, and the dedicated MVP
+  project now reports zero open issues and computed gate `OK`; coverage is 99.8% and duplication is
+  0.0%. Remote-policy validation is aligned with Sonar's actual API split:
   `project_status` proves computed `OK` and disabled ignored conditions, the assigned gate and
   gate-definition endpoints prove exactly eight configured conditions, and the project `main`
   branch response proves the explicit `PREVIOUS_VERSION` assignment. Missing, duplicate, stale,
@@ -68,21 +67,22 @@
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 692 tests across 25 files, and the
-  four-entry domain architecture boundary passed.
-- `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
-  (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
-  (1,567/1,568). Every domain metric remained 100%.
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 693 tests across 25 files, and the
+  five-entry domain architecture boundary passed.
+- `pnpm quality:coverage` — exit 0; 693 tests passed. Coverage was 100% statements
+  (1,646/1,646), 99.48% branches (971/976), 100% functions (357/357), and 100% lines
+  (1,626/1,626). Every domain metric remained 100%.
 - `pnpm quality:crap` — exit 0; 26 source files, 362 units, zero violations, maximum CRAP 6.
 - `pnpm quality:knip` — exit 0; zero issues, including zero configuration and tag hints.
 - `pnpm quality:full` — exit 1 at mutation after quick, coverage, CRAP, and Knip passed. The fresh
   mutation report contained 3,817 mutants: 2,803 killed, 1,008 checker-rejected compile errors,
   4 survived, 1 had no coverage, and 1 produced a runtime error. The reported total mutation score
   was 99.82% (99.86% covered). The fail-fast chain did not start Sonar.
-- `pnpm quality:sonar` — exit 1 after a real authorized scan; Sonar analysis completed and the
-  server-computed gate reported `ERROR` for 19 open issues. Coverage was 99.8% and duplicated-line
-  density was 0.0%. Compute task `720c76bd-698b-4275-b45a-7c62e6c4e686` completed `SUCCESS` as
-  analysis `0549f292-8aef-40b6-9a97-2865a52966ea`. The token was neither printed nor persisted.
+- `pnpm quality:sonar` — exit 0 after a real authorized scan; Sonar analysis
+  `0b616e70-e87f-48dc-b4b0-313045e6074c` completed with computed gate `OK` and the approved remote
+  policy. Compute task `1e521e9f-ef14-4bcd-9c42-06e52df7204e` completed successfully. The dedicated
+  project reports zero open issues, 99.8% coverage, and 0.0% duplicated-line density. The token was
+  neither printed nor persisted.
 - `pnpm exec vitest run test/cli` — exit 0; 17 tests across two files.
 - Focused mutation verification used temporary `coverageAnalysis: perTest` only for diagnostic
   speed; checked-in `stryker.config.mjs` remains `coverageAnalysis: "all"`. Final affected ranges
@@ -109,6 +109,9 @@
 - The reconciled Sonar policy and wrapper ranges reported 137 killed runnable mutants with zero
   survived/uncovered/timeout and 30 checker errors. The checked definition remains exact even when
   the computed status omits conditions without measures.
+- The Sonar-finding cleanup ranges reported 179 killed runnable mutants with zero
+  survived/uncovered/timeout and 52 checker errors. This includes locale-explicit ordering, absolute
+  Git executable dispatch without inherited `PATH`, and the remaining clarity/type repairs.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior
@@ -156,8 +159,8 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: preserve the reconciled Sonar policy checks while fixing all 19 real
-  findings reported for the dedicated MVP project.
+- Exact local next action: rerun the complete-project non-incremental mutation gate and repair every
+  remaining runnable finding before executing the full release chain.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
   remaining runnable finding; fix every real Sonar issue; and keep iterating through
   `pnpm quality:full` until it exits zero.

@@ -15,6 +15,8 @@ interface CliStreams {
   readonly stderr: Pick<NodeJS.WriteStream, "write">;
 }
 
+const PROCESS_STREAMS: CliStreams = { stdout: process.stdout, stderr: process.stderr };
+
 interface ParsedCommand {
   readonly command: "run" | "status";
   readonly options: Readonly<Record<string, string | true>>;
@@ -22,7 +24,7 @@ interface ParsedCommand {
 
 export async function runCli(
   argv: readonly string[],
-  streams: CliStreams = { stdout: process.stdout, stderr: process.stderr },
+  streams: CliStreams = PROCESS_STREAMS,
 ): Promise<number> {
   try {
     const parsed = parseArguments(argv);
@@ -164,6 +166,9 @@ function renderStatus(
     output.write(`${JSON.stringify(report)}\n`);
     return;
   }
+  const blocker = report.blocker === null
+    ? "none"
+    : `${report.blocker.code}: ${report.blocker.message}`;
   output.write(
     [
       `Run: ${report.runId}`,
@@ -171,7 +176,7 @@ function renderStatus(
       `Current step: ${report.currentStep}`,
       `Visits: ${JSON.stringify(report.visitCounts)}`,
       `Latest outcome: ${report.latestOutcome!.outcome}`,
-      `Blocker: ${report.blocker === null ? "none" : `${report.blocker.code}: ${report.blocker.message}`}`,
+      `Blocker: ${blocker}`,
       `Run directory: ${report.runDirectory}`,
       "",
     ].join("\n"),

@@ -2,6 +2,7 @@ import { Ajv, type ErrorObject, type ValidateFunction } from "ajv";
 import { readFile, realpath, stat } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { compareStrings } from "../domain/order.js";
 import { validateConfigurationGraph } from "../domain/validation.js";
 import type { Configuration } from "../domain/types.js";
 
@@ -54,7 +55,7 @@ export async function loadConfiguration(inputPath: string): Promise<LoadedConfig
     configPath,
     configRoot,
     prompts: Object.freeze(prompts),
-    promptPaths: Object.freeze([...new Set(promptPaths)].sort()),
+    promptPaths: Object.freeze([...new Set(promptPaths)].sort(compareStrings)),
   };
 }
 

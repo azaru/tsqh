@@ -1,5 +1,8 @@
-import type { QualityGateRuntime } from "./gates.js";
-import { runLocalQualityGate, type LocalQualityGateId } from "./gates.js";
+import {
+  runLocalQualityGate,
+  type LocalQualityGateId,
+  type QualityGateRuntime,
+} from "./gates.js";
 import type { SonarApi } from "./sonar-api.js";
 import { runSonarQualityGate } from "./sonar-gate.js";
 import type { SonarEnvironment } from "./sonar.js";

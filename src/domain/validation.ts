@@ -4,7 +4,7 @@ export class ConfigurationValidationError extends Error {
   public readonly issues: readonly string[];
 
   public constructor(issues: readonly string[]) {
-    super(`Configuration validation failed:\n${issues.map((issue) => `- ${issue}`).join("\n")}`);
+    super(["Configuration validation failed:", ...issues.map((issue) => `- ${issue}`)].join("\n"));
     this.name = "ConfigurationValidationError";
     this.issues = issues;
   }

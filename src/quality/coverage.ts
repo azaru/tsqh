@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
+import { compareStrings } from "../domain/order.js";
 import {
   EvidenceError,
   isRecord,
@@ -13,6 +14,7 @@ const REQUIRED_PERCENTAGE = 90;
 const DOMAIN_REQUIRED_PERCENTAGE = 100;
 
 type MetricName = "lines" | "statements" | "functions" | "branches";
+type LcovField = "LF" | "LH" | "FNF" | "FNH" | "BRF" | "BRH";
 
 interface Count {
   readonly covered: number;
@@ -117,7 +119,7 @@ async function discoverSources(workspace: string): Promise<SourceInventory> {
     }
   }
 
-  executable.sort();
+  executable.sort(compareStrings);
   return { all, executable, newestMtimeMs };
 }
 
@@ -276,8 +278,8 @@ function assertSameKeys(
   locations: Readonly<Record<string, unknown>>,
   label: string,
 ): void {
-  const countKeys = Object.keys(counts).sort();
-  const locationKeys = Object.keys(locations).sort();
+  const countKeys = Object.keys(counts).sort(compareStrings);
+  const locationKeys = Object.keys(locations).sort(compareStrings);
   if (countKeys.length !== locationKeys.length || countKeys.some((key, index) => key !== locationKeys[index])) {
     throw new EvidenceError(`${label} counts and locations disagree.`);
   }
@@ -294,7 +296,7 @@ function parseLcov(
 ): ReadonlyMap<string, Counts> {
   const records = new Map<string, Counts>();
   let currentPath: string | null = null;
-  let fields: Partial<Record<"LF" | "LH" | "FNF" | "FNH" | "BRF" | "BRH", number>> = {};
+  let fields: Partial<Record<LcovField, number>> = {};
   for (const line of content.split(/\r?\n/u)) {
     const result = processLcovLine({ workspace, sources, records, currentPath, fields }, line);
     currentPath = result.currentPath;
@@ -314,7 +316,7 @@ interface LcovState {
   readonly sources: ReadonlySet<string>;
   readonly records: Map<string, Counts>;
   readonly currentPath: string | null;
-  readonly fields: Partial<Record<"LF" | "LH" | "FNF" | "FNH" | "BRF" | "BRH", number>>;
+  readonly fields: Partial<Record<LcovField, number>>;
 }
 
 function processLcovLine(state: LcovState, line: string): Pick<LcovState, "currentPath" | "fields"> {

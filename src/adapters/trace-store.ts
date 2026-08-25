@@ -1,6 +1,7 @@
 import { appendFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { TraceStore, TraceWriter } from "../application/ports.js";
+import { compareStrings } from "../domain/order.js";
 import type { RunEvent } from "../domain/types.js";
 
 const MAX_EVENT_BYTES = 262_144;
@@ -101,7 +102,7 @@ function assertEventEnvelope(value: Record<string, unknown>, line: number): void
 function assertRunCreated(value: Record<string, unknown>, line: number): void {
   requireKeys(value, ["schemaVersion", "sequence", "runId", "occurredAt", "type", "workflowId", "entryStepId", "workspace"], line);
   if (typeof value.workflowId !== "string" || typeof value.entryStepId !== "string" || typeof value.workspace !== "string") {
-    throw new Error(`Run trace line ${String(line)} has an invalid run-created event.`);
+    throw new TypeError(`Run trace line ${String(line)} has an invalid run-created event.`);
   }
 }
 
@@ -172,8 +173,8 @@ function invalidRunFinished(line: number): never {
 }
 
 function requireKeys(value: Record<string, unknown>, expected: readonly string[], line: number): void {
-  const actual = Object.keys(value).sort();
-  const wanted = [...expected].sort();
+  const actual = Object.keys(value).sort(compareStrings);
+  const wanted = [...expected].sort(compareStrings);
   if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
     throw new Error(`Run trace line ${String(line)} has unknown or missing properties.`);
   }

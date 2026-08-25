@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { compareStrings } from "../../src/domain/order.js";
 import { planNextAction } from "../../src/domain/planner.js";
 import { reduceTrace, TraceValidationError } from "../../src/domain/reducer.js";
 import type {
@@ -14,6 +15,13 @@ import {
   isSafeRelativePath,
   validateConfigurationGraph,
 } from "../../src/domain/validation.js";
+
+describe("canonical string ordering", () => {
+  it("sorts with the fixed English locale", () => {
+    expect(["z", "a", "b"].sort(compareStrings)).toEqual(["a", "b", "z"]);
+    expect(compareStrings("same", "same")).toBe(0);
+  });
+});
 
 describe("planner guards", () => {
   it.each([

@@ -126,12 +126,12 @@ function renderCapture(capture: Capture): string {
 function boundedSanitizedOutput(output: string): string {
   const sanitized = output
     .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "")
-    .replace(/[^\t\n\r\u0020-\u007e\u00a0-\ud7ff\ue000-\ufffd]/g, "�");
+    .replace(/[^\t\n\r\u0020-\u007e\u00a0-\ud7ff\ue000-\ufffd]/g, "\uFFFD");
   if (Buffer.byteLength(sanitized) <= MAX_OUTPUT_BYTES) {
     return sanitized;
   }
   return Buffer.from(sanitized)
     .subarray(0, MAX_OUTPUT_BYTES)
     .toString("utf8")
-    .replace(/�$/u, "");
+    .replace(/\uFFFD$/u, "");
 }

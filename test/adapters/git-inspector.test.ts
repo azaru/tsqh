@@ -126,9 +126,9 @@ describe.sequential("local Git inspection", () => {
   });
 
   it("rejects a changed path that is not a file or symbolic link", async () => {
-    await withFakeGit(statusScript(Buffer.from("?? directory\0")), async (root) => {
+    await withFakeGit(statusScript(Buffer.from("?? directory\0")), async (root, inspector) => {
       await mkdir(join(root, "directory"));
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+      await expect(inspector.snapshot(root)).rejects.toThrow(
         "Changed path is not a regular file or symbolic link: directory.",
       );
     });
@@ -143,50 +143,50 @@ describe.sequential("local Git inspection", () => {
     [Buffer.from("?? trailing/\0"), "Git returned an invalid or ambiguous changed path"],
     [Buffer.from([0xff, 0]), "Git status output is not valid UTF-8."],
   ] as const)("rejects malformed status output", async (output, message) => {
-    await withFakeGit(statusScript(output), async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(message);
+    await withFakeGit(statusScript(output), async (root, inspector) => {
+      await expect(inspector.snapshot(root)).rejects.toThrow(message);
     });
   });
 
   it("accepts the shortest valid status record", async () => {
-    await withFakeGit(statusScript(Buffer.from("?? a\0")), async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).resolves.toEqual({
+    await withFakeGit(statusScript(Buffer.from("?? a\0")), async (root, inspector) => {
+      await expect(inspector.snapshot(root)).resolves.toEqual({
         fingerprints: { a: "??:deleted" },
       });
     });
   });
 
   it("preserves exact Git exit, signal, and spawn diagnostics", async () => {
-    await withFakeGit("process.stderr.write('bad status\\n'); process.exit(7);", async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+    await withFakeGit("process.stderr.write('bad status\\n'); process.exit(7);", async (root, inspector) => {
+      await expect(inspector.snapshot(root)).rejects.toThrow(
         "Git status failed: bad status",
       );
     });
-    await withFakeGit("process.kill(process.pid, 'SIGTERM');", async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+    await withFakeGit("process.kill(process.pid, 'SIGTERM');", async (root, inspector) => {
+      await expect(inspector.snapshot(root)).rejects.toThrow(
         "Git ended from signal 'SIGTERM'.",
       );
     });
 
     const emptyPath = await mkdtemp(join(tmpdir(), "tsqh-no-git-"));
-    await withPath(emptyPath, async () => {
-      await expect(new LocalGitInspector().snapshot(emptyPath)).rejects.toThrow(/spawn git ENOENT/u);
-    });
+    await expect(new LocalGitInspector(join(emptyPath, "git")).snapshot(emptyPath)).rejects.toThrow(
+      /spawn .*git ENOENT/u,
+    );
   });
 
   it("bounds both Git output streams", async () => {
     await withFakeGit(
       "process.stdout.write(Buffer.alloc(4194305));",
-      async (root) => {
-        await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+      async (root, inspector) => {
+        await expect(inspector.snapshot(root)).rejects.toThrow(
           "Git output exceeded the bounded capture limit.",
         );
       },
     );
     await withFakeGit(
       "process.stderr.write(Buffer.alloc(4194305));",
-      async (root) => {
-        await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+      async (root, inspector) => {
+        await expect(inspector.snapshot(root)).rejects.toThrow(
           "Git output exceeded the bounded capture limit.",
         );
       },
@@ -197,8 +197,8 @@ describe.sequential("local Git inspection", () => {
     const invalidStatusAtLimit = Buffer.alloc(4_194_304, 97);
     invalidStatusAtLimit.set(Buffer.from("?? ../"));
     invalidStatusAtLimit[invalidStatusAtLimit.length - 1] = 0;
-    await withFakeGit(statusScript(invalidStatusAtLimit), async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+    await withFakeGit(statusScript(invalidStatusAtLimit), async (root, inspector) => {
+      await expect(inspector.snapshot(root)).rejects.toThrow(
         "Git returned an invalid or ambiguous changed path",
       );
     });
@@ -207,14 +207,14 @@ describe.sequential("local Git inspection", () => {
       "process.stdout.write(Buffer.from('YmFkAA==', 'base64'));",
       "process.stderr.write(Buffer.alloc(4194304));",
     ].join("\n");
-    await withFakeGit(script, async (root) => {
-      await expect(new LocalGitInspector().snapshot(root)).rejects.toThrow(
+    await withFakeGit(script, async (root, inspector) => {
+      await expect(inspector.snapshot(root)).rejects.toThrow(
         "Git status returned a malformed path record.",
       );
     });
   });
 
-  it("passes Git only its fixed environment and inherited runtime paths", async () => {
+  it("passes Git only its fixed environment and selected runtime directories", async () => {
     const secretKey = "TSQH_GIT_INSPECTOR_SECRET";
     process.env[secretKey] = "must-not-leak";
     try {
@@ -222,11 +222,12 @@ describe.sequential("local Git inspection", () => {
         `if (process.env.${secretKey}) process.exit(8);`,
         "if (process.env.LC_ALL !== 'C') process.exit(9);",
         "if (process.env.GIT_OPTIONAL_LOCKS !== '0') process.exit(10);",
-        "if (!process.env.PATH || !process.env.HOME) process.exit(11);",
+        "if (process.env.PATH) process.exit(11);",
+        "if (!process.env.HOME) process.exit(12);",
         "process.stdout.write('');",
       ].join("\n");
-      await withFakeGit(script, async (root) => {
-        await expect(new LocalGitInspector().snapshot(root)).resolves.toEqual({ fingerprints: {} });
+      await withFakeGit(script, async (root, inspector) => {
+        await expect(inspector.snapshot(root)).resolves.toEqual({ fingerprints: {} });
       });
     } finally {
       delete process.env[secretKey];
@@ -238,8 +239,8 @@ describe.sequential("local Git inspection", () => {
       "if (process.argv.includes('rev-parse')) { process.stdout.write(Buffer.from([255])); process.exit(0); }",
       "process.stdout.write(Buffer.from([0]));",
     ].join("\n");
-    await withFakeGit(script, async (root) => {
-      await expect(new LocalGitInspector().openCleanWorkspace(root, [])).rejects.toThrow(
+    await withFakeGit(script, async (root, inspector) => {
+      await expect(inspector.openCleanWorkspace(root, [])).rejects.toThrow(
         "Git output is not valid UTF-8.",
       );
     });
@@ -267,7 +268,7 @@ function statusScript(output: Buffer): string {
 
 async function withFakeGit(
   body: string,
-  action: (workspace: string) => Promise<void>,
+  action: (workspace: string, inspector: LocalGitInspector) => Promise<void>,
 ): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), "tsqh-fake-git-"));
   const bin = join(root, "bin");
@@ -277,19 +278,5 @@ async function withFakeGit(
   const executable = join(bin, "git");
   await writeFile(executable, `#!${process.execPath}\n${body}\n`, "utf8");
   await chmod(executable, 0o755);
-  await withPath(bin, async () => action(await realpath(workspace)));
-}
-
-async function withPath(path: string, action: () => Promise<void>): Promise<void> {
-  const previous = process.env.PATH;
-  process.env.PATH = path;
-  try {
-    await action();
-  } finally {
-    if (previous === undefined) {
-      delete process.env.PATH;
-    } else {
-      process.env.PATH = previous;
-    }
-  }
+  await action(await realpath(workspace), new LocalGitInspector(executable));
 }

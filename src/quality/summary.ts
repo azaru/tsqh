@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
+import { compareStrings } from "../domain/order.js";
 import {
   EvidenceError,
   isRecord,
@@ -197,8 +198,8 @@ function assertExactKeys(
   expected: readonly string[],
   label: string,
 ): void {
-  const actual = Object.keys(value).sort();
-  const sortedExpected = [...expected].sort();
+  const actual = Object.keys(value).sort(compareStrings);
+  const sortedExpected = [...expected].sort(compareStrings);
   if (!isDeepStrictEqual(actual, sortedExpected)) {
     throw new EvidenceError(`Quality summary ${label} has missing or unknown properties.`);
   }

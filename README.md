@@ -51,14 +51,13 @@ controller code. Every failure uses the ordinary configured repair edge and reru
 
 Hardening is in progress: strict local wrappers and evidence validators, tool configuration, the
 six-gate example graph, deterministic failure tests, the approved pinned development packages, and
-the sequential fail-fast package scripts now exist. Real coverage, CRAP, and Knip runs pass. The
-mutation policy now keeps checker-rejected `CompileError` mutations visible while requiring every
-runnable mutant to be `Killed`. Its validator and a fresh complete-project run now prove that the
-gate fails closed: 4 mutants survived, 1 had no coverage, and 1 produced a runtime error, while
-1,008 checker-rejected `CompileError` mutations remained visible. A dedicated local Sonar target
-is provisioned and the first real scan reached its strict gate. It is red for 19 real issues, not
-missing infrastructure. Consequently `quality:full` is wired but cannot yet be claimed green. See
-[`STATUS.md`](STATUS.md) for exact evidence and work.
+the sequential fail-fast package scripts now exist. Real coverage, CRAP, Knip, and Sonar runs pass.
+The mutation policy keeps checker-rejected `CompileError` mutations visible while requiring every
+runnable mutant to be `Killed`; all formerly runnable findings and every newly changed range are
+focused-mutation clean. A fresh complete-project mutation run remains before the full chain can be
+claimed green. The dedicated Sonar target now reports its strict computed gate `OK` with zero open
+issues after all 19 initial findings were fixed. See [`STATUS.md`](STATUS.md) for exact evidence and
+remaining release work.
 
 The active specification now includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next

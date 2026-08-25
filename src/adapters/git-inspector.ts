@@ -4,11 +4,15 @@ import { createReadStream } from "node:fs";
 import { lstat, readlink, realpath, stat } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import type { CleanWorkspace, GitInspector, GitSnapshot } from "../application/ports.js";
+import { compareStrings } from "../domain/order.js";
 import { isSafeRelativeFilePath, isSafeRelativePath } from "../domain/validation.js";
 
+const DEFAULT_GIT_EXECUTABLE = "/usr/bin/git";
 const MAX_GIT_OUTPUT_BYTES = 4_194_304;
 
 export class LocalGitInspector implements GitInspector {
+  public constructor(private readonly gitExecutable = DEFAULT_GIT_EXECUTABLE) {}
+
   public async openCleanWorkspace(
     workspacePath: string,
     protectedAbsolutePaths: readonly string[],
@@ -18,7 +22,10 @@ export class LocalGitInspector implements GitInspector {
     if (!details.isDirectory()) {
       throw new Error(`Workspace is not a directory: ${workspace}`);
     }
-    const rootResult = await runGit(workspace, ["rev-parse", "--show-toplevel"]);
+    const rootResult = await runGit(this.gitExecutable, workspace, [
+      "rev-parse",
+      "--show-toplevel",
+    ]);
     if (rootResult.exitCode !== 0) {
       throw new Error(`Workspace is not a Git worktree: ${cleanText(rootResult.stderr)}`);
     }
@@ -34,12 +41,12 @@ export class LocalGitInspector implements GitInspector {
     const protectedPaths = protectedAbsolutePaths
       .map((absolutePath) => repositoryRelativePath(workspace, absolutePath))
       .filter((value): value is string => value !== null)
-      .sort();
+      .sort(compareStrings);
     return { path: workspace, protectedPaths: [...new Set(protectedPaths)] };
   }
 
   public async snapshot(workspacePath: string): Promise<GitSnapshot> {
-    const result = await runGit(workspacePath, [
+    const result = await runGit(this.gitExecutable, workspacePath, [
       "status",
       "--porcelain=v1",
       "-z",
@@ -66,7 +73,7 @@ export class LocalGitInspector implements GitInspector {
     ]);
     return [...candidates]
       .filter((path) => before.fingerprints[path] !== after.fingerprints[path])
-      .sort();
+      .sort(compareStrings);
   }
 }
 
@@ -76,9 +83,13 @@ interface GitResult {
   readonly stderr: Buffer;
 }
 
-async function runGit(cwd: string, args: readonly string[]): Promise<GitResult> {
+async function runGit(executable: string, cwd: string, args: readonly string[]): Promise<GitResult> {
   return new Promise((resolveResult, reject) => {
-    const child = spawn("git", [...args], { cwd, shell: false, env: gitEnvironment(process.env) });
+    const child = spawn(executable, [...args], {
+      cwd,
+      shell: false,
+      env: gitEnvironment(process.env),
+    });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     let stdoutBytes = 0;
@@ -222,7 +233,7 @@ function repositoryRelativePath(workspace: string, absolutePath: string): string
 
 function gitEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = { LC_ALL: "C", GIT_OPTIONAL_LOCKS: "0" };
-  for (const key of ["PATH", "HOME", "TMPDIR", "TMP", "TEMP"] as const) {
+  for (const key of ["HOME", "TMPDIR", "TMP", "TEMP"] as const) {
     environment[key] = source[key];
   }
   return environment;

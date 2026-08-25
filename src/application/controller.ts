@@ -19,6 +19,11 @@ import type {
 
 const DEFAULT_AGENT_TIMEOUT_MS = 900_000;
 const DEFAULT_GATE_TIMEOUT_MS = 900_000;
+const STEP_TYPES = {
+  "dispatch-agent": "agent",
+  "enter-terminal": "terminal",
+  "run-native-profile": "gate",
+} as const;
 
 export interface ControllerInput {
   readonly configuration: Configuration;
@@ -90,11 +95,7 @@ async function runLoop(context: ControllerContext): Promise<ControllerResult> {
     context.runId,
     context.services,
     action.stepId,
-    action.type === "dispatch-agent"
-      ? "agent"
-      : action.type === "run-native-profile"
-        ? "gate"
-        : "terminal",
+    STEP_TYPES[action.type],
     action.visit,
   );
   await executeAction(context, state, action);

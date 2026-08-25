@@ -131,11 +131,6 @@ export async function readExecutionLog(scenario: Scenario): Promise<readonly str
   return content.trim().split("\n");
 }
 
-export async function overwriteConfiguration(scenario: Scenario, value: unknown): Promise<void> {
-  await mkdir(dirname(scenario.configPath), { recursive: true });
-  await writeFile(scenario.configPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-}
-
 export async function placeConfigurationInWorkspace(
   scenario: Scenario,
   mutate: (configuration: Record<string, unknown>) => void,

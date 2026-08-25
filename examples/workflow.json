@@ -14,27 +14,43 @@
         "type": "gate",
         "profile": "quick",
         "maxVisits": 3,
-        "onPassed": "review",
+        "onPassed": "coverage",
         "onFailed": "repair"
       },
-      "review": {
-        "type": "agent",
-        "role": "reviewer",
-        "maxVisits": 3,
-        "onCompleted": "full"
-      },
-      "full": {
+      "coverage": {
         "type": "gate",
-        "profile": "full",
+        "profile": "coverage",
         "maxVisits": 3,
-        "onPassed": "verify",
+        "onPassed": "crap",
         "onFailed": "repair"
       },
-      "verify": {
-        "type": "agent",
-        "role": "verifier",
-        "maxVisits": 1,
-        "onCompleted": "passed"
+      "crap": {
+        "type": "gate",
+        "profile": "crap",
+        "maxVisits": 3,
+        "onPassed": "knip",
+        "onFailed": "repair"
+      },
+      "knip": {
+        "type": "gate",
+        "profile": "knip",
+        "maxVisits": 3,
+        "onPassed": "mutation",
+        "onFailed": "repair"
+      },
+      "mutation": {
+        "type": "gate",
+        "profile": "mutation",
+        "maxVisits": 3,
+        "onPassed": "sonar",
+        "onFailed": "repair"
+      },
+      "sonar": {
+        "type": "gate",
+        "profile": "sonar",
+        "maxVisits": 3,
+        "onPassed": "passed",
+        "onFailed": "repair"
       },
       "repair": {
         "type": "agent",
@@ -52,16 +68,6 @@
     "implementer": {
       "provider": "codex",
       "promptPath": "prompts/implementer.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "reviewer": {
-      "provider": "codex",
-      "promptPath": "prompts/reviewer.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "verifier": {
-      "provider": "codex",
-      "promptPath": "prompts/verifier.md",
       "allowedPathPrefixes": ["src/", "test/"]
     },
     "repairer": {
@@ -85,10 +91,31 @@
       "args": ["quality:quick"],
       "timeoutMs": 900000
     },
-    "full": {
+    "coverage": {
       "executable": "pnpm",
-      "args": ["quality:full"],
+      "args": ["quality:coverage"],
       "timeoutMs": 900000
+    },
+    "crap": {
+      "executable": "pnpm",
+      "args": ["quality:crap"],
+      "timeoutMs": 900000
+    },
+    "knip": {
+      "executable": "pnpm",
+      "args": ["quality:knip"],
+      "timeoutMs": 900000
+    },
+    "mutation": {
+      "executable": "pnpm",
+      "args": ["quality:mutation"],
+      "timeoutMs": 3600000
+    },
+    "sonar": {
+      "executable": "pnpm",
+      "args": ["quality:sonar"],
+      "environmentKeys": ["SONAR_HOST_URL", "SONAR_TOKEN", "SONAR_ORGANIZATION"],
+      "timeoutMs": 360000
     }
   }
 }

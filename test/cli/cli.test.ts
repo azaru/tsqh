@@ -35,7 +35,68 @@ describe("CLI acceptance", () => {
     );
     expect(exitCode).toBe(0);
     expect(errors).toEqual([]);
-    expect(JSON.parse(output.join(""))).toMatchObject({ terminalState: "passed", currentStep: "passed" });
+    const report = JSON.parse(output.join("")) as Record<string, unknown>;
+    expect(report).toMatchObject({ terminalState: "passed", currentStep: "passed" });
+    expect(String(report.runDirectory)).toMatch(
+      new RegExp(`^${escapeRegex(scenario.runsRoot)}/`, "u"),
+    );
+
+    const human: string[] = [];
+    const statusCode = await runCli(["status", "--run", String(report.runDirectory)], {
+      stdout: { write: (value) => { human.push(String(value)); return true; } },
+      stderr: { write: () => true },
+    });
+    expect(statusCode).toBe(0);
+    expect(human.join("")).toBe([
+      `Run: ${String(report.runId)}`,
+      "State: passed",
+      "Current step: passed",
+      "Visits: {\"implement\":1,\"passed\":1}",
+      "Latest outcome: passed",
+      "Blocker: none",
+      `Run directory: ${String(report.runDirectory)}`,
+      "",
+    ].join("\n"));
+  });
+
+  it("uses the default runs root and returns one for a configured blocked run and status", async () => {
+    const scenario = await createScenario({
+      steps: { stop: { type: "terminal", outcome: "blocked" } },
+    });
+    const output: string[] = [];
+    const exitCode = await runCli(
+      [
+        "run",
+        "--config",
+        scenario.configPath,
+        "--workspace",
+        scenario.workspace,
+        "--task",
+        scenario.taskPath,
+      ],
+      {
+        stdout: { write: (value) => { output.push(String(value)); return true; } },
+        stderr: { write: () => true },
+      },
+    );
+
+    const runDirectory = output.join("").match(/^Run directory: (.+)$/mu)?.[1];
+    expect(exitCode).toBe(1);
+    expect(runDirectory).toMatch(new RegExp(`^${escapeRegex(join(tmpdir(), "tsqh-runs"))}/`, "u"));
+    expect(output.join("")).toContain(
+      "Blocker: configured-terminal-blocked: Terminal step 'stop' blocks the run.",
+    );
+
+    const statusOutput: string[] = [];
+    const statusCode = await runCli(["status", "--run", runDirectory!, "--json"], {
+      stdout: { write: (value) => { statusOutput.push(String(value)); return true; } },
+      stderr: { write: () => true },
+    });
+    expect(statusCode).toBe(1);
+    expect(JSON.parse(statusOutput.join(""))).toMatchObject({
+      terminalState: "blocked",
+      blocker: { code: "configured-terminal-blocked", stepId: "stop" },
+    });
   });
 
   it("rejects invalid configuration before Git or trace side effects", async () => {
@@ -72,14 +133,40 @@ describe("CLI acceptance", () => {
     await expect(access(runsRoot)).rejects.toThrow();
   });
 
-  it("rejects unknown and duplicate options", async () => {
+  it.each([
+    [[], usage()],
+    [["unknown"], usage()],
+    [["status", "run"], `Unexpected positional argument 'run'.\n${usage()}`],
+    [["status", "--"], `Unexpected positional argument '--'.\n${usage()}`],
+    [["status", "--run"], "Option '--run' requires a value."],
+    [["status", "--run", "--json"], "Option '--run' requires a value."],
+    [["status", "--run", ""], `Missing required option '--run'.\n${usage()}`],
+    [["status", "--run", "one", "--run", "two"], "Option '--run' was provided more than once."],
+    [["status", "--wat"], `Unknown option '--wat'.\n${usage()}`],
+    [["run", "--json"], `Missing required option '--config'.\n${usage()}`],
+    [["status", "--json"], `Missing required option '--run'.\n${usage()}`],
+    [["run", "--run", "value"], `Unknown option '--run'.\n${usage()}`],
+    [["status", "--config", "value"], `Unknown option '--config'.\n${usage()}`],
+  ] as const)("rejects malformed arguments %#", async (argv, message) => {
     const errors: string[] = [];
-    const streams = {
+    const exitCode = await runCli(argv, {
       stdout: { write: () => true },
-      stderr: { write: (value: string | Uint8Array) => { errors.push(String(value)); return true; } },
-    };
-    expect(await runCli(["status", "--run", "one", "--run", "two"], streams)).toBe(2);
-    expect(await runCli(["status", "--wat"], streams)).toBe(2);
-    expect(errors.join("")) .toMatch(/more than once|Unknown option/);
+      stderr: { write: (value) => { errors.push(String(value)); return true; } },
+    });
+
+    expect(exitCode).toBe(2);
+    expect(errors.join("")).toBe(`TSQH error: ${message}\n`);
   });
 });
+
+function usage(): string {
+  return [
+    "Usage:",
+    "  tsqh run --config <file> --workspace <clean-git-worktree> --task <file> [--runs-root <directory>] [--json]",
+    "  tsqh status --run <run-directory> [--json]",
+  ].join("\n");
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

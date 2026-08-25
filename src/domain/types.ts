@@ -1,14 +1,14 @@
 export type StepOutcome = "completed" | "passed" | "failed" | "blocked";
-export type TerminalState = "passed" | "blocked";
+type TerminalState = "passed" | "blocked";
 
-export interface AgentStep {
+interface AgentStep {
   readonly type: "agent";
   readonly role: string;
   readonly maxVisits: number;
   readonly onCompleted: string;
 }
 
-export interface GateStep {
+interface GateStep {
   readonly type: "gate";
   readonly profile: string;
   readonly maxVisits: number;
@@ -16,14 +16,14 @@ export interface GateStep {
   readonly onFailed: string;
 }
 
-export interface TerminalStep {
+interface TerminalStep {
   readonly type: "terminal";
   readonly outcome: TerminalState;
 }
 
 export type WorkflowStep = AgentStep | GateStep | TerminalStep;
 
-export interface Workflow {
+interface Workflow {
   readonly id: string;
   readonly entryStepId: string;
   readonly steps: Readonly<Record<string, WorkflowStep>>;
@@ -46,6 +46,7 @@ export interface CommandProvider {
 export interface QualityProfile {
   readonly executable: string;
   readonly args: readonly string[];
+  readonly environmentKeys?: readonly string[];
   readonly timeoutMs?: number;
 }
 
@@ -80,7 +81,7 @@ interface BaseEvent {
   readonly occurredAt: string;
 }
 
-export interface RunCreatedEvent extends BaseEvent {
+interface RunCreatedEvent extends BaseEvent {
   readonly type: "run-created";
   readonly workflowId: string;
   readonly entryStepId: string;

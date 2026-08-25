@@ -36,21 +36,17 @@ export class SpawnCommandRunner implements CommandRunner {
       const stdout = createCapture();
       const stderr = createCapture();
       let timedOut = false;
-      let settled = false;
       let forceKillTimer: NodeJS.Timeout | null = null;
       const child = spawn(request.executable, [...request.args], {
         cwd: request.cwd,
         shell: false,
-        env: minimalEnvironment(process.env),
-        stdio: [request.stdin === null ? "ignore" : "pipe", "pipe", "pipe"],
+        env: minimalEnvironment(process.env, request.environmentKeys ?? []),
       });
 
-      child.stdout?.on("data", (chunk: Buffer) => captureChunk(stdout, chunk));
-      child.stderr?.on("data", (chunk: Buffer) => captureChunk(stderr, chunk));
-      child.stdin?.on("error", () => undefined);
-      if (request.stdin !== null) {
-        child.stdin?.end(request.stdin, "utf8");
-      }
+      child.stdout.on("data", (chunk: Buffer) => captureChunk(stdout, chunk));
+      child.stderr.on("data", (chunk: Buffer) => captureChunk(stderr, chunk));
+      child.stdin.on("error", () => undefined);
+      child.stdin.end(request.stdin ?? "", "utf8");
 
       const timeout = setTimeout(() => {
         timedOut = true;
@@ -59,10 +55,6 @@ export class SpawnCommandRunner implements CommandRunner {
       }, request.timeoutMs);
 
       const finish = (artifact: ProcessArtifact): void => {
-        if (settled) {
-          return;
-        }
-        settled = true;
         clearTimeout(timeout);
         if (forceKillTimer !== null) {
           clearTimeout(forceKillTimer);
@@ -76,9 +68,7 @@ export class SpawnCommandRunner implements CommandRunner {
           exitCode: null,
           signal: null,
           stdout: renderCapture(stdout),
-          stderr: boundedSanitizedOutput(
-            error.code === undefined ? error.message : `${error.code}: ${error.message}`,
-          ),
+          stderr: boundedSanitizedOutput(error.message),
           stdoutTruncated: stdout.truncated,
           stderrTruncated: false,
         });
@@ -104,13 +94,13 @@ export class SpawnCommandRunner implements CommandRunner {
   }
 }
 
-function minimalEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+function minimalEnvironment(
+  source: NodeJS.ProcessEnv,
+  additionalKeys: readonly string[],
+): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = {};
-  for (const key of ENVIRONMENT_ALLOWLIST) {
-    const value = source[key];
-    if (value !== undefined) {
-      environment[key] = value;
-    }
+  for (const key of [...ENVIRONMENT_ALLOWLIST, ...additionalKeys]) {
+    environment[key] = source[key];
   }
   return environment;
 }
@@ -121,10 +111,6 @@ function createCapture(): Capture {
 
 function captureChunk(capture: Capture, chunk: Buffer): void {
   const remaining = MAX_OUTPUT_BYTES - capture.bytes;
-  if (remaining <= 0) {
-    capture.truncated = true;
-    return;
-  }
   const accepted = chunk.subarray(0, remaining);
   capture.chunks.push(accepted);
   capture.bytes += accepted.byteLength;
@@ -134,22 +120,18 @@ function captureChunk(capture: Capture, chunk: Buffer): void {
 }
 
 function renderCapture(capture: Capture): string {
-  const output = boundedSanitizedOutput(Buffer.concat(capture.chunks).toString("utf8"));
-  if (Buffer.byteLength(output) >= MAX_OUTPUT_BYTES) {
-    capture.truncated = true;
-  }
-  return output;
+  return boundedSanitizedOutput(Buffer.concat(capture.chunks).toString("utf8"));
 }
 
 function boundedSanitizedOutput(output: string): string {
-  let sanitized = output
+  const sanitized = output
     .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "")
     .replace(/[^\t\n\r\u0020-\u007e\u00a0-\ud7ff\ue000-\ufffd]/g, "�");
-  while (Buffer.byteLength(sanitized) > MAX_OUTPUT_BYTES) {
-    sanitized = Buffer.from(sanitized)
-      .subarray(0, MAX_OUTPUT_BYTES)
-      .toString("utf8")
-      .replace(/�$/u, "");
+  if (Buffer.byteLength(sanitized) <= MAX_OUTPUT_BYTES) {
+    return sanitized;
   }
-  return sanitized;
+  return Buffer.from(sanitized)
+    .subarray(0, MAX_OUTPUT_BYTES)
+    .toString("utf8")
+    .replace(/�$/u, "");
 }

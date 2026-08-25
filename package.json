@@ -5,10 +5,10 @@
   "type": "module",
   "description": "A deterministic sequential multi-agent guardrail controller.",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "bin": {
-    "tsqh": "dist/cli/main.js"
+    "tsqh": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/mark-cli-executable.mjs",
@@ -16,15 +16,27 @@
     "test": "pnpm build && vitest run",
     "test:unit": "vitest run test/domain test/config",
     "quality:architecture": "node scripts/check-architecture.mjs",
-    "quality:quick": "pnpm typecheck && pnpm test",
-    "quality:full": "pnpm quality:quick && pnpm quality:architecture",
-    "tsqh": "node --enable-source-maps dist/cli/main.js"
+    "quality:quick": "node scripts/run-quality.mjs quick",
+    "quality:coverage": "node scripts/run-quality.mjs coverage",
+    "quality:crap": "node scripts/run-quality.mjs crap",
+    "quality:knip": "node scripts/run-quality.mjs knip",
+    "quality:mutation": "node scripts/run-quality.mjs mutation",
+    "quality:sonar": "node scripts/run-quality.mjs sonar",
+    "quality:full": "node scripts/run-quality.mjs full",
+    "tsqh": "node --enable-source-maps dist/cli.js"
   },
   "dependencies": {
     "ajv": "8.20.0"
   },
   "devDependencies": {
+    "@azaru/tscrap": "0.1.2",
+    "@sonar/scan": "5.0.0",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/typescript-checker": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "22.20.1",
+    "@vitest/coverage-v8": "4.1.11",
+    "knip": "6.32.2",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
   },

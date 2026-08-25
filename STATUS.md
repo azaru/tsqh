@@ -2,91 +2,126 @@
 
 ## Current state
 
-- Product: configurable sequential multi-step and multi-agent guardrail controller.
+- Product: small configurable sequential Swarm Forge Lite guardrail controller.
 - Active specification:
-  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`active`).
+  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`active`; safe local hardening is
+  implemented, Swarm Forge Lite continuation is approved, final release evidence is pending).
 - Completed specification:
   `specs/TSQH-MVP-001-configurable-sequential-controller.md` (`complete`).
-- Implementation: the complete version 0 vertical slice is implemented in strict TypeScript, with
-  schema/configuration loading, a pure planner/reducer, command/Git/trace adapters, a foreground
-  controller, `run` and `status` CLI commands, an example workflow, and deterministic tests.
-- Version 0 completion condition: satisfied. All required artifacts exist, deterministic happy/repair/
-  exhaustion traces pass, the authenticated Codex smoke passed, documentation describes the
-  implemented behavior, and the final full quality gate exits 0.
-- Active hardening state: specification and adapted prompt catalog complete; implementation has not
-  started. The current package scripts do not satisfy `TSQH-MVP-002`.
-- Adapted prompt catalog: ten original TSQH role prompts plus a versioned digest manifest and
-  immutable provenance record now exist under `prompts/swarm-forge-adapted/`. Research covered
-  Swarm Forge `main`, `two-pack`, `four-pack`, `six-pack`, `adversaries`, and `squad`. No upstream
-  license file was observed, so the catalog paraphrases and attributes ideas instead of copying
-  substantial text verbatim.
-- Runtime boundary: one foreground controller, one active run, one caller-supplied clean Git
-  worktree, one action at a time, and one generic command provider.
-- Deterministic proof: 36 tests currently pass across six files. They cover a three-role/two-gate
-  ordered pass; failed-gate repair and later pass; repair/visit exhaustion; configuration failures
-  before side effects; agent transition-output isolation; native gate exit authority; clean Git,
-  unauthorized/protected paths, spawn/nonzero/timeout/signal blockers; bounded command output;
-  contiguous traces; read-only status; and immutable deterministic planning.
-- Active hardening blockers:
-  - human approval is required before adding the seven proposed pinned development packages outside
-    the initial dependency budget;
-  - no authorized Sonar target, project identity, assigned gate/profile/new-code policy, or
-    environment credentials are currently recorded;
-  - this workspace copy contains no `.git` metadata, so a clean-worktree delivery check and a new
-    real controller smoke cannot currently be demonstrated here.
-- Verification completed during implementation:
-  - `pnpm build` — exit 0.
-  - `pnpm test:unit` — exit 0; 13 tests passed across two files at that checkpoint.
-  - `pnpm quality:quick` — exit 0; 36 tests passed across six files.
-- Hardening specification and catalog verification on 2026-08-25:
-  - local SHA-256 manifest validation — exit 0; all 10 adapted role files matched;
-  - immutable upstream path validation against the six recorded commits — exit 0; all 28 mapped
-    role-source paths existed;
-  - `xmllint --noout .tsqh/executive-summary.html` — exit 0;
-  - `pnpm quality:quick` — exit 0; 36 tests passed across six files;
-  - `pnpm quality:full` — exit 0; 36 tests passed and four domain entries passed the version 0
-    architecture boundary. This is baseline evidence only, not a `TSQH-MVP-002` pass.
-- Manual Codex smoke attempt 1 used Codex CLI 0.149.1 in an authenticated session and correctly
-  blocked before any downstream step: configured flags `--sandbox workspace-write` and
-  `--approve-for-me` conflict in this CLI, so the implementer exited 2. Run id
-  `ec299e53-7eb5-4019-9693-6fc235d85ac0` records the real failed attempt. The example provider was
-  corrected to use `--sandbox workspace-write` without the conflicting flag; a fresh smoke retry
-  was then run.
-- Manual Codex smoke attempt 2 — exit 0. Codex CLI 0.149.1, authenticated with ChatGPT, ran in a
-  disposable clean Git copy. Run `454a9357-a181-40dc-acca-f950b4ec53d9` recorded 14 contiguous
-  events with this trace:
-  `implement(completed) -> quick(passed) -> review(completed) -> full(passed) -> verify(completed)
-  -> passed`. Both gates and all three command-provider visits exited 0. The implementer changed
-  only `src/smoke-marker.ts` and `test/smoke-marker.test.ts`; review and verification made no
-  changes. `pnpm tsqh status --run <that-run> --json` also exited 0 and reported the same terminal
-  state without mutation.
-- Final standalone verification on 2026-08-25:
-  - `pnpm build` — exit 0.
-  - `pnpm test` — exit 0; 36 tests passed across six files.
-  - `pnpm quality:quick` — exit 0; strict source/test typecheck passed and 36 tests passed.
-  - `pnpm quality:full` — exit 0; quick quality passed and the domain dependency boundary passed
-    with four entries inspected.
-- Remaining limitations are the explicit version 0 non-goals: no concurrency, daemon, remote
-  executor, managed worktrees, merge, crash-safe resume, locks, snapshots, cache, server,
-  dashboard, provider SDK, or same-account hostile-process protection.
-- Quality coverage limitation: `quality:quick` and `quality:full` currently enforce strict
-  TypeScript, build, Vitest, and the domain dependency boundary. They do not yet integrate Stryker
-  mutation testing, Sonar analysis, `@azaru/tscrap`, Knip, or fresh V8 coverage. An exit-zero result
-  from the present `quality:full` is only historical version 0 evidence, not a hardening pass.
-- Exact next action: obtain explicit approval for the pinned dependency set and an authorized Sonar
-  target, then execute `GOAL.md` against `TSQH-MVP-002`. Do not change `package.json`, the lockfile,
-  or remote Sonar state before that approval.
+- Version 0 remains complete: strict configuration loading, pure planning/reduction, sequential
+  controller execution, command/Git/trace adapters, `run` and `status`, deterministic repair and
+  exhaustion behavior, and the previously authenticated Codex smoke are preserved.
+- The safe local hardening implementation is complete. `quality:quick`, `quality:coverage`,
+  `quality:crap`, `quality:knip`, `quality:mutation`, `quality:sonar`, and the exact sequential
+  fail-fast `quality:full` chain are wired. Native evidence is freshly generated, validated, and
+  summarized; missing or contradictory evidence blocks.
+- The example workflow exposes `quick -> coverage -> crap -> knip -> mutation -> sonar`. Every
+  failure uses the configured repair role, returns to `quick`, and remains bounded by `maxVisits`.
+- The adapted ten-role catalog, immutable provenance, and digest validation remain present under
+  `prompts/swarm-forge-adapted/`.
+- Runtime scope remains version 0: one foreground run, one action at a time, one caller-supplied
+  clean Git worktree, and generic command providers. There is no concurrency or remote executor.
+- The approved Swarm Forge Lite continuation is deliberately small: pass the prior completed agent's bounded,
+  sanitized stdout to the next configured agent as untrusted context; block gates that mutate the
+  candidate; and add a separate sequential `implementer -> cleaner -> reviewer -> hardener -> qa`
+  example followed by the unchanged six-gate quality chain.
+- The continuation is not implemented yet. Existing CLI behavior does not yet provide previous-role
+  handoff context or snapshot the candidate around native gates.
+- A dedicated local Sonar target is now provisioned on the existing localhost service: project
+  `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
+  `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
+  `infra/sonar/compose.yaml`, `sonar-project.properties`, and `sonar-policy.json` record its
+  non-secret local infrastructure and identity.
 
-## Fixed scope decisions
+## Current release work
 
-- Multi-step and multi-agent configuration is core MVP behavior.
-- Execution is sequential; multi-agent does not imply concurrency.
-- Workflow steps, logical roles, providers, prompts, and quality profiles remain separate data.
-- The controller never asks an agent to choose the next transition.
-- Stryker, Sonar, `@azaru/tscrap`, Knip, and coverage remain native configured profiles or package
-  scripts; the controller contains no branches for them.
-- Hardening targets CRAP at or below 6, at least 90 percent global coverage, 100 percent domain
-  coverage, zero non-killed mutation statuses, zero Knip findings, and a computed Sonar gate of
-  `OK`.
-- Advanced persistence, managed worktrees, merge, concurrency, approvals, cache, dashboards, and
-  provider SDK integrations are deferred.
+- Mutation baseline: the fresh complete-project non-incremental run produced 3,817 mutants:
+  2,803 `Killed`, 1,008 `CompileError`, 4 `Survived`, 1 `NoCoverage`, and 1 `RuntimeError`.
+  Checker-produced `CompileError` mutations remain visible as type-invalid, non-runnable mutations;
+  every runnable mutant must be `Killed`, and every other runtime status fails. The validator,
+  summaries, tests, and full run now implement and prove that fail-closed distinction. Remaining
+  runtime findings are in `src/quality/coverage.ts`, `src/quality/mutation.ts`,
+  `src/quality/sonar-gate.ts` (two survivors), `src/quality/cli.ts` (no coverage), and
+  `src/adapters/command-runner.ts` (runtime error).
+- Sonar is reachable and authorized. The first real MVP analysis completed on the server and the
+  strict gate correctly reported `ERROR`: coverage was 99.8%, duplication 0.0%, and 19 open issues
+  failed the zero-issue condition. These are actionable code findings, not an infrastructure or
+  authority blocker. Remote-policy validation must also be aligned with Sonar's actual API split:
+  configured conditions come from the gate-definition endpoint, while `project_status` may omit
+  conditions that have no computed measure; explicit `PREVIOUS_VERSION` is currently visible on
+  the main-branch new-code assignment.
+- `pnpm quality:full` remains required and has not been claimed green for `TSQH-MVP-002`.
+
+## Verified local evidence — 2026-08-25
+
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 651 tests across 24 files, and the
+  four-entry domain architecture boundary passed.
+- `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
+  (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
+  (1,567/1,568). Every domain metric remained 100%.
+- `pnpm quality:crap` — exit 0; 26 source files, 362 units, zero violations, maximum CRAP 6.
+- `pnpm quality:knip` — exit 0; zero issues, including zero configuration and tag hints.
+- `pnpm quality:full` — exit 1 at mutation after quick, coverage, CRAP, and Knip passed. The fresh
+  mutation report contained 3,817 mutants: 2,803 killed, 1,008 checker-rejected compile errors,
+  4 survived, 1 had no coverage, and 1 produced a runtime error. The reported total mutation score
+  was 99.82% (99.86% covered). The fail-fast chain did not start Sonar.
+- `pnpm quality:sonar` — exit 1 after a real authorized scan; Sonar analysis completed and the
+  server-computed gate reported `ERROR` for 19 open issues. Coverage was 99.8% and duplicated-line
+  density was 0.0%. Compute task `720c76bd-698b-4275-b45a-7c62e6c4e686` completed `SUCCESS` as
+  analysis `0549f292-8aef-40b6-9a97-2865a52966ea`. The token was neither printed nor persisted.
+- `pnpm exec vitest run test/cli` — exit 0; 17 tests across two files.
+- Focused mutation verification used temporary `coverageAnalysis: perTest` only for diagnostic
+  speed; checked-in `stryker.config.mjs` remains `coverageAnalysis: "all"`. Final affected ranges
+  for the command runner, configuration loader, controller, CLI, and local gate evidence each
+  reported 100% runtime mutation score with zero survived, uncovered, or timed-out mutations.
+  TypeScript checker `CompileError` counts remained present and are not reclassified.
+- `pnpm exec stryker run --mutate 'src/quality/gates.ts:200-210' --coverageAnalysis perTest` —
+  exit 0; 10 killed, 0 survived/uncovered/timeout, 3 checker errors.
+- `pnpm exec stryker run --mutate 'src/cli/main.ts:35-180' --coverageAnalysis perTest` — exit 0;
+  84 killed, 0 survived/uncovered/timeout, 49 checker errors.
+- `pnpm exec stryker run --mutate src/cli.ts --coverageAnalysis all` — exit 0; 1 killed and no
+  other status.
+- No new real Codex smoke was run or claimed for this hardening checkpoint.
+
+## Demonstrated workflow behavior
+
+- Happy hardening trace:
+  `implement(completed) -> quick(passed) -> coverage(passed) -> crap(passed) -> knip(passed) -> mutation(passed) -> sonar(passed) -> passed`.
+- Repair trace: a failed intermediate gate selects `repair`, then restarts the entire chain at
+  `quick`; after the one-time failure, every gate is rerun in order and the workflow passes.
+- Exhaustion trace: a persistent mutation-gate failure consumes the finite repair budget, blocks
+  at `repair`, and never starts `sonar`.
+- Existing version 0 authenticated smoke remains historical evidence only: Codex CLI 0.149.1 ran
+  `implement(completed) -> quick(passed) -> review(completed) -> full(passed) -> verify(completed) -> passed`
+  in disposable run `454a9357-a181-40dc-acca-f950b4ec53d9`.
+
+## Approved dependencies
+
+- Runtime: `ajv` 8.20.0.
+- Approved hardening tools are pinned exactly: `@vitest/coverage-v8` 4.1.11,
+  `@azaru/tscrap` 0.1.2, `@stryker-mutator/core` 10.0.0,
+  `@stryker-mutator/vitest-runner` 10.0.0, `@stryker-mutator/typescript-checker` 10.0.0,
+  `@sonar/scan` 5.0.0, and `knip` 6.32.2.
+- The repository targets Node.js `>=22.12.0`, uses pnpm exclusively, and has one
+  `pnpm-lock.yaml`.
+
+## Fixed scope and next action
+
+- Quality targets remain: CRAP at or below 6, at least 90% global coverage, 100% domain coverage,
+  zero Knip findings, every runnable mutant `Killed` with TypeScript-checker `CompileError`
+  mutations reported separately, and a server-computed Sonar gate of `OK` with the approved remote
+  policy.
+- Native quality tools remain configured profiles and package scripts; the controller contains no
+  tool-specific transition branches.
+- Sonar and complete-project mutation remain required release gates while the local continuation
+  proceeds; no local handoff or candidate-stability result substitutes for them.
+- Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
+  worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
+  same-account hostile-process protection.
+- Exact local next action: launch `GOAL.md` against active `TSQH-MVP-002`, preserve all concurrent
+  hardening work, and implement only bounded role handoff, candidate-stable gates, and the separate
+  Swarm Forge Lite example.
+- Release next action: fix the four surviving mutants, the one uncovered mutant, and the one
+  runtime-error mutant from the fresh complete-project report; fix every real Sonar issue;
+  reconcile the validator with the actual Sonar policy endpoints; and keep iterating through
+  `pnpm quality:full` until it exits zero.

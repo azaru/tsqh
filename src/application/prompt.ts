@@ -10,6 +10,7 @@ export interface AssignmentPromptInput {
   readonly visit: number;
   readonly roleId: string;
   readonly providerId: string;
+  readonly allowedPathPrefixes: readonly string[];
   readonly mostRecentGateFailure: GateFailure | null;
 }
 
@@ -25,6 +26,13 @@ export function composeAssignmentPrompt(input: AssignmentPromptInput): string {
           input.mostRecentGateFailure.process.stdout,
           "Standard error:",
           input.mostRecentGateFailure.process.stderr,
+        ].join("\n");
+  const allowedPaths =
+    input.allowedPathPrefixes.length === 0
+      ? "None. Do not write any files."
+      : [
+          ...input.allowedPathPrefixes.map((prefix) => `- ${prefix}`),
+          "These prefixes are the complete write authority for this assignment.",
         ].join("\n");
 
   return [
@@ -44,6 +52,9 @@ export function composeAssignmentPrompt(input: AssignmentPromptInput): string {
     `Visit: ${String(input.visit)}`,
     `Logical role: ${input.roleId}`,
     `Provider: ${input.providerId}`,
+    "",
+    "## Allowed path prefixes",
+    allowedPaths,
     "",
     "## Most recent gate failure",
     gateFailure,

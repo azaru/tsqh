@@ -2,9 +2,9 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { lstat, readlink, realpath, stat } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import type { CleanWorkspace, GitInspector, GitSnapshot } from "../application/ports.js";
-import { isSafeRelativePath } from "../domain/validation.js";
+import { isSafeRelativeFilePath, isSafeRelativePath } from "../domain/validation.js";
 
 const MAX_GIT_OUTPUT_BYTES = 4_194_304;
 
@@ -104,17 +104,45 @@ async function runGit(cwd: string, args: readonly string[]): Promise<GitResult> 
     });
     child.on("error", reject);
     child.on("close", (exitCode, signal) => {
-      if (overflow) {
-        reject(new Error("Git output exceeded the bounded capture limit."));
-        return;
-      }
-      if (signal !== null || exitCode === null) {
-        reject(new Error(`Git ended from signal '${signal ?? "unknown"}'.`));
-        return;
-      }
-      resolveResult({ exitCode, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) });
+      completeGitResult({ exitCode, signal, overflow, stdout, stderr }, resolveResult, reject);
     });
   });
+}
+
+interface GitCompletion {
+  readonly exitCode: number | null;
+  readonly signal: NodeJS.Signals | null;
+  readonly overflow: boolean;
+  readonly stdout: readonly Buffer[];
+  readonly stderr: readonly Buffer[];
+}
+
+function completeGitResult(
+  completion: GitCompletion,
+  resolveResult: (result: GitResult) => void,
+  reject: (error: Error) => void,
+): void {
+  if (completion.overflow) {
+    reject(new Error("Git output exceeded the bounded capture limit."));
+    return;
+  }
+  if (gitEndedAbnormally(completion)) {
+    reject(gitSignalError(completion.signal));
+    return;
+  }
+  resolveResult({
+    exitCode: completion.exitCode!,
+    stdout: Buffer.concat(completion.stdout),
+    stderr: Buffer.concat(completion.stderr),
+  });
+}
+
+function gitEndedAbnormally(completion: GitCompletion): boolean {
+  return completion.exitCode === null;
+}
+
+function gitSignalError(signal: NodeJS.Signals | null): Error {
+  return new Error(`Git ended from signal '${String(signal)}'.`);
 }
 
 function parseStatus(output: Buffer): ReadonlyMap<string, string> {
@@ -126,40 +154,44 @@ function parseStatus(output: Buffer): ReadonlyMap<string, string> {
   entries.pop();
   const statuses = new Map<string, string>();
   for (const entry of entries) {
-    if (entry.length < 4 || entry[2] !== " ") {
-      throw new Error("Git status returned a malformed path record.");
-    }
-    const statusCode = entry.slice(0, 2);
-    const path = entry.slice(3);
-    if (!isSafeRelativePath(path, false)) {
-      throw new Error(`Git returned an invalid or ambiguous changed path: ${JSON.stringify(path)}.`);
-    }
+    const [path, statusCode] = parseStatusEntry(entry);
     statuses.set(path, statusCode);
   }
   return statuses;
 }
 
+function parseStatusEntry(entry: string): readonly [string, string] {
+  if (entry.length < 4 || entry[2] !== " ") {
+    throw new Error("Git status returned a malformed path record.");
+  }
+  const path = entry.slice(3);
+  if (!isSafeRelativePath(path, false)) {
+    throw new Error(`Git returned an invalid or ambiguous changed path: ${JSON.stringify(path)}.`);
+  }
+  return [path, entry.slice(0, 2)];
+}
+
 async function assertSafeWorkspacePath(workspace: string, repositoryPath: string): Promise<void> {
   const absolutePath = resolve(workspace, repositoryPath);
-  const difference = relative(workspace, absolutePath);
-  if (difference.startsWith(`..${sep}`) || difference === ".." || isAbsolute(difference)) {
-    throw new Error(`Changed path escapes the workspace: ${repositoryPath}.`);
-  }
   try {
     const resolvedPath = await realpath(absolutePath);
-    const resolvedDifference = relative(workspace, resolvedPath);
-    if (
-      resolvedDifference.startsWith(`..${sep}`) ||
-      resolvedDifference === ".." ||
-      isAbsolute(resolvedDifference)
-    ) {
-      throw new Error(`Changed path resolves outside the workspace: ${repositoryPath}.`);
-    }
+    assertPathInside(
+      workspace,
+      resolvedPath,
+      `Changed path resolves outside the workspace: ${repositoryPath}.`,
+    );
   } catch (error) {
     const details = await lstat(absolutePath).catch(() => null);
     if (details !== null) {
       throw error;
     }
+  }
+}
+
+function assertPathInside(workspace: string, path: string, message: string): void {
+  const difference = relative(workspace, path);
+  if (difference.startsWith(`..${sep}`) || difference === "..") {
+    throw new Error(message);
   }
 }
 
@@ -176,36 +208,22 @@ async function fingerprintPath(workspace: string, repositoryPath: string, status
     throw new Error(`Changed path is not a regular file or symbolic link: ${repositoryPath}.`);
   }
   const digest = createHash("sha256");
-  await new Promise<void>((resolveStream, reject) => {
-    const stream = createReadStream(absolutePath);
-    stream.on("data", (chunk) => digest.update(chunk));
-    stream.on("error", reject);
-    stream.on("end", resolveStream);
-  });
+  for await (const chunk of createReadStream(absolutePath)) {
+    digest.update(chunk);
+  }
   return `${statusCode}:file:${details.mode}:${digest.digest("hex")}`;
 }
 
 function repositoryRelativePath(workspace: string, absolutePath: string): string | null {
   const difference = relative(workspace, absolutePath);
-  if (
-    difference === "" ||
-    difference.startsWith(`..${sep}`) ||
-    difference === ".." ||
-    isAbsolute(difference)
-  ) {
-    return null;
-  }
   const normalized = difference.split(sep).join("/");
-  return isSafeRelativePath(normalized, false) ? normalized : null;
+  return isSafeRelativeFilePath(normalized) ? normalized : null;
 }
 
 function gitEnvironment(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = { LC_ALL: "C", GIT_OPTIONAL_LOCKS: "0" };
   for (const key of ["PATH", "HOME", "TMPDIR", "TMP", "TEMP"] as const) {
-    const value = source[key];
-    if (value !== undefined) {
-      environment[key] = value;
-    }
+    environment[key] = source[key];
   }
   return environment;
 }

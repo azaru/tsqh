@@ -2,7 +2,6 @@
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { runController } from "../application/controller.js";
 import { SpawnCommandRunner } from "../adapters/command-runner.js";
 import { loadConfiguration, loadTask } from "../adapters/config-loader.js";
@@ -72,21 +71,11 @@ export async function runCli(
 }
 
 function parseArguments(argv: readonly string[]): ParsedCommand {
-  const command = argv[0];
-  if (command !== "run" && command !== "status") {
-    throw new Error(usage());
-  }
-  const allowed = command === "run" ? new Set(["config", "workspace", "task", "runs-root", "json"]) : new Set(["run", "json"]);
+  const command = requireCommand(argv[0]);
+  const allowed = allowedOptions(command);
   const options: Record<string, string | true> = {};
   for (let index = 1; index < argv.length; index += 1) {
-    const argument = argv[index];
-    if (argument === undefined || !argument.startsWith("--") || argument.length === 2) {
-      throw new Error(`Unexpected positional argument '${argument ?? ""}'.\n${usage()}`);
-    }
-    const key = argument.slice(2);
-    if (!allowed.has(key)) {
-      throw new Error(`Unknown option '--${key}'.\n${usage()}`);
-    }
+    const key = requireOptionName(argv[index]!, allowed);
     if (key in options) {
       throw new Error(`Option '--${key}' was provided more than once.`);
     }
@@ -94,19 +83,46 @@ function parseArguments(argv: readonly string[]): ParsedCommand {
       options[key] = true;
       continue;
     }
-    const value = argv[index + 1];
-    if (value === undefined || value.startsWith("--")) {
-      throw new Error(`Option '--${key}' requires a value.`);
-    }
-    options[key] = value;
+    options[key] = requireOptionValue(argv[index + 1], key);
     index += 1;
   }
 
-  const required = command === "run" ? ["config", "workspace", "task"] : ["run"];
-  for (const key of required) {
-    requireStringOption(options, key);
-  }
   return { command, options };
+}
+
+function requireCommand(value: string | undefined): ParsedCommand["command"] {
+  if (value !== "run" && value !== "status") {
+    throw new Error(usage());
+  }
+  return value;
+}
+
+function allowedOptions(command: ParsedCommand["command"]): ReadonlySet<string> {
+  return new Set(command === "run"
+    ? ["config", "workspace", "task", "runs-root", "json"]
+    : ["run", "json"]);
+}
+
+function requireOptionName(value: string, allowed: ReadonlySet<string>): string {
+  const key = parseOptionName(value);
+  if (!allowed.has(key)) {
+    throw new Error(`Unknown option '--${key}'.\n${usage()}`);
+  }
+  return key;
+}
+
+function parseOptionName(value: string): string {
+  if (!value.startsWith("--") || value.length === 2) {
+    throw new Error(`Unexpected positional argument '${value}'.\n${usage()}`);
+  }
+  return value.slice(2);
+}
+
+function requireOptionValue(value: string | undefined, key: string): string {
+  if (value === undefined || value.startsWith("--")) {
+    throw new Error(`Option '--${key}' requires a value.`);
+  }
+  return value;
 }
 
 function requireStringOption(options: Readonly<Record<string, string | true>>, key: string): string {
@@ -154,7 +170,7 @@ function renderStatus(
       `State: ${report.terminalState ?? state.phase}`,
       `Current step: ${report.currentStep}`,
       `Visits: ${JSON.stringify(report.visitCounts)}`,
-      `Latest outcome: ${report.latestOutcome?.outcome ?? "none"}`,
+      `Latest outcome: ${report.latestOutcome!.outcome}`,
       `Blocker: ${report.blocker === null ? "none" : `${report.blocker.code}: ${report.blocker.message}`}`,
       `Run directory: ${report.runDirectory}`,
       "",
@@ -172,9 +188,4 @@ function usage(): string {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-const invokedPath = process.argv[1];
-if (invokedPath !== undefined && import.meta.url === pathToFileURL(resolve(invokedPath)).href) {
-  process.exitCode = await runCli(process.argv.slice(2));
 }

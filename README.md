@@ -12,16 +12,18 @@ current milestone state of `tsqh-orchestrator`.
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
 3. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
-   — the active normative hardening specification.
+   — the active quality and bounded Swarm Forge Lite specification.
 4. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
-5. [`GOAL.md`](GOAL.md) — ready-to-run Codex hardening goal prompt.
+5. [`GOAL.md`](GOAL.md) — ready-to-run Codex prompt for the active increment.
 
 ## Product slice
 
 ```text
 validated configuration
   -> logical agent step
+  -> bounded handoff context for the next configured role
+  -> additional specialist roles in the same candidate
   -> native quality gate
   -> next configured step
   -> configured repair agent on failure
@@ -33,24 +35,38 @@ The runtime is sequential in version 0. Multiple logical agents remain configura
 step references a role, every role references a provider and prompt, and several roles may use the
 same provider. Concurrency is not required for multi-agent behavior.
 
-## Active hardening increment
+## Current increments
 
-The controller slice is complete. The active `TSQH-MVP-002` increment adds a fail-closed delivery
+The controller slice is complete. `TSQH-MVP-002` has locally implemented a fail-closed delivery
 chain for fresh V8 coverage, `@azaru/tscrap`, Stryker, Knip, and a real server-computed Sonar quality
-gate. The target order is:
+gate in this exact order:
 
 ```text
 quick -> coverage -> crap -> knip -> mutation -> sonar
 ```
 
-These are native configured gates; they do not become role names or branches in controller code.
-Every failure will use the ordinary configured repair edge and rerun the chain from `quick` within
-finite visit budgets.
+These remain mandatory native configured gates; they do not become role names or branches in
+controller code. Every failure uses the ordinary configured repair edge and reruns the chain from
+`quick` within finite visit budgets.
 
-Gate implementation has not started because the expanded pinned development dependency set and
-Sonar target require human approval. Until that work is verified, the existing `quality:full`
-remains the version 0 baseline rather than evidence that the new stack passed. See
-[`STATUS.md`](STATUS.md) for the exact blockers.
+Hardening is in progress: strict local wrappers and evidence validators, tool configuration, the
+six-gate example graph, deterministic failure tests, the approved pinned development packages, and
+the sequential fail-fast package scripts now exist. Real coverage, CRAP, and Knip runs pass. The
+mutation policy now keeps checker-rejected `CompileError` mutations visible while requiring every
+runnable mutant to be `Killed`. Its validator and a fresh complete-project run now prove that the
+gate fails closed: 4 mutants survived, 1 had no coverage, and 1 produced a runtime error, while
+1,008 checker-rejected `CompileError` mutations remained visible. A dedicated local Sonar target
+is provisioned and the first real scan reached its strict gate. It is red for 19 real issues, not
+missing infrastructure. Consequently `quality:full` is wired but cannot yet be claimed green. See
+[`STATUS.md`](STATUS.md) for exact evidence and work.
+
+The active specification now continues with the smallest useful Swarm Forge collaboration
+primitive: bounded output from one successfully completed agent becomes untrusted context for the
+next configured agent. It also makes native gates candidate-stable by blocking any gate that
+changes the Git snapshot, and adds a separate sequential example inspired by Swarm Forge `main`,
+`six-pack`, and `squad`. This approved local work can proceed while the release evidence remains
+pending. The planner remains the only transition authority; there is no peer messaging, persistent
+leader, dynamic spawning, daemon, or per-role worktree.
 
 The repository already contains an original attributed role catalog at
 [`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md), informed by the `main`,
@@ -62,8 +78,14 @@ and missing-upstream-license notice are in
 
 ## Upstream design references
 
-The local active specification is authoritative for this repository. These sibling-project files
-provide design rationale without importing their active milestone or implementation:
+The local active specification is authoritative for this repository. The primary product
+references are the immutable Swarm Forge `main`, `six-pack`, and `squad` commits recorded in
+[`PROVENANCE.md`](prompts/swarm-forge-adapted/PROVENANCE.md). They contribute role separation,
+bounded handoff, and controller/worker ideas without importing their tmux, daemon, worktree, or
+dashboard runtime.
+
+These sibling-project files provide additional design rationale without importing their active
+milestone or implementation:
 
 - [`../tsqh-orchestrator/VISION.md`](../tsqh-orchestrator/VISION.md) — deterministic transition
   authority and fail-closed principles.
@@ -80,8 +102,8 @@ Do not modify `../tsqh-orchestrator` while implementing this repository.
 
 ## Requirements and setup
 
-TSQH requires Node.js 22 or newer, pnpm, Git, and the configured local command executables. Install
-and verify the controller with:
+TSQH requires Node.js 22.12.0 or newer, pnpm, Git, and the configured local command executables.
+Install and verify the controller with:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -91,11 +113,35 @@ pnpm quality:quick
 pnpm quality:full
 ```
 
-The package currently stays within the initial dependency budget: Ajv is the only runtime
-dependency, while TypeScript, Vitest, and Node.js types are development dependencies. The active
-hardening specification proposes an exact additional development-only tool set and requires human
-approval before `package.json` or `pnpm-lock.yaml` changes. Its target Node.js floor is 22.12.0; the
-implemented package still declares the version 0 floor until that dependency change is approved.
+Ajv remains the only runtime dependency. The human-approved hardening tools are installed as exact
+development dependency versions through the repository's single pnpm lockfile, and the declared
+Node.js floor is 22.12.0.
+
+## Local SonarQube
+
+The checked-in [`infra/sonar/compose.yaml`](infra/sonar/compose.yaml) reproduces the localhost-only
+SonarQube/PostgreSQL service and intentionally uses the shared Compose project name `tsqh-sonar`.
+Its database values and scanner token are environment-only. Start or inspect it with values from a
+private environment file:
+
+```sh
+docker compose --env-file /path/to/private-sonar.env --file infra/sonar/compose.yaml up --detach
+curl --fail --silent http://127.0.0.1:9000/api/system/status
+```
+
+[`sonar-project.properties`](sonar-project.properties) selects project `azaru_tsqh_mvp`, while
+[`sonar-policy.json`](sonar-policy.json) pins the approved host, dedicated strict gate, TypeScript
+profile, and `PREVIOUS_VERSION` new-code identity. The existing local service is already
+provisioned with those identities. For a scan, expose `SONAR_HOST_URL` and `SONAR_TOKEN` only to the
+process, regenerate coverage, and run the real gate:
+
+```sh
+pnpm quality:coverage
+pnpm quality:sonar
+```
+
+Do not commit an environment file or token. A fresh server must reproduce the exact identities in
+the active specification and must not modify the sibling `azaru_tsqh` project.
 
 ## Configuration
 
@@ -117,10 +163,17 @@ Agent and gate commands are always spawned as one executable plus an exact argum
 values are optional and may be between 1 ms and 24 hours; both default to 15 minutes. Each output
 stream is sanitized and limited to 64 KiB before it is persisted.
 
-See [`examples/workflow.json`](examples/workflow.json) for four logical roles sharing one generic
-Codex command provider, two native pnpm quality profiles, and explicit bounded repair edges. The
+Quality profiles may also name explicit `environmentKeys`. Only those configured gate processes
+receive the additional values; agent-provider processes retain the fixed minimal environment.
+
+See [`examples/workflow.json`](examples/workflow.json) for two writing roles sharing one generic
+Codex command provider, six native pnpm quality profiles, and explicit bounded repair edges. The
 provider arguments match the locally inspected Codex CLI 0.149.1 interface; they remain ordinary
 configuration and may need adjustment for another Codex release.
+
+The active continuation will add a separate Swarm Forge Lite example rather than rewriting this
+verified hardening example. Until that work is implemented, bounded previous-role context and
+candidate-stable gate inspection are target behavior, not current CLI claims.
 
 ## Run and status
 

@@ -1,0 +1,22 @@
+export default {
+  checkers: ["typescript"],
+  cleanTempDir: "always",
+  concurrency: 2,
+  coverageAnalysis: "all",
+  dryRunTimeoutMinutes: 5,
+  ignoreStatic: false,
+  incremental: false,
+  jsonReporter: { fileName: "reports/mutation/mutation.json" },
+  mutate: ["src/**/*.ts", "!src/**/*.d.ts"],
+  plugins: [
+    "@stryker-mutator/vitest-runner",
+    "@stryker-mutator/typescript-checker",
+  ],
+  reporters: ["clear-text", "progress", "json"],
+  tempDirName: ".stryker-tmp",
+  testRunner: "vitest",
+  thresholds: { high: 100, low: 100, break: 100 },
+  timeoutMS: 10_000,
+  tsconfigFile: "tsconfig.json",
+  vitest: { related: false },
+};

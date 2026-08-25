@@ -1,17 +1,20 @@
 import { composeAssignmentPrompt } from "./prompt.js";
-import type { GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
+import type { CleanWorkspace, GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
 import { planNextAction } from "../domain/planner.js";
 import { reduceTrace } from "../domain/reducer.js";
 import type {
   Blocker,
+  CommandProvider,
   Configuration,
+  PlannedAction,
   ProcessArtifact,
+  QualityProfile,
+  Role,
   RunEvent,
   RunFinishedEvent,
   RunState,
   StepFinishedEvent,
   StepStartedEvent,
-  WorkflowStep,
 } from "../domain/types.js";
 
 const DEFAULT_AGENT_TIMEOUT_MS = 900_000;
@@ -59,139 +62,270 @@ export async function runController(
     workspace: workspace.path,
   });
 
-  while (true) {
-    const state = reduceTrace(events);
-    const action = planNextAction(input.configuration, state);
-    if (action.type === "finish") {
-      const event: RunFinishedEvent = {
-        ...baseEvent(events, runId, services),
-        type: "run-finished",
-        terminalState: action.terminalState,
-        blocker: action.blocker,
-      };
-      await appendEvent(events, trace, event);
-      const finalState = reduceTrace(events);
-      return { runId, runDirectory: trace.runDirectory, events, state: finalState };
-    }
+  return runLoop({ input, services, workspace, runId, trace, events });
+}
 
-    const step = input.configuration.workflow.steps[action.stepId];
-    if (step === undefined) {
-      throw new Error(`Planner selected unknown step '${action.stepId}'.`);
-    }
-    await appendStepStarted(events, trace, runId, services, action.stepId, step, action.visit);
+interface ControllerContext {
+  readonly input: ControllerInput;
+  readonly services: RuntimeServices;
+  readonly workspace: CleanWorkspace;
+  readonly runId: string;
+  readonly trace: TraceWriter;
+  readonly events: RunEvent[];
+}
 
-    if (action.type === "enter-terminal") {
-      const blocker =
-        action.outcome === "blocked"
-          ? createBlocker(
-              "configured-terminal-blocked",
-              `Terminal step '${action.stepId}' blocks the run.`,
-              action.stepId,
-            )
-          : null;
-      await appendStepFinished(events, trace, runId, services, {
-        stepId: action.stepId,
-        stepType: "terminal",
-        visit: action.visit,
-        outcome: action.outcome,
-        process: null,
-        changedPaths: [],
-        blocker,
-      });
-      continue;
-    }
+type ExecutableAction = Exclude<PlannedAction, { readonly type: "finish" }>;
 
-    if (action.type === "run-native-profile") {
-      const profile = input.configuration.profiles[action.profileId];
-      if (profile === undefined) {
-        throw new Error(`Planner selected unknown quality profile '${action.profileId}'.`);
-      }
-      const process = await services.commandRunner.run({
-        executable: profile.executable,
-        args: profile.args,
-        cwd: workspace.path,
-        stdin: null,
-        timeoutMs: profile.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS,
-      });
-      const blocker = gateBlocker(action.stepId, process);
-      await appendStepFinished(events, trace, runId, services, {
-        stepId: action.stepId,
-        stepType: "gate",
-        visit: action.visit,
-        outcome: blocker === null ? (process.exitCode === 0 ? "passed" : "failed") : "blocked",
-        process,
-        changedPaths: [],
-        blocker,
-      });
-      continue;
-    }
-
-    const role = input.configuration.roles[action.roleId];
-    if (role === undefined) {
-      throw new Error(`Planner selected unknown role '${action.roleId}'.`);
-    }
-    const provider = input.configuration.providers[role.provider];
-    if (provider === undefined) {
-      throw new Error(`Role '${action.roleId}' selected unknown provider '${role.provider}'.`);
-    }
-    const rolePrompt = input.prompts[action.roleId];
-    if (rolePrompt === undefined) {
-      throw new Error(`No loaded prompt is available for role '${action.roleId}'.`);
-    }
-
-    let before: GitSnapshot | null = null;
-    let process: ProcessArtifact | null = null;
-    let changedPaths: readonly string[] = [];
-    let blocker: Blocker | null = null;
-    try {
-      before = await services.git.snapshot(workspace.path);
-    } catch (error) {
-      blocker = createBlocker("git-inspection-failed", errorMessage(error), action.stepId);
-    }
-
-    if (blocker === null && before !== null) {
-      process = await services.commandRunner.run({
-        executable: provider.executable,
-        args: provider.args,
-        cwd: workspace.path,
-        stdin: composeAssignmentPrompt({
-          rolePrompt,
-          task: input.task,
-          runId,
-          workflowId: input.configuration.workflow.id,
-          workspace: workspace.path,
-          stepId: action.stepId,
-          visit: action.visit,
-          roleId: action.roleId,
-          providerId: role.provider,
-          mostRecentGateFailure: state.mostRecentGateFailure,
-        }),
-        timeoutMs: provider.timeoutMs ?? DEFAULT_AGENT_TIMEOUT_MS,
-      });
-      try {
-        changedPaths = await services.git.changedPathsSince(workspace.path, before);
-        blocker = validateAgentPaths(
-          action.stepId,
-          changedPaths,
-          role.allowedPathPrefixes,
-          workspace.protectedPaths,
-        );
-      } catch (error) {
-        blocker = createBlocker("git-inspection-failed", errorMessage(error), action.stepId);
-      }
-      blocker ??= agentProcessBlocker(action.stepId, process);
-    }
-
-    await appendStepFinished(events, trace, runId, services, {
-      stepId: action.stepId,
-      stepType: "agent",
-      visit: action.visit,
-      outcome: blocker === null ? "completed" : "blocked",
-      process,
-      changedPaths,
-      blocker,
-    });
+async function runLoop(context: ControllerContext): Promise<ControllerResult> {
+  const { input, events } = context;
+  const state = reduceTrace(events);
+  const action = planNextAction(input.configuration, state);
+  if (action.type === "finish") {
+    return finishRun(context, action);
   }
+
+  await appendStepStarted(
+    events,
+    context.trace,
+    context.runId,
+    context.services,
+    action.stepId,
+    action.type === "dispatch-agent"
+      ? "agent"
+      : action.type === "run-native-profile"
+        ? "gate"
+        : "terminal",
+    action.visit,
+  );
+  await executeAction(context, state, action);
+  return runLoop(context);
+}
+
+async function finishRun(
+  context: ControllerContext,
+  action: Extract<PlannedAction, { readonly type: "finish" }>,
+): Promise<ControllerResult> {
+  const event: RunFinishedEvent = {
+    ...baseEvent(context.events, context.runId, context.services),
+    type: "run-finished",
+    terminalState: action.terminalState,
+    blocker: action.blocker,
+  };
+  await appendEvent(context.events, context.trace, event);
+  return {
+    runId: context.runId,
+    runDirectory: context.trace.runDirectory,
+    events: context.events,
+    state: reduceTrace(context.events),
+  };
+}
+
+async function executeAction(
+  context: ControllerContext,
+  state: RunState,
+  action: ExecutableAction,
+): Promise<void> {
+  if (action.type === "enter-terminal") {
+    await executeTerminal(context, action);
+    return;
+  }
+  if (action.type === "run-native-profile") {
+    await executeGate(context, action);
+    return;
+  }
+  await executeAgent(context, state, action);
+}
+
+async function executeTerminal(
+  context: ControllerContext,
+  action: Extract<ExecutableAction, { readonly type: "enter-terminal" }>,
+): Promise<void> {
+  const blocker = action.outcome === "blocked"
+    ? createBlocker(
+        "configured-terminal-blocked",
+        `Terminal step '${action.stepId}' blocks the run.`,
+        action.stepId,
+      )
+    : null;
+  await appendStepFinished(context.events, context.trace, context.runId, context.services, {
+    stepId: action.stepId,
+    stepType: "terminal",
+    visit: action.visit,
+    outcome: action.outcome,
+    process: null,
+    changedPaths: [],
+    blocker,
+  });
+}
+
+async function executeGate(
+  context: ControllerContext,
+  action: Extract<ExecutableAction, { readonly type: "run-native-profile" }>,
+): Promise<void> {
+  const profile = requireProfile(context.input.configuration, action.profileId);
+  const process = await context.services.commandRunner.run({
+    executable: profile.executable,
+    args: profile.args,
+    cwd: context.workspace.path,
+    stdin: null,
+    timeoutMs: profile.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS,
+    environmentKeys: profile.environmentKeys ?? [],
+  });
+  const blocker = gateBlocker(action.stepId, process);
+  await appendStepFinished(context.events, context.trace, context.runId, context.services, {
+    stepId: action.stepId,
+    stepType: "gate",
+    visit: action.visit,
+    outcome: gateOutcome(process, blocker),
+    process,
+    changedPaths: [],
+    blocker,
+  });
+}
+
+function requireProfile(configuration: Configuration, profileId: string): QualityProfile {
+  const profile = configuration.profiles[profileId];
+  if (profile === undefined) {
+    throw new Error(`Planner selected unknown quality profile '${profileId}'.`);
+  }
+  return profile;
+}
+
+function gateOutcome(process: ProcessArtifact, blocker: Blocker | null): "passed" | "failed" | "blocked" {
+  if (blocker !== null) {
+    return "blocked";
+  }
+  return process.exitCode === 0 ? "passed" : "failed";
+}
+
+interface AgentDefinition {
+  readonly role: Role;
+  readonly provider: CommandProvider;
+  readonly prompt: string;
+}
+
+async function executeAgent(
+  context: ControllerContext,
+  state: RunState,
+  action: Extract<ExecutableAction, { readonly type: "dispatch-agent" }>,
+): Promise<void> {
+  const definition = requireAgentDefinition(context.input, action.roleId);
+  const before = await inspectBefore(context, action.stepId);
+  if (before.snapshot === null) {
+    await appendAgentResult(context, action, null, [], before.blocker);
+    return;
+  }
+
+  const process = await runAgentProcess(context, state, action, definition);
+  const inspection = await inspectAfter(context, action, definition.role, before.snapshot);
+  const blocker = inspection.blocker ?? agentProcessBlocker(action.stepId, process);
+  await appendAgentResult(context, action, process, inspection.changedPaths, blocker);
+}
+
+function requireAgentDefinition(input: ControllerInput, roleId: string): AgentDefinition {
+  const role = input.configuration.roles[roleId];
+  if (role === undefined) {
+    throw new Error(`Planner selected unknown role '${roleId}'.`);
+  }
+  const provider = input.configuration.providers[role.provider];
+  if (provider === undefined) {
+    throw new Error(`Role '${roleId}' selected unknown provider '${role.provider}'.`);
+  }
+  const prompt = input.prompts[roleId];
+  if (prompt === undefined) {
+    throw new Error(`No loaded prompt is available for role '${roleId}'.`);
+  }
+  return { role, provider, prompt };
+}
+
+type BeforeInspection =
+  | { readonly snapshot: GitSnapshot; readonly blocker: null }
+  | { readonly snapshot: null; readonly blocker: Blocker };
+
+async function inspectBefore(context: ControllerContext, stepId: string): Promise<BeforeInspection> {
+  try {
+    return { snapshot: await context.services.git.snapshot(context.workspace.path), blocker: null };
+  } catch (error) {
+    return {
+      snapshot: null,
+      blocker: createBlocker("git-inspection-failed", errorMessage(error), stepId),
+    };
+  }
+}
+
+async function runAgentProcess(
+  context: ControllerContext,
+  state: RunState,
+  action: Extract<ExecutableAction, { readonly type: "dispatch-agent" }>,
+  definition: AgentDefinition,
+): Promise<ProcessArtifact> {
+  return context.services.commandRunner.run({
+    executable: definition.provider.executable,
+    args: definition.provider.args,
+    cwd: context.workspace.path,
+    stdin: composeAssignmentPrompt({
+      rolePrompt: definition.prompt,
+      task: context.input.task,
+      runId: context.runId,
+      workflowId: context.input.configuration.workflow.id,
+      workspace: context.workspace.path,
+      stepId: action.stepId,
+      visit: action.visit,
+      roleId: action.roleId,
+      providerId: definition.role.provider,
+      allowedPathPrefixes: definition.role.allowedPathPrefixes,
+      mostRecentGateFailure: state.mostRecentGateFailure,
+    }),
+    timeoutMs: definition.provider.timeoutMs ?? DEFAULT_AGENT_TIMEOUT_MS,
+  });
+}
+
+interface AfterInspection {
+  readonly changedPaths: readonly string[];
+  readonly blocker: Blocker | null;
+}
+
+async function inspectAfter(
+  context: ControllerContext,
+  action: Extract<ExecutableAction, { readonly type: "dispatch-agent" }>,
+  role: Role,
+  before: GitSnapshot,
+): Promise<AfterInspection> {
+  try {
+    const changedPaths = await context.services.git.changedPathsSince(context.workspace.path, before);
+    return {
+      changedPaths,
+      blocker: validateAgentPaths(
+        action.stepId,
+        changedPaths,
+        role.allowedPathPrefixes,
+        context.workspace.protectedPaths,
+      ),
+    };
+  } catch (error) {
+    return {
+      changedPaths: [],
+      blocker: createBlocker("git-inspection-failed", errorMessage(error), action.stepId),
+    };
+  }
+}
+
+async function appendAgentResult(
+  context: ControllerContext,
+  action: Extract<ExecutableAction, { readonly type: "dispatch-agent" }>,
+  process: ProcessArtifact | null,
+  changedPaths: readonly string[],
+  blocker: Blocker | null,
+): Promise<void> {
+  await appendStepFinished(context.events, context.trace, context.runId, context.services, {
+    stepId: action.stepId,
+    stepType: "agent",
+    visit: action.visit,
+    outcome: blocker === null ? "completed" : "blocked",
+    process,
+    changedPaths,
+    blocker,
+  });
 }
 
 function validateAgentPaths(
@@ -227,11 +361,7 @@ function agentProcessBlocker(stepId: string, process: ProcessArtifact): Blocker 
     return createBlocker("agent-timeout", `Agent step '${stepId}' timed out.`, stepId);
   }
   if (process.kind === "signal") {
-    return createBlocker(
-      "agent-signal",
-      `Agent step '${stepId}' ended from signal '${process.signal ?? "unknown"}'.`,
-      stepId,
-    );
+    return agentSignalBlocker(stepId, process.signal);
   }
   if (process.exitCode !== 0) {
     return createBlocker(
@@ -241,6 +371,14 @@ function agentProcessBlocker(stepId: string, process: ProcessArtifact): Blocker 
     );
   }
   return null;
+}
+
+function agentSignalBlocker(stepId: string, signal: string | null): Blocker {
+  return createBlocker(
+    "agent-signal",
+    `Agent step '${stepId}' ended from signal '${signal ?? "unknown"}'.`,
+    stepId,
+  );
 }
 
 function gateBlocker(stepId: string, process: ProcessArtifact): Blocker | null {
@@ -266,14 +404,14 @@ async function appendStepStarted(
   runId: string,
   services: RuntimeServices,
   stepId: string,
-  step: WorkflowStep,
+  stepType: "agent" | "gate" | "terminal",
   visit: number,
 ): Promise<void> {
   const event: StepStartedEvent = {
     ...baseEvent(events, runId, services),
     type: "step-started",
     stepId,
-    stepType: step.type,
+    stepType,
     visit,
   };
   await appendEvent(events, trace, event);

@@ -6,6 +6,7 @@ export interface CommandRequest {
   readonly cwd: string;
   readonly stdin: string | null;
   readonly timeoutMs: number;
+  readonly environmentKeys?: readonly string[];
 }
 
 export interface CommandRunner {

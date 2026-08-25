@@ -42,6 +42,10 @@
       "minimum": 1,
       "maximum": 86400000
     },
+    "environmentKey": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+    },
     "agentStep": {
       "type": "object",
       "additionalProperties": false,
@@ -152,6 +156,12 @@
           "type": "array",
           "maxItems": 64,
           "items": { "$ref": "#/$defs/safeString" }
+        },
+        "environmentKeys": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/environmentKey" }
         },
         "timeoutMs": { "$ref": "#/$defs/timeout" }
       }

@@ -8,7 +8,6 @@ import type { Configuration } from "../domain/types.js";
 const MAX_CONFIG_BYTES = 1_048_576;
 const MAX_PROMPT_BYTES = 262_144;
 const schemaPath = fileURLToPath(new URL("../../schemas/workflow.schema.json", import.meta.url));
-let validatorPromise: Promise<ValidateFunction> | null = null;
 
 export interface LoadedConfiguration {
   readonly configuration: Configuration;
@@ -32,7 +31,7 @@ export async function loadConfiguration(inputPath: string): Promise<LoadedConfig
   const validate = await getValidator();
   if (!validate(parsed)) {
     const details = (validate.errors ?? [])
-      .map((error: ErrorObject) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`)
+      .map((error: ErrorObject) => `${error.instancePath || "/"} ${String(error.message)}`)
       .join("; ");
     throw new Error(`Configuration schema validation failed: ${details}`);
   }
@@ -43,7 +42,6 @@ export async function loadConfiguration(inputPath: string): Promise<LoadedConfig
   const promptPaths: string[] = [];
   for (const [roleId, role] of Object.entries(configuration.roles)) {
     const lexicalPath = resolve(configRoot, role.promptPath);
-    assertBeneath(configRoot, lexicalPath, `Prompt path for role '${roleId}'`);
     const promptPath = await realpath(lexicalPath);
     assertBeneath(configRoot, promptPath, `Prompt path for role '${roleId}'`);
     const promptBytes = await readBoundedFile(promptPath, MAX_PROMPT_BYTES, `prompt for role '${roleId}'`);
@@ -67,12 +65,8 @@ export async function loadTask(taskPathInput: string): Promise<{ readonly path: 
 }
 
 async function getValidator(): Promise<ValidateFunction> {
-  validatorPromise ??= readFile(schemaPath, "utf8").then((schemaText) => {
-    const schema = JSON.parse(schemaText) as object;
-    const ajv = new Ajv({ allErrors: true, strict: true });
-    return ajv.compile(schema);
-  });
-  return validatorPromise;
+  const schema = JSON.parse(await readFile(schemaPath, "utf8")) as object;
+  return new Ajv({ allErrors: true }).compile(schema);
 }
 
 async function readBoundedFile(path: string, maximumBytes: number, label: string): Promise<Buffer> {
@@ -96,14 +90,13 @@ function decodeUtf8(bytes: Uint8Array, label: string): string {
 
 function assertBeneath(root: string, candidate: string, label: string): void {
   const difference = relative(root, candidate);
-  if (difference === "" || (!difference.startsWith(`..${sep}`) && difference !== ".." && !isAbsolute(difference))) {
-    return;
+  if (difference === ".." || difference.startsWith(`..${sep}`) || isAbsolute(difference)) {
+    throw new Error(`${label} escapes the configuration root.`);
   }
-  throw new Error(`${label} escapes the configuration root.`);
 }
 
 function deepFreeze<T>(value: T): T {
-  if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
+  if (typeof value !== "object" || value === null) {
     return value;
   }
   Object.freeze(value);

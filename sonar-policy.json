@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "hostUrl": "http://127.0.0.1:9000",
+  "projectKey": "azaru_tsqh_mvp",
+  "organization": null,
+  "qualityGate": "azaru-tsqh-mvp-strict",
+  "typescriptProfile": "azaru-tsqh-mvp-typescript",
+  "newCodeDefinition": "PREVIOUS_VERSION"
+}

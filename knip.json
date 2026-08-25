@@ -1,0 +1,35 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/quality/cli.ts",
+    "scripts/**/*.mjs"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "scripts/**/*.mjs",
+    "*.config.{ts,mjs}"
+  ],
+  "include": [
+    "files",
+    "dependencies",
+    "devDependencies",
+    "optionalPeerDependencies",
+    "unlisted",
+    "binaries",
+    "unresolved",
+    "exports",
+    "nsExports",
+    "types",
+    "nsTypes",
+    "enumMembers",
+    "namespaceMembers",
+    "duplicates",
+    "catalog",
+    "catalogReferences",
+    "cycles"
+  ],
+  "ignoreDependencies": ["@azaru/tscrap", "@sonar/scan"],
+  "treatConfigHintsAsErrors": true,
+  "treatTagHintsAsErrors": true
+}

@@ -11,6 +11,10 @@ export function planNextAction(configuration: Configuration, state: RunState): P
   if (state.workflowId !== configuration.workflow.id) {
     return blocked("workflow-mismatch", "The run workflow does not match the configured workflow.", null);
   }
+  return planForPhase(configuration, state);
+}
+
+function planForPhase(configuration: Configuration, state: RunState): PlannedAction {
   if (state.phase === "finished") {
     return {
       type: "finish",
@@ -26,18 +30,16 @@ export function planNextAction(configuration: Configuration, state: RunState): P
     return actionForStep(configuration, state.currentStepId, state.visitCounts[state.currentStepId] ?? 1);
   }
 
+  return planTransition(configuration, state);
+}
+
+function planTransition(configuration: Configuration, state: RunState): PlannedAction {
   const latest = state.latestOutcome;
-  if (latest === null || latest.stepId !== state.currentStepId) {
+  if (!isCurrentOutcome(latest, state.currentStepId)) {
     return blocked("missing-outcome", "No current recorded outcome is available for transition selection.", state.currentStepId);
   }
   if (latest.outcome === "blocked") {
-    return {
-      type: "finish",
-      terminalState: "blocked",
-      blocker:
-        latest.blocker ??
-        createBlocker("step-blocked", `Step '${latest.stepId}' recorded a blocker.`, latest.stepId),
-    };
+    return finishBlockedStep(latest);
   }
 
   const source = configuration.workflow.steps[latest.stepId];
@@ -45,14 +47,7 @@ export function planNextAction(configuration: Configuration, state: RunState): P
     return blocked("unknown-current-step", `Current step '${latest.stepId}' does not exist.`, latest.stepId);
   }
   if (source.type === "terminal") {
-    return {
-      type: "finish",
-      terminalState: source.outcome,
-      blocker:
-        source.outcome === "blocked"
-          ? createBlocker("configured-terminal-blocked", `Terminal step '${latest.stepId}' blocks the run.`, latest.stepId)
-          : null,
-    };
+    return finishTerminal(source.outcome, latest.stepId);
   }
 
   const targetStepId = transitionTarget(source, latest.outcome);
@@ -63,9 +58,27 @@ export function planNextAction(configuration: Configuration, state: RunState): P
       latest.stepId,
     );
   }
+  return planTarget(configuration, state, latest.stepId, targetStepId);
+}
+
+function finishBlockedStep(latest: NonNullable<RunState["latestOutcome"]>): PlannedAction {
+  return {
+    type: "finish",
+    terminalState: "blocked",
+    blocker: latest.blocker ??
+      createBlocker("step-blocked", `Step '${latest.stepId}' recorded a blocker.`, latest.stepId),
+  };
+}
+
+function planTarget(
+  configuration: Configuration,
+  state: RunState,
+  sourceStepId: string,
+  targetStepId: string,
+): PlannedAction {
   const target = configuration.workflow.steps[targetStepId];
   if (target === undefined) {
-    return blocked("unknown-transition-target", `Transition target '${targetStepId}' does not exist.`, latest.stepId);
+    return blocked("unknown-transition-target", `Transition target '${targetStepId}' does not exist.`, sourceStepId);
   }
 
   const nextVisit = (state.visitCounts[targetStepId] ?? 0) + 1;
@@ -77,6 +90,23 @@ export function planNextAction(configuration: Configuration, state: RunState): P
     );
   }
   return actionForStep(configuration, targetStepId, nextVisit);
+}
+
+function isCurrentOutcome(
+  latest: RunState["latestOutcome"],
+  currentStepId: string,
+): latest is NonNullable<RunState["latestOutcome"]> {
+  return latest !== null && latest.stepId === currentStepId;
+}
+
+function finishTerminal(outcome: "passed" | "blocked", stepId: string): PlannedAction {
+  return {
+    type: "finish",
+    terminalState: outcome,
+    blocker: outcome === "blocked"
+      ? createBlocker("configured-terminal-blocked", `Terminal step '${stepId}' blocks the run.`, stepId)
+      : null,
+  };
 }
 
 function actionForStep(configuration: Configuration, stepId: string, visit: number): PlannedAction {

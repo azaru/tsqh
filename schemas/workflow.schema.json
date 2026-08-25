@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tsqh.local/schemas/workflow.schema.json",
+  "title": "TSQH MVP workflow configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "workflow", "roles", "providers", "profiles"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "workflow": { "$ref": "#/$defs/workflow" },
+    "roles": { "$ref": "#/$defs/roles" },
+    "providers": { "$ref": "#/$defs/providers" },
+    "profiles": { "$ref": "#/$defs/profiles" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "safeString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^[^\\u0000]*$"
+    },
+    "relativePath": {
+      "allOf": [
+        { "$ref": "#/$defs/safeString" },
+        {
+          "type": "string",
+          "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//).+$"
+        }
+      ]
+    },
+    "visitable": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400000
+    },
+    "agentStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "role", "maxVisits", "onCompleted"],
+      "properties": {
+        "type": { "const": "agent" },
+        "role": { "$ref": "#/$defs/id" },
+        "maxVisits": { "$ref": "#/$defs/visitable" },
+        "onCompleted": { "$ref": "#/$defs/id" }
+      }
+    },
+    "gateStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "profile", "maxVisits", "onPassed", "onFailed"],
+      "properties": {
+        "type": { "const": "gate" },
+        "profile": { "$ref": "#/$defs/id" },
+        "maxVisits": { "$ref": "#/$defs/visitable" },
+        "onPassed": { "$ref": "#/$defs/id" },
+        "onFailed": { "$ref": "#/$defs/id" }
+      }
+    },
+    "terminalStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "outcome"],
+      "properties": {
+        "type": { "const": "terminal" },
+        "outcome": { "enum": ["passed", "blocked"] }
+      }
+    },
+    "step": {
+      "oneOf": [
+        { "$ref": "#/$defs/agentStep" },
+        { "$ref": "#/$defs/gateStep" },
+        { "$ref": "#/$defs/terminalStep" }
+      ]
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "entryStepId", "steps"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "entryStepId": { "$ref": "#/$defs/id" },
+        "steps": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 256,
+          "propertyNames": { "$ref": "#/$defs/id" },
+          "additionalProperties": { "$ref": "#/$defs/step" }
+        }
+      }
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "promptPath", "allowedPathPrefixes"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/id" },
+        "promptPath": { "$ref": "#/$defs/relativePath" },
+        "allowedPathPrefixes": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/relativePath" }
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 256,
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/role" }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "executable", "args", "promptTransport"],
+      "properties": {
+        "type": { "const": "command" },
+        "executable": { "$ref": "#/$defs/safeString" },
+        "args": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/safeString" }
+        },
+        "promptTransport": { "const": "stdin" },
+        "timeoutMs": { "$ref": "#/$defs/timeout" }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 256,
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/provider" }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "args"],
+      "properties": {
+        "executable": { "$ref": "#/$defs/safeString" },
+        "args": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/safeString" }
+        },
+        "timeoutMs": { "$ref": "#/$defs/timeout" }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 256,
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/profile" }
+    }
+  }
+}

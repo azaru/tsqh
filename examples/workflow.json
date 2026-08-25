@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "workflow": {
+    "id": "example",
+    "entryStepId": "implement",
+    "steps": {
+      "implement": {
+        "type": "agent",
+        "role": "implementer",
+        "maxVisits": 1,
+        "onCompleted": "quick"
+      },
+      "quick": {
+        "type": "gate",
+        "profile": "quick",
+        "maxVisits": 3,
+        "onPassed": "review",
+        "onFailed": "repair"
+      },
+      "review": {
+        "type": "agent",
+        "role": "reviewer",
+        "maxVisits": 3,
+        "onCompleted": "full"
+      },
+      "full": {
+        "type": "gate",
+        "profile": "full",
+        "maxVisits": 3,
+        "onPassed": "verify",
+        "onFailed": "repair"
+      },
+      "verify": {
+        "type": "agent",
+        "role": "verifier",
+        "maxVisits": 1,
+        "onCompleted": "passed"
+      },
+      "repair": {
+        "type": "agent",
+        "role": "repairer",
+        "maxVisits": 2,
+        "onCompleted": "quick"
+      },
+      "passed": {
+        "type": "terminal",
+        "outcome": "passed"
+      }
+    }
+  },
+  "roles": {
+    "implementer": {
+      "provider": "codex",
+      "promptPath": "prompts/implementer.md",
+      "allowedPathPrefixes": ["src/", "test/"]
+    },
+    "reviewer": {
+      "provider": "codex",
+      "promptPath": "prompts/reviewer.md",
+      "allowedPathPrefixes": ["src/", "test/"]
+    },
+    "verifier": {
+      "provider": "codex",
+      "promptPath": "prompts/verifier.md",
+      "allowedPathPrefixes": ["src/", "test/"]
+    },
+    "repairer": {
+      "provider": "codex",
+      "promptPath": "prompts/repairer.md",
+      "allowedPathPrefixes": ["src/", "test/"]
+    }
+  },
+  "providers": {
+    "codex": {
+      "type": "command",
+      "executable": "codex",
+      "args": ["exec", "--sandbox", "workspace-write", "-"],
+      "promptTransport": "stdin",
+      "timeoutMs": 900000
+    }
+  },
+  "profiles": {
+    "quick": {
+      "executable": "pnpm",
+      "args": ["quality:quick"],
+      "timeoutMs": 900000
+    },
+    "full": {
+      "executable": "pnpm",
+      "args": ["quality:full"],
+      "timeoutMs": 900000
+    }
+  }
+}

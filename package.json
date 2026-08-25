@@ -1,0 +1,32 @@
+{
+  "name": "tsqh-mvp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A deterministic sequential multi-agent guardrail controller.",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "tsqh": "dist/cli/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/mark-cli-executable.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "test": "pnpm build && vitest run",
+    "test:unit": "vitest run test/domain test/config",
+    "quality:architecture": "node scripts/check-architecture.mjs",
+    "quality:quick": "pnpm typecheck && pnpm test",
+    "quality:full": "pnpm quality:quick && pnpm quality:architecture",
+    "tsqh": "node --enable-source-maps dist/cli/main.js"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "packageManager": "pnpm@11.17.0"
+}

@@ -69,9 +69,9 @@
 - `pnpm quality:quick` — exit 0; strict test typecheck, build, 693 tests across 25 files, and the
   five-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 693 tests passed. Coverage was 100% statements
-  (1,646/1,646), 99.48% branches (971/976), 100% functions (357/357), and 100% lines
-  (1,626/1,626). Every domain metric remained 100%.
-- `pnpm quality:crap` — exit 0; 26 source files, 362 units, zero violations, maximum CRAP 6.
+  (1,649/1,649), 99.48% branches (967/972), 100% functions (363/363), and 100% lines
+  (1,628/1,628). Every domain metric remained 100%.
+- `pnpm quality:crap` — exit 0; 27 source files, 378 units, zero violations, maximum CRAP 6.
 - `pnpm quality:knip` — exit 0; zero issues, including zero configuration and tag hints.
 - `pnpm quality:full` — exit 1 at mutation after quick, coverage, CRAP, and Knip passed. The fresh
   mutation report contained 3,817 mutants: 2,803 killed, 1,008 checker-rejected compile errors,
@@ -81,6 +81,9 @@
   2,892 killed and 1,057 checker-rejected compile errors, with zero survived, uncovered, timed-out,
   or runtime-error mutants. The exact blocker was the stale `framework.name` expectation; the
   pinned Stryker 10 report identifies itself as `StrykerJS`.
+- A later `pnpm quality:full` attempt passed quick and coverage, then stopped at CRAP with two
+  fully covered complexity-7 units. Responsibility extraction reduced both to the required maximum
+  of 6; the direct CRAP rerun now exits 0.
 - `pnpm quality:sonar` — exit 0 after a real authorized scan; Sonar analysis
   `0b616e70-e87f-48dc-b4b0-313045e6074c` completed with computed gate `OK` and the approved remote
   policy. Compute task `1e521e9f-ef14-4bcd-9c42-06e52df7204e` completed successfully. The dedicated
@@ -115,6 +118,8 @@
 - The Sonar-finding cleanup ranges reported 179 killed runnable mutants with zero
   survived/uncovered/timeout and 52 checker errors. This includes locale-explicit ordering, absolute
   Git executable dispatch without inherited `PATH`, and the remaining clarity/type repairs.
+- The CRAP responsibility-extraction ranges reported 46 killed runnable mutants with zero
+  survived/uncovered/timeout and 29 checker errors.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior

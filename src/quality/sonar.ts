@@ -382,6 +382,16 @@ function parseProperties(content: string): Readonly<Record<string, string>> {
 }
 
 function validateConfiguredConditions(value: unknown): void {
+  const conditions = configuredConditionInventory(value);
+  for (const [metricKey, [comparator, threshold]] of Object.entries(REQUIRED_CONDITIONS)) {
+    const condition = requireConfiguredCondition(conditions, metricKey);
+    requireEqual(condition.op, comparator, `Sonar ${metricKey} comparator`);
+    requireEqual(condition.error, threshold, `Sonar ${metricKey} threshold`);
+  }
+  requireExactConditionCount(conditions.size);
+}
+
+function configuredConditionInventory(value: unknown): ReadonlyMap<string, Record<string, unknown>> {
   if (!Array.isArray(value)) {
     throw new EvidenceError("Sonar quality-gate definition conditions are missing.");
   }
@@ -394,15 +404,22 @@ function validateConfiguredConditions(value: unknown): void {
     }
     conditions.set(metricKey, condition);
   }
-  for (const [metricKey, [comparator, threshold]] of Object.entries(REQUIRED_CONDITIONS)) {
-    const condition = conditions.get(metricKey);
-    if (condition === undefined) {
-      throw new EvidenceError(`Sonar quality gate is missing required condition ${metricKey}.`);
-    }
-    requireEqual(condition.op, comparator, `Sonar ${metricKey} comparator`);
-    requireEqual(condition.error, threshold, `Sonar ${metricKey} threshold`);
+  return conditions;
+}
+
+function requireConfiguredCondition(
+  conditions: ReadonlyMap<string, Record<string, unknown>>,
+  metricKey: string,
+): Record<string, unknown> {
+  const condition = conditions.get(metricKey);
+  if (condition === undefined) {
+    throw new EvidenceError(`Sonar quality gate is missing required condition ${metricKey}.`);
   }
-  if (conditions.size !== Object.keys(REQUIRED_CONDITIONS).length) {
+  return condition;
+}
+
+function requireExactConditionCount(actual: number): void {
+  if (actual !== Object.keys(REQUIRED_CONDITIONS).length) {
     throw new EvidenceError("Sonar quality gate contains unapproved conditions.");
   }
 }

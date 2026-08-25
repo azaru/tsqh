@@ -126,14 +126,20 @@ function validateMutationFile(
   if (!Array.isArray(file.mutants)) {
     throw new EvidenceError(`Mutation report files.${path}.mutants must be an array.`);
   }
-  let killed = 0;
-  let compileErrors = 0;
-  for (const [index, value] of file.mutants.entries()) {
-    const status = validateMutant(value, path, index, seenIds);
-    killed += status === "Killed" ? 1 : 0;
-    compileErrors += status === "CompileError" ? 1 : 0;
-  }
-  return { killed, compileErrors };
+  const statuses = file.mutants.map((mutant, index) =>
+    validateMutant(mutant, path, index, seenIds)
+  );
+  return {
+    killed: countMutationStatus(statuses, "Killed"),
+    compileErrors: countMutationStatus(statuses, "CompileError"),
+  };
+}
+
+function countMutationStatus(
+  statuses: readonly ("Killed" | "CompileError")[],
+  expected: "Killed" | "CompileError",
+): number {
+  return statuses.filter((status) => status === expected).length;
 }
 
 function validateMutant(

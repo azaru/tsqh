@@ -63,7 +63,7 @@ function validateReportHeader(report: Record<string, unknown>, workspace: string
 
 function validateFramework(report: Record<string, unknown>): void {
   const framework = record(report.framework, "framework");
-  requireEqual(framework.name, "Stryker", "framework.name");
+  requireEqual(framework.name, "StrykerJS", "framework.name");
   requireEqual(framework.version, "10.0.0", "framework.version");
 }
 

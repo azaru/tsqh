@@ -386,7 +386,7 @@ async function writeMutationReport(root: string): Promise<void> {
     schemaVersion: "1.0",
     projectRoot: root,
     thresholds,
-    framework: { name: "Stryker", version: "10.0.0" },
+    framework: { name: "StrykerJS", version: "10.0.0" },
     config: {
       checkers: ["typescript"],
       cleanTempDir: "always",

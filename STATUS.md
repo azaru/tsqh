@@ -46,16 +46,15 @@
 
 ## Current release work
 
-- Mutation baseline: the fresh complete-project non-incremental run produced 3,817 mutants:
-  2,803 `Killed`, 1,008 `CompileError`, 4 `Survived`, 1 `NoCoverage`, and 1 `RuntimeError`.
+- The latest complete-project non-incremental mutation execution produced 3,949 mutants:
+  2,892 `Killed`, 1,057 `CompileError`, and zero survived, uncovered, timed-out, or runtime-error
+  mutants.
   Checker-produced `CompileError` mutations remain visible as type-invalid, non-runnable mutations;
-  every runnable mutant must be `Killed`, and every other runtime status fails. The validator,
-  summaries, tests, and full run now implement and prove that fail-closed distinction. Remaining
-  runtime findings from that report were in `src/quality/coverage.ts`, `src/quality/mutation.ts`,
-  `src/quality/sonar-gate.ts` (two survivors), `src/quality/cli.ts` (no coverage), and
-  `src/adapters/command-runner.ts` (runtime error). Focused repairs now give every affected range a
-  100% runtime mutation score with checker rejections reported separately. A fresh complete-project
-  run remains required before replacing the baseline or claiming the mutation gate green.
+  every runnable mutant must be `Killed`, and every other runtime status fails. The gate still
+  blocked because its header validator expected legacy framework name `Stryker` while the pinned
+  Stryker 10 JSON schema reports `StrykerJS`. The validator and all controlled fixtures now pin the
+  observed `StrykerJS` identity; 6 focused runnable mutants were killed with no other statuses. A
+  fresh complete-project run remains required before claiming the mutation gate green.
 - Sonar is reachable and authorized. All 19 initial findings are fixed, and the dedicated MVP
   project now reports zero open issues and computed gate `OK`; coverage is 99.8% and duplication is
   0.0%. Remote-policy validation is aligned with Sonar's actual API split:
@@ -78,6 +77,10 @@
   mutation report contained 3,817 mutants: 2,803 killed, 1,008 checker-rejected compile errors,
   4 survived, 1 had no coverage, and 1 produced a runtime error. The reported total mutation score
   was 99.82% (99.86% covered). The fail-fast chain did not start Sonar.
+- `pnpm quality:mutation` — exit 1 only at evidence validation after all 3,949 mutants completed:
+  2,892 killed and 1,057 checker-rejected compile errors, with zero survived, uncovered, timed-out,
+  or runtime-error mutants. The exact blocker was the stale `framework.name` expectation; the
+  pinned Stryker 10 report identifies itself as `StrykerJS`.
 - `pnpm quality:sonar` — exit 0 after a real authorized scan; Sonar analysis
   `0b616e70-e87f-48dc-b4b0-313045e6074c` completed with computed gate `OK` and the approved remote
   policy. Compute task `1e521e9f-ef14-4bcd-9c42-06e52df7204e` completed successfully. The dedicated
@@ -162,5 +165,4 @@
 - Exact local next action: rerun the complete-project non-incremental mutation gate and repair every
   remaining runnable finding before executing the full release chain.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
-  remaining runnable finding; fix every real Sonar issue; and keep iterating through
-  `pnpm quality:full` until it exits zero.
+  remaining runnable finding; and keep iterating through `pnpm quality:full` until it exits zero.

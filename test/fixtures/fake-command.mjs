@@ -39,6 +39,16 @@ if (mode.startsWith("agent-")) {
 }
 
 await appendFile(join(stateDirectory, "execution.log"), `gate:${label}\n`, "utf8");
+if (mode === "gate-write-tracked") {
+  await appendFile("seed.txt", "gate mutation\n", "utf8");
+}
+if (mode === "gate-write-untracked") {
+  await writeFile("gate-output.txt", "gate mutation\n", "utf8");
+}
+if (mode === "gate-write-ignored") {
+  await mkdir("reports", { recursive: true });
+  await writeFile("reports/gate-output.txt", "owned ignored report\n", "utf8");
+}
 if (mode === "gate-signal") {
   process.kill(process.pid, "SIGTERM");
   await new Promise((resolve) => setTimeout(resolve, 10_000));

@@ -163,6 +163,11 @@ async function executeGate(
   action: Extract<ExecutableAction, { readonly type: "run-native-profile" }>,
 ): Promise<void> {
   const profile = requireProfile(context.input.configuration, action.profileId);
+  const before = await inspectBeforeGate(context, action.stepId);
+  if (before.snapshot === null) {
+    await appendGateResult(context, action, null, [], before.blocker);
+    return;
+  }
   const process = await context.services.commandRunner.run({
     executable: profile.executable,
     args: profile.args,
@@ -171,14 +176,72 @@ async function executeGate(
     timeoutMs: profile.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS,
     environmentKeys: profile.environmentKeys ?? [],
   });
-  const blocker = gateBlocker(action.stepId, process);
+  const inspection = await inspectAfterGate(context, action.stepId, before.snapshot);
+  const blocker = inspection.blocker ?? gateBlocker(action.stepId, process);
+  await appendGateResult(context, action, process, inspection.changedPaths, blocker);
+}
+
+async function inspectBeforeGate(
+  context: ControllerContext,
+  stepId: string,
+): Promise<BeforeInspection> {
+  try {
+    return { snapshot: await context.services.git.snapshot(context.workspace.path), blocker: null };
+  } catch (error) {
+    return {
+      snapshot: null,
+      blocker: createBlocker(
+        "git-inspection-failed",
+        `Git inspection before gate '${stepId}' failed: ${errorMessage(error)}`,
+        stepId,
+      ),
+    };
+  }
+}
+
+async function inspectAfterGate(
+  context: ControllerContext,
+  stepId: string,
+  before: GitSnapshot,
+): Promise<AfterInspection> {
+  try {
+    const changedPaths = await context.services.git.changedPathsSince(context.workspace.path, before);
+    return {
+      changedPaths,
+      blocker: changedPaths.length === 0
+        ? null
+        : createBlocker(
+            "gate-mutated-candidate",
+            `Gate step '${stepId}' changed candidate paths: ${changedPaths.join(", ")}.`,
+            stepId,
+          ),
+    };
+  } catch (error) {
+    return {
+      changedPaths: [],
+      blocker: createBlocker(
+        "git-inspection-failed",
+        `Git inspection after gate '${stepId}' failed: ${errorMessage(error)}`,
+        stepId,
+      ),
+    };
+  }
+}
+
+async function appendGateResult(
+  context: ControllerContext,
+  action: Extract<ExecutableAction, { readonly type: "run-native-profile" }>,
+  process: ProcessArtifact | null,
+  changedPaths: readonly string[],
+  blocker: Blocker | null,
+): Promise<void> {
   await appendStepFinished(context.events, context.trace, context.runId, context.services, {
     stepId: action.stepId,
     stepType: "gate",
     visit: action.visit,
     outcome: gateOutcome(process, blocker),
     process,
-    changedPaths: [],
+    changedPaths,
     blocker,
   });
 }
@@ -191,8 +254,11 @@ function requireProfile(configuration: Configuration, profileId: string): Qualit
   return profile;
 }
 
-function gateOutcome(process: ProcessArtifact, blocker: Blocker | null): "passed" | "failed" | "blocked" {
-  if (blocker !== null) {
+function gateOutcome(
+  process: ProcessArtifact | null,
+  blocker: Blocker | null,
+): "passed" | "failed" | "blocked" {
+  if (blocker !== null || process === null) {
     return "blocked";
   }
   return process.exitCode === 0 ? "passed" : "failed";

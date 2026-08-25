@@ -62,10 +62,12 @@ missing infrastructure. Consequently `quality:full` is wired but cannot yet be c
 
 The active specification now includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
-configured agent. Candidate-stable native gates and a separate sequential example inspired by
-Swarm Forge `main`, `six-pack`, and `squad` remain in progress. The planner remains the only
-transition authority; there is no peer messaging, persistent leader, dynamic spawning, daemon, or
-per-role worktree.
+configured agent. Native gates are also candidate-stable: the controller compares Git snapshots
+around each gate and blocks any Git-visible candidate-path mutation while permitting configured
+gates to regenerate ignored quality reports. A separate sequential example inspired by Swarm Forge
+`main`, `six-pack`, and `squad` remains in progress. The planner remains the only transition
+authority; there is no peer messaging, persistent leader, dynamic spawning, daemon, or per-role
+worktree.
 
 The repository already contains an original attributed role catalog at
 [`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md), informed by the `main`,
@@ -174,7 +176,9 @@ The controller now supplies the latest successfully completed agent's bounded, s
 the next configured agent with source identity and truncation state. Gates preserve that handoff,
 and its text cannot alter task, provider, write authority, transitions, visits, or gate outcomes.
 The active continuation will still add a separate Swarm Forge Lite example rather than rewriting
-this verified hardening example; candidate-stable gate inspection remains target behavior.
+this verified hardening example. Native gates now compare Git state before and after execution and
+block tracked or untracked candidate changes; owned ignored quality reports remain outside that
+candidate diff.
 
 ## Run and status
 

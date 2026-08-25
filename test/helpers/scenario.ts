@@ -44,6 +44,7 @@ export async function createScenario(options: ScenarioOptions): Promise<Scenario
   await mkdir(workspace);
   await mkdir(promptRoot, { recursive: true });
   await writeFile(join(workspace, "seed.txt"), "seed\n", "utf8");
+  await writeFile(join(workspace, ".gitignore"), "reports/\n", "utf8");
   await writeFile(taskPath, "Perform the deterministic test assignment exactly.\n", "utf8");
 
   const roles =
@@ -95,7 +96,7 @@ export async function createScenario(options: ScenarioOptions): Promise<Scenario
   await execFileAsync("git", ["init", "--quiet"], { cwd: workspace });
   await execFileAsync("git", ["config", "user.email", "tests@tsqh.local"], { cwd: workspace });
   await execFileAsync("git", ["config", "user.name", "TSQH Tests"], { cwd: workspace });
-  await execFileAsync("git", ["add", "seed.txt"], { cwd: workspace });
+  await execFileAsync("git", ["add", "seed.txt", ".gitignore"], { cwd: workspace });
   await execFileAsync("git", ["commit", "--quiet", "-m", "fixture"], { cwd: workspace });
 
   return { root, workspace, stateDirectory, runsRoot, configPath, taskPath };

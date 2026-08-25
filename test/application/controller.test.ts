@@ -319,6 +319,47 @@ describe("foreground controller", () => {
     expect(result.state.blocker).toMatchObject({ code: "gate-signal" });
   });
 
+  it.each([
+    ["tracked", "gate-write-tracked", "seed.txt"],
+    ["untracked", "gate-write-untracked", "gate-output.txt"],
+  ] as const)("blocks an exit-zero gate that changes a %s candidate path", async (
+    _label,
+    mode,
+    changedPath,
+  ) => {
+    const scenario = await createScenario({ steps: gateOnlySteps() });
+    await rewriteProfilesForState(scenario, {
+      quick: profile(mode, scenario.stateDirectory, "quick"),
+    });
+
+    const result = await runScenario(scenario);
+
+    expect(result.state).toMatchObject({
+      terminalState: "blocked",
+      blocker: { code: "gate-mutated-candidate", stepId: "quick" },
+    });
+    expect(result.state.blocker?.message).toContain(changedPath);
+    expect(finishedSteps(result.events)[0]).toMatchObject({
+      outcome: "blocked",
+      changedPaths: [changedPath],
+      process: { kind: "exited", exitCode: 0 },
+    });
+  });
+
+  it("allows a native gate to regenerate an owned ignored report", async () => {
+    const scenario = await createScenario({ steps: gateOnlySteps() });
+    await rewriteProfilesForState(scenario, {
+      quick: profile("gate-write-ignored", scenario.stateDirectory, "quick"),
+    });
+
+    const result = await runScenario(scenario);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(finishedSteps(result.events)[0]).toMatchObject({ outcome: "passed", changedPaths: [] });
+    await expect(readFile(join(scenario.workspace, "reports/gate-output.txt"), "utf8"))
+      .resolves.toBe("owned ignored report\n");
+  });
+
   it("uses native gate exit status even when output claims a pass", async () => {
     const scenario = await createScenario({ steps: exhaustionSteps() });
     await rewriteProfilesForState(scenario, {
@@ -440,6 +481,60 @@ describe("foreground controller", () => {
       process: { kind: "exited", exitCode: 0 },
       changedPaths: [],
     });
+  });
+
+  it("blocks Git inspection failures before and after a native gate", async () => {
+    const before = directHarness({
+      configuration: gateConfiguration(),
+      snapshotFailure: "snapshot failed",
+    });
+    const beforeResult = await runController(before.input, before.services);
+    expect(before.commands).toEqual([]);
+    expect(beforeResult.state.blocker).toEqual({
+      code: "git-inspection-failed",
+      message: "Git inspection before gate 'quality' failed: snapshot failed",
+      stepId: "quality",
+    });
+    expect(finishedSteps(beforeResult.events)[0]).toMatchObject({
+      process: null,
+      changedPaths: [],
+    });
+
+    const after = directHarness({
+      configuration: gateConfiguration(),
+      changedPathsFailure: new Error("comparison failed"),
+    });
+    const afterResult = await runController(after.input, after.services);
+    expect(after.commands).toHaveLength(1);
+    expect(afterResult.state.blocker).toEqual({
+      code: "git-inspection-failed",
+      message: "Git inspection after gate 'quality' failed: comparison failed",
+      stepId: "quality",
+    });
+    expect(finishedSteps(afterResult.events)[0]).toMatchObject({
+      process: { kind: "exited", exitCode: 0 },
+      changedPaths: [],
+    });
+  });
+
+  it("blocks gate mutation before applying a nonzero gate repair edge", async () => {
+    const harness = directHarness({
+      configuration: gateConfiguration(),
+      process: processArtifact("exited", null, 1),
+      changedPaths: ["src/mutated.ts", "test/mutated.test.ts"],
+    });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state).toMatchObject({
+      terminalState: "blocked",
+      blocker: {
+        code: "gate-mutated-candidate",
+        message: "Gate step 'quality' changed candidate paths: src/mutated.ts, test/mutated.test.ts.",
+        stepId: "quality",
+      },
+    });
+    expect(startedSteps(result.events).map(({ stepId }) => stepId)).toEqual(["quality"]);
   });
 
   it("distinguishes directory, exact-file, and protected path authority", async () => {

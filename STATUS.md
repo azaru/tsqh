@@ -29,7 +29,12 @@
   latest successful agent stdout, source step, visit, and truncation state from the existing bounded
   process artifact. Gates preserve it; blocked or nonzero agents do not create one; and prompt text
   labels it as untrusted context with no task, permission, provider, transition, visit, or gate
-  authority. Candidate-stable native gates and the separate Lite example remain to implement.
+  authority.
+- Candidate-stable native gates are implemented. The controller snapshots Git before each gate,
+  compares candidate paths afterward, blocks tracked or untracked mutations even when the command
+  exits zero, and permits regeneration of ignored owned quality reports. Inspection failures block
+  with exact diagnostics, and a mutating nonzero gate cannot take its repair edge. The separate
+  Lite example remains to implement.
 - A dedicated local Sonar target is now provisioned on the existing localhost service: project
   `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
@@ -59,7 +64,7 @@
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 670 tests across 25 files, and the
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 675 tests across 25 files, and the
   four-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
   (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
@@ -95,6 +100,8 @@
 - The bounded-handoff controller and prompt ranges reported 60 killed runnable mutants with zero
   survived/uncovered/timeout; a follow-up reducer scan reported 13 killed runnable mutants with zero
   survived/uncovered/timeout and 21 checker errors.
+- The candidate-stable gate controller range reported 10 killed runnable mutants with zero
+  survived/uncovered/timeout and 2 checker errors after its focused regression tests passed.
 - No new real Codex smoke was run or claimed for this hardening checkpoint.
 
 ## Demonstrated workflow behavior
@@ -135,7 +142,7 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: preserve bounded handoff and implement candidate-stable gates plus the
+- Exact local next action: preserve bounded handoff and candidate-stable gates while adding the
   separate Swarm Forge Lite example without expanding the version 0 runtime.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
   remaining runnable finding; fix every real Sonar issue; reconcile the validator with the actual

@@ -5,7 +5,7 @@
 - Product: small configurable sequential Swarm Forge Lite guardrail controller.
 - Active specification:
   `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`active`; safe local hardening is
-  implemented, Swarm Forge Lite continuation is approved, final release evidence is pending).
+  implemented, Swarm Forge Lite is implemented, final release evidence is pending).
 - Completed specification:
   `specs/TSQH-MVP-001-configurable-sequential-controller.md` (`complete`).
 - Version 0 remains complete: strict configuration loading, pure planning/reduction, sequential
@@ -21,10 +21,11 @@
   `prompts/swarm-forge-adapted/`.
 - Runtime scope remains version 0: one foreground run, one action at a time, one caller-supplied
   clean Git worktree, and generic command providers. There is no concurrency or remote executor.
-- The approved Swarm Forge Lite continuation is deliberately small: pass the prior completed agent's bounded,
-  sanitized stdout to the next configured agent as untrusted context; block gates that mutate the
-  candidate; and add a separate sequential `implementer -> cleaner -> reviewer -> hardener -> qa`
-  example followed by the unchanged six-gate quality chain.
+- The approved Swarm Forge Lite continuation is deliberately small: pass the prior completed
+  agent's bounded, sanitized stdout to the next configured agent as untrusted context; block gates
+  that mutate the candidate; and add a separate sequential
+  `implementer -> cleaner -> reviewer -> hardener -> qa` example followed by the unchanged six-gate
+  quality chain.
 - Bounded previous-role handoff is implemented without a trace migration: reduction derives the
   latest successful agent stdout, source step, visit, and truncation state from the existing bounded
   process artifact. Gates preserve it; blocked or nonzero agents do not create one; and prompt text
@@ -33,8 +34,10 @@
 - Candidate-stable native gates are implemented. The controller snapshots Git before each gate,
   compares candidate paths afterward, blocks tracked or untracked mutations even when the command
   exits zero, and permits regeneration of ignored owned quality reports. Inspection failures block
-  with exact diagnostics, and a mutating nonzero gate cannot take its repair edge. The separate
-  Lite example remains to implement.
+  with exact diagnostics, and a mutating nonzero gate cannot take its repair edge.
+- The separate `examples/swarm-forge-lite/` pack is implemented with one shared command provider,
+  fresh sequential role processes, bounded writer/read-only permissions, concise local prompts,
+  all six native gates, and two bounded repair visits that restart at `quick`.
 - A dedicated local Sonar target is now provisioned on the existing localhost service: project
   `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
@@ -64,7 +67,7 @@
 
 ## Verified local evidence — 2026-08-25
 
-- `pnpm quality:quick` — exit 0; strict test typecheck, build, 675 tests across 25 files, and the
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 678 tests across 25 files, and the
   four-entry domain architecture boundary passed.
 - `pnpm quality:coverage` — exit 0; 651 tests passed. Coverage was 99.93% statements
   (1,586/1,587), 99.46% branches (936/941), 100% functions (348/348), and 99.93% lines
@@ -115,6 +118,13 @@
 - Handoff trace: `implement` output reaches `review` across `quick`; `review` output then replaces it
   and reaches `verify` across `full`. Empty and truncated output retain source identity, and embedded
   pass, skip, transition, task, and permission claims do not affect configured execution.
+- Lite happy trace:
+  `implementer -> cleaner -> reviewer -> hardener -> qa -> quick -> coverage -> crap -> knip -> mutation -> sonar -> passed`.
+  Reviewer output reaches hardener, QA output remains the latest evidence across native gates, and
+  only the configured writer roles change the fake candidate.
+- Lite exhaustion trace: a persistent mutation failure selects repairer twice, restarts at `quick`
+  after each completed repair, reruns through mutation three times, then blocks at the repairer
+  visit limit without starting Sonar.
 - Existing version 0 authenticated smoke remains historical evidence only: Codex CLI 0.149.1 ran
   `implement(completed) -> quick(passed) -> review(completed) -> full(passed) -> verify(completed) -> passed`
   in disposable run `454a9357-a181-40dc-acca-f950b4ec53d9`.
@@ -142,8 +152,8 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: preserve bounded handoff and candidate-stable gates while adding the
-  separate Swarm Forge Lite example without expanding the version 0 runtime.
+- Exact local next action: preserve the completed bounded Lite behavior while reconciling Sonar
+  remote-policy validation with its actual endpoints and fixing all real Sonar findings.
 - Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
   remaining runnable finding; fix every real Sonar issue; reconcile the validator with the actual
   Sonar policy endpoints; and keep iterating through `pnpm quality:full` until it exits zero.

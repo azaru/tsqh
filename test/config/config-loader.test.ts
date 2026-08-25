@@ -191,6 +191,44 @@ describe("strict configuration loading", () => {
     expect(loaded.prompts.implementer).toContain("# Implementer");
     expect(loaded.prompts.repairer).toContain("# Repairer");
   });
+
+  it("loads the separate Swarm Forge Lite example with exact role boundaries", async () => {
+    const loaded = await loadConfiguration(resolve("examples/swarm-forge-lite/workflow.json"));
+    const { configuration } = loaded;
+
+    expect(Object.keys(configuration.workflow.steps)).toEqual([
+      "implementer",
+      "cleaner",
+      "reviewer",
+      "hardener",
+      "qa",
+      "quick",
+      "coverage",
+      "crap",
+      "knip",
+      "mutation",
+      "sonar",
+      "repairer",
+      "passed",
+    ]);
+    expect(new Set(Object.values(configuration.roles).map(({ provider }) => provider))).toEqual(
+      new Set(["codex"]),
+    );
+    expect(configuration.roles.reviewer?.allowedPathPrefixes).toEqual([]);
+    expect(configuration.roles.qa?.allowedPathPrefixes).toEqual([]);
+    for (const roleId of ["implementer", "cleaner", "hardener", "repairer"] as const) {
+      expect(configuration.roles[roleId]?.allowedPathPrefixes).toEqual(["src/", "test/"]);
+    }
+    for (const gateId of ["quick", "coverage", "crap", "knip", "mutation", "sonar"] as const) {
+      expect(configuration.workflow.steps[gateId]).toMatchObject({ onFailed: "repairer" });
+    }
+    expect(configuration.workflow.steps.repairer).toMatchObject({
+      maxVisits: 2,
+      onCompleted: "quick",
+    });
+    expect(loaded.prompts.reviewer).toContain("# Reviewer");
+    expect(loaded.prompts.qa).toContain("# QA verifier");
+  });
 });
 
 describe("bounded task loading", () => {

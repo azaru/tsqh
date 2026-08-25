@@ -1,5 +1,5 @@
 import { access, readFile, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { runController, type ControllerInput } from "../../src/application/controller.js";
 import { runCli } from "../../src/cli/main.js";
@@ -169,6 +169,65 @@ describe("foreground controller", () => {
       "gate:mutation",
     ]);
     expect(stepStarts(result.events)).not.toContain("sonar");
+  });
+
+  it("executes the fake-provider Swarm Forge Lite example in exact configured order", async () => {
+    const scenario = await createLiteScenario();
+
+    const result = await runScenario(scenario);
+
+    const agentSteps = ["implementer", "cleaner", "reviewer", "hardener", "qa"] as const;
+    expect(result.state).toMatchObject({
+      terminalState: "passed",
+      mostRecentAgentHandoff: { sourceStepId: "qa", sourceVisit: 1 },
+    });
+    expect(await readExecutionLog(scenario)).toEqual([
+      ...agentSteps.map((step) => `agent:${step}:1`),
+      ...hardeningGateIds.map((gate) => `gate:${gate}`),
+    ]);
+    expect(stepStarts(result.events)).toEqual([...agentSteps, ...hardeningGateIds, "passed"]);
+    await expect(readFile(join(scenario.workspace, "src/order.txt"), "utf8")).resolves.toBe(
+      "implementer\ncleaner\nhardener\n",
+    );
+
+    const hardenerPrompt = await readFile(
+      join(scenario.stateDirectory, "prompt-hardener-1.txt"),
+      "utf8",
+    );
+    expect(hardenerPrompt).toContain("Source step: reviewer\nSource visit: 1");
+    const qaPrompt = await readFile(join(scenario.stateDirectory, "prompt-qa-1.txt"), "utf8");
+    expect(qaPrompt).toContain("Source step: hardener\nSource visit: 1");
+  });
+
+  it("exhausts the Lite repairer on persistent gate failure before downstream work", async () => {
+    const scenario = await createLiteScenario({ mutation: "gate-always-fail" });
+
+    const result = await runScenario(scenario);
+
+    const throughMutation = ["quick", "coverage", "crap", "knip", "mutation"] as const;
+    expect(result.state).toMatchObject({
+      terminalState: "blocked",
+      blocker: { code: "visit-limit-exceeded", stepId: "repairer" },
+    });
+    expect(await readExecutionLog(scenario)).toEqual([
+      "agent:implementer:1",
+      "agent:cleaner:1",
+      "agent:reviewer:1",
+      "agent:hardener:1",
+      "agent:qa:1",
+      ...throughMutation.map((gate) => `gate:${gate}`),
+      "agent:repairer:1",
+      ...throughMutation.map((gate) => `gate:${gate}`),
+      "agent:repairer:2",
+      ...throughMutation.map((gate) => `gate:${gate}`),
+    ]);
+    expect(stepStarts(result.events)).not.toContain("sonar");
+    const repairPrompt = await readFile(
+      join(scenario.stateDirectory, "prompt-repairer-1.txt"),
+      "utf8",
+    );
+    expect(repairPrompt).toContain("Source step: qa\nSource visit: 1");
+    expect(repairPrompt).toContain("simulated persistent gate failure");
   });
 
   it("blocks on visit exhaustion without running downstream work", async () => {
@@ -855,6 +914,30 @@ function hardeningProfiles(
       profile(overrides[gate] ?? defaultMode, stateDirectory, gate),
     ]),
   );
+}
+
+async function createLiteScenario(
+  overrides: Partial<Record<(typeof hardeningGateIds)[number], string>> = {},
+): Promise<Awaited<ReturnType<typeof createScenario>>> {
+  const example = await loadConfiguration(resolve("examples/swarm-forge-lite/workflow.json"));
+  const roles = Object.fromEntries(
+    Object.entries(example.configuration.roles).map(([roleId, role]) => [
+      roleId,
+      { ...role, provider: "shared" },
+    ]),
+  ) as Configuration["roles"];
+  const scenario = await createScenario({
+    steps: example.configuration.workflow.steps,
+    entryStepId: example.configuration.workflow.entryStepId,
+    providerMode: "agent-lite",
+    profiles: hardeningProfiles("gate-pass", "pending"),
+    roles,
+  });
+  await rewriteProfilesForState(
+    scenario,
+    hardeningProfiles("gate-pass", scenario.stateDirectory, overrides),
+  );
+  return scenario;
 }
 
 function profile(mode: string, stateDirectory: string, label: string): Configuration["profiles"][string] {

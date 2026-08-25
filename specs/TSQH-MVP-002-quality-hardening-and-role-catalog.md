@@ -1,18 +1,16 @@
 ---
 id: TSQH-MVP-002
-status: active
+status: complete
 risk: high
 ---
 
 # Fail-closed quality hardening and adapted role catalog
 
-> Local implementation checkpoint: the complete configured quality surface, validators, role
-> catalog, and deterministic tests are present. The approved mutation policy now distinguishes
-> checker-rejected `CompileError` mutants from runnable mutants: every runnable mutant must be
-> `Killed`, and every other runtime status remains a failure. The authorized local Sonar target is
-> `http://127.0.0.1:9000`, project `azaru_tsqh_mvp`, with the dedicated gate and TypeScript profile
-> named below. The quality commands, thresholds, mutation checker, Sonar gate, and `quality:full`
-> order remain mandatory.
+> Completed on 2026-08-25. The final non-incremental report contains 3,951 mutants across 25 files:
+> 2,890 runnable mutants were `Killed`, 1,061 checker-rejected mutants were `CompileError`, and no
+> other status occurred. Real Sonar analysis `32bbda2f-8b39-48de-a572-e905813f81cb` reported the
+> dedicated project's computed gate `OK` with zero open issues. The exact configured
+> `quick -> coverage -> crap -> knip -> mutation -> sonar` chain exited zero.
 
 ## Value
 
@@ -48,9 +46,7 @@ The increment owns:
 
 ## Approval and runtime prerequisites
 
-The current dependency budget does not include the required hardening tools. Before changing
-`package.json` or `pnpm-lock.yaml`, obtain human approval for one exact, mutually compatible pinned
-set. The researched candidate set on 2026-08-25 is:
+The approved dependency budget contains this exact, mutually compatible pinned set:
 
 ```text
 @vitest/coverage-v8@4.1.11

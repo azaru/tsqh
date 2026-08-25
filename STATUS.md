@@ -3,10 +3,9 @@
 ## Current state
 
 - Product: small configurable sequential Swarm Forge Lite guardrail controller.
-- Active specification:
-  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`active`; safe local hardening is
-  implemented, Swarm Forge Lite is implemented, final release evidence is pending).
-- Completed specification:
+- Active specification: none.
+- Completed specifications:
+  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`complete`) and
   `specs/TSQH-MVP-001-configurable-sequential-controller.md` (`complete`).
 - Version 0 remains complete: strict configuration loading, pure planning/reduction, sequential
   controller execution, command/Git/trace adapters, `run` and `status`, deterministic repair and
@@ -44,17 +43,14 @@
   `infra/sonar/compose.yaml`, `sonar-project.properties`, and `sonar-policy.json` record its
   non-secret local infrastructure and identity.
 
-## Current release work
+## Completed release evidence
 
-- The latest complete-project non-incremental mutation execution produced 3,949 mutants:
-  2,892 `Killed`, 1,057 `CompileError`, and zero survived, uncovered, timed-out, or runtime-error
-  mutants.
+- The final complete-project non-incremental mutation execution produced 3,951 mutants across 25
+  files: 2,890 `Killed`, 1,061 `CompileError`, and zero survived, uncovered, ignored, timed-out,
+  test-failed, or runtime-error mutants.
   Checker-produced `CompileError` mutations remain visible as type-invalid, non-runnable mutations;
-  every runnable mutant must be `Killed`, and every other runtime status fails. The gate still
-  blocked because its header validator expected legacy framework name `Stryker` while the pinned
-  Stryker 10 JSON schema reports `StrykerJS`. The validator and all controlled fixtures now pin the
-  observed `StrykerJS` identity; 6 focused runnable mutants were killed with no other statuses. A
-  fresh complete-project run remains required before claiming the mutation gate green.
+  every runnable mutant was killed, for a 100% runnable mutation score. The report identifies the
+  pinned framework as `StrykerJS` 10.0.0 and passed the fresh evidence validator.
 - Sonar is reachable and authorized. All 19 initial findings are fixed, and the dedicated MVP
   project now reports zero open issues and computed gate `OK`; coverage is 99.8% and duplication is
   0.0%. Remote-policy validation is aligned with Sonar's actual API split:
@@ -62,7 +58,8 @@
   gate-definition endpoints prove exactly eight configured conditions, and the project `main`
   branch response proves the explicit `PREVIOUS_VERSION` assignment. Missing, duplicate, stale,
   malformed, red, and computed-condition-omission cases have deterministic fake-API coverage.
-- `pnpm quality:full` remains required and has not been claimed green for `TSQH-MVP-002`.
+- The exact sequential `pnpm quality:full` chain exited 0 after running
+  `quick -> coverage -> crap -> knip -> mutation -> sonar` without skips.
 
 ## Verified local evidence — 2026-08-25
 
@@ -73,22 +70,15 @@
   (1,628/1,628). Every domain metric remained 100%.
 - `pnpm quality:crap` — exit 0; 27 source files, 378 units, zero violations, maximum CRAP 6.
 - `pnpm quality:knip` — exit 0; zero issues, including zero configuration and tag hints.
-- `pnpm quality:full` — exit 1 at mutation after quick, coverage, CRAP, and Knip passed. The fresh
-  mutation report contained 3,817 mutants: 2,803 killed, 1,008 checker-rejected compile errors,
-  4 survived, 1 had no coverage, and 1 produced a runtime error. The reported total mutation score
-  was 99.82% (99.86% covered). The fail-fast chain did not start Sonar.
-- `pnpm quality:mutation` — exit 1 only at evidence validation after all 3,949 mutants completed:
-  2,892 killed and 1,057 checker-rejected compile errors, with zero survived, uncovered, timed-out,
-  or runtime-error mutants. The exact blocker was the stale `framework.name` expectation; the
-  pinned Stryker 10 report identifies itself as `StrykerJS`.
-- A later `pnpm quality:full` attempt passed quick and coverage, then stopped at CRAP with two
-  fully covered complexity-7 units. Responsibility extraction reduced both to the required maximum
-  of 6; the direct CRAP rerun now exits 0.
-- `pnpm quality:sonar` — exit 0 after a real authorized scan; Sonar analysis
-  `0b616e70-e87f-48dc-b4b0-313045e6074c` completed with computed gate `OK` and the approved remote
-  policy. Compute task `1e521e9f-ef14-4bcd-9c42-06e52df7204e` completed successfully. The dedicated
+- `pnpm quality:mutation` within the final full chain — exit 0; 25 files, 2,890 killed runnable
+  mutants, 1,061 checker-rejected compile errors, and no other status.
+- `pnpm quality:sonar` within the final full chain — exit 0; real analysis
+  `32bbda2f-8b39-48de-a572-e905813f81cb` completed with computed gate `OK` and the approved remote
+  policy. Compute task `c99c3582-2006-457d-87a1-7b104b21185b` completed successfully. The dedicated
   project reports zero open issues, 99.8% coverage, and 0.0% duplicated-line density. The token was
   neither printed nor persisted.
+- `pnpm quality:full` — exit 0; quick, coverage, CRAP, Knip, complete mutation, and real Sonar all
+  passed in the required fail-fast order.
 - `pnpm exec vitest run test/cli` — exit 0; 17 tests across two files.
 - Focused mutation verification used temporary `coverageAnalysis: perTest` only for diagnostic
   speed; checked-in `stryker.config.mjs` remains `coverageAnalysis: "all"`. Final affected ranges
@@ -162,12 +152,11 @@
   policy.
 - Native quality tools remain configured profiles and package scripts; the controller contains no
   tool-specific transition branches.
-- Sonar and complete-project mutation remain required release gates while the local continuation
-  proceeds; no local handoff or candidate-stability result substitutes for them.
+- Sonar and complete-project mutation remain required release gates; both passed in the final full
+  chain, and no local handoff or candidate-stability result substituted for them.
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: rerun the complete-project non-incremental mutation gate and repair every
-  remaining runnable finding before executing the full release chain.
-- Release next action: rerun complete-project mutation to confirm the focused repairs; fix every
-  remaining runnable finding; and keep iterating through `pnpm quality:full` until it exits zero.
+- Exact local next action: no work remains under `TSQH-MVP-002`; define and approve a new local
+  specification before expanding product scope.
+- Release blockers: none.

@@ -12,10 +12,10 @@ current milestone state of `tsqh-orchestrator`.
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
 3. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
-   — the active quality and bounded Swarm Forge Lite specification.
+   — the completed quality and bounded Swarm Forge Lite specification.
 4. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
-5. [`GOAL.md`](GOAL.md) — ready-to-run Codex prompt for the active increment.
+5. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
 
 ## Product slice
 
@@ -49,17 +49,15 @@ These remain mandatory native configured gates; they do not become role names or
 controller code. Every failure uses the ordinary configured repair edge and reruns the chain from
 `quick` within finite visit budgets.
 
-Hardening is in progress: strict local wrappers and evidence validators, tool configuration, the
+Hardening is complete: strict local wrappers and evidence validators, tool configuration, the
 six-gate example graph, deterministic failure tests, the approved pinned development packages, and
-the sequential fail-fast package scripts now exist. Real coverage, CRAP, Knip, and Sonar runs pass.
-The mutation policy keeps checker-rejected `CompileError` mutations visible while requiring every
-runnable mutant to be `Killed`; all formerly runnable findings and every newly changed range are
-focused-mutation clean. A fresh complete-project mutation run remains before the full chain can be
-claimed green. The dedicated Sonar target now reports its strict computed gate `OK` with zero open
-issues after all 19 initial findings were fixed. See [`STATUS.md`](STATUS.md) for exact evidence and
-remaining release work.
+the sequential fail-fast package scripts are present. The final non-incremental Stryker report has
+2,890 killed runnable mutants and 1,061 separately reported checker `CompileError` mutations, with
+no other status. The dedicated Sonar target reports computed gate `OK` with zero open issues after
+all 19 initial findings were fixed. The exact `quality:full` chain exits zero; see
+[`STATUS.md`](STATUS.md) for the complete evidence.
 
-The active specification now includes the smallest useful Swarm Forge collaboration primitive:
+The completed specification includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
 configured agent. Native gates are also candidate-stable: the controller compares Git snapshots
 around each gate and blocks any Git-visible candidate-path mutation while permitting configured
@@ -79,7 +77,7 @@ and missing-upstream-license notice are in
 
 ## Upstream design references
 
-The local active specification is authoritative for this repository. The primary product
+The completed local specification is authoritative for this repository. The primary product
 references are the immutable Swarm Forge `main`, `six-pack`, and `squad` commits recorded in
 [`PROVENANCE.md`](prompts/swarm-forge-adapted/PROVENANCE.md). They contribute role separation,
 bounded handoff, and controller/worker ideas without importing their tmux, daemon, worktree, or
@@ -142,7 +140,7 @@ pnpm quality:sonar
 ```
 
 Do not commit an environment file or token. A fresh server must reproduce the exact identities in
-the active specification and must not modify the sibling `azaru_tsqh` project.
+the completed specification and must not modify the sibling `azaru_tsqh` project.
 
 The fail-closed wrapper checks three distinct kinds of remote evidence: `project_status` proves the
 computed result is `OK` with ignored conditions disabled; the assigned gate and its definition

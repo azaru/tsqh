@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tsqh.local/schemas/project-config.schema.json",
+  "title": "TSQH partial project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quick": { "type": "boolean" },
+        "coverage": { "type": "boolean" },
+        "crap": { "type": "boolean" },
+        "knip": { "type": "boolean" },
+        "mutation": { "type": "boolean" },
+        "sonar": { "type": "boolean" }
+      }
+    }
+  }
+}

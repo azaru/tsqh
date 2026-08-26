@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { lstat, readFile, realpath } from "node:fs/promises";
+import { lstat, readFile, readdir, realpath } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const catalogRoot = resolve("prompts/swarm-forge-adapted");
+const litePromptRoot = resolve("examples/swarm-forge-lite/prompts");
 const expectedCommits = {
   main: "0b69a51ca154025087569e6f880ca24b0bce6f54",
   "two-pack": "f2791781b9070fc43c33d460f396f297447e5833",
@@ -84,6 +85,29 @@ describe("adapted prompt catalog", () => {
       expect(prompt).not.toMatch(forbidden);
       expect(prompt).toMatch(/controller|transition|next step/iu);
       expect(prompt).toMatch(/allowed|read-only|configured(?:\s+\w+){0,2}\s+paths/iu);
+    }
+  });
+
+  it("keeps the concise Lite prompts distinct from the complete catalog", async () => {
+    const manifest = await readManifest();
+    const catalogDigests = new Set(manifest.roles.map((role) => role.sha256));
+    const liteFiles = (await readdir(litePromptRoot))
+      .filter((file) => file.endsWith(".md"))
+      .sort((left, right) => left.localeCompare(right, "en"));
+
+    expect(liteFiles).toEqual([
+      "cleaner.md",
+      "hardener.md",
+      "implementer.md",
+      "qa.md",
+      "repairer.md",
+      "reviewer.md",
+    ]);
+    for (const file of liteFiles) {
+      const digest = createHash("sha256")
+        .update(await readFile(join(litePromptRoot, file), "utf8"))
+        .digest("hex");
+      expect(catalogDigests.has(digest)).toBe(false);
     }
   });
 });

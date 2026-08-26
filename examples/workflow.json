@@ -67,12 +67,12 @@
   "roles": {
     "implementer": {
       "provider": "codex",
-      "promptPath": "prompts/implementer.md",
+      "promptPath": "swarm-forge-lite/prompts/implementer.md",
       "allowedPathPrefixes": ["src/", "test/"]
     },
     "repairer": {
       "provider": "codex",
-      "promptPath": "prompts/repairer.md",
+      "promptPath": "swarm-forge-lite/prompts/repairer.md",
       "allowedPathPrefixes": ["src/", "test/"]
     }
   },

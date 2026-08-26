@@ -5,7 +5,9 @@
 - Product: small configurable sequential Swarm Forge Lite guardrail controller.
 - Active specification: none.
 - Completed specifications:
-  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`complete`) and
+  `specs/TSQH-MVP-004-unified-typescript-configuration.md` (`complete`),
+  `specs/TSQH-MVP-003-discovered-project-configuration.md` (`complete`),
+  `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`complete`), and
   `specs/TSQH-MVP-001-configurable-sequential-controller.md` (`complete`).
 - Version 0 remains complete: strict configuration loading, pure planning/reduction, sequential
   controller execution, command/Git/trace adapters, `run` and `status`, deterministic repair and
@@ -42,6 +44,16 @@
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
   `infra/sonar/compose.yaml`, `sonar-project.properties`, and `sonar-policy.json` record its
   non-secret local infrastructure and identity.
+- Project-local configuration discovery is complete. `run` accepts an optional `--config`, resolves
+  only the candidate-root `tsqh.config.ts` when omitted, falls back to a built-in workflow only when
+  that file is absent, and preserves explicit complete JSON workflows.
+- The strict partial surface controls the six ordered quality stages. Disabled stages and profiles
+  are omitted and surrounding edges are reconnected; the repository example disables only Sonar.
+  The bounded evaluator uses a dedicated envelope pipe, rejects configuration output, forwards no
+  credential environment, and cannot let standard output impersonate configuration.
+- `TSQH-MVP-004` is complete. It makes `tsqh.config.ts` the unified primary surface by accepting
+  either the existing partial quality overlay or a complete version 1 workflow default export,
+  while retaining explicit JSON compatibility and every existing validation boundary.
 
 ## Completed release evidence
 
@@ -60,6 +72,83 @@
   malformed, red, and computed-condition-omission cases have deterministic fake-API coverage.
 - The exact sequential `pnpm quality:full` chain exited 0 after running
   `quick -> coverage -> crap -> knip -> mutation -> sonar` without skips.
+
+## TSQH-MVP-004 completion evidence — 2026-08-26
+
+- Unified TypeScript loading accepts both the existing strict partial quality overlay and a strict
+  complete version 1 workflow. `schemaVersion` selects the complete contract fail-closed; complete
+  prompt paths reuse the JSON loader's configuration-root containment and validation.
+- The object from `examples/swarm-forge-lite/workflow.json`, when wrapped in `export default`,
+  resolves to the same workflow and prompt contents as the JSON source. Normal JSON-compatible
+  arrays are accepted by the bounded evaluator; sparse, augmented, accessor-bearing, subclassed,
+  and cyclic arrays remain rejected.
+- Prompt audit: the complete ten-role catalog and six concise Lite prompts have no matching file
+  digest and remain separate by purpose. The two byte-identical copies formerly under
+  `examples/prompts/` were removed; `examples/workflow.json` now reuses the Lite prompt paths. A
+  behavioral digest test prevents those two prompt sets from becoming duplicate content.
+- Latest `pnpm quality:quick` — exit 0; strict test typecheck, build, 761 tests across 28 files, and
+  the six-entry domain architecture boundary passed.
+- Coverage within the latest full attempt — exit 0; 761 tests passed. Coverage was 100% statements
+  (1,785/1,785), 99.51% branches (1,034/1,039), 100% functions (400/400), and 100% lines
+  (1,755/1,755).
+- CRAP within the latest full attempt — exit 0; 30 source files, 418 units, zero violations, and
+  maximum CRAP 6. Knip exited 0 with zero issues, configuration hints, or tag hints.
+- Complete non-incremental mutation within the latest full attempt — exit 0; 4,254 mutants across
+  30 source files: all 3,083 runnable mutants were `Killed`, 1,171 checker-rejected mutants were
+  `CompileError`, and no other status occurred.
+- Focused mutation for the unified loading ranges — exit 0; 43 runnable mutants were `Killed`, 14
+  checker-rejected mutants were `CompileError`, and no other status occurred.
+- First authenticated complete-TypeScript dogfood run
+  `6a517e19-2708-466e-88f8-c6905b7023e5` discovered the configuration and produced the exact two
+  authorized files, but Codex started a complete mutation run and exceeded its 15-minute provider
+  limit. TSQH blocked it as `agent-timeout`; this run is not claimed as passed.
+- Final authenticated complete-TypeScript dogfood run
+  `15150672-58af-47e3-b91d-be6effc3a630` — exit 0 in a fresh disposable clean copy. It discovered
+  `tsqh.config.ts` without `--config`, ran Codex CLI 0.149.1, produced only the requested `src/` and
+  `test/` files, and recorded `implement(completed) -> quick(passed) -> passed`. Its quick gate
+  passed 761 tests across 29 files including the dogfood test and the architecture boundary.
+- An initial `pnpm quality:full` attempt correctly stopped after complete mutation because its
+  process had not loaded the ignored `.env` and `SONAR_TOKEN` was absent. The final execution loaded
+  that private environment without printing or persisting its values and exited 0 after the exact
+  fail-fast `quick -> coverage -> crap -> knip -> mutation -> sonar` order.
+- `pnpm quality:sonar` within the final full chain — exit 0; real analysis
+  `c3b00f50-74d6-41cb-8f99-bf4d3adf2e70` completed with computed gate `OK` and the approved remote
+  policy on dedicated project `azaru_tsqh_mvp`. The token was neither printed nor persisted.
+
+## TSQH-MVP-003 completion evidence — 2026-08-25
+
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 747 tests across 28 files, and the
+  six-entry domain architecture boundary passed.
+- `pnpm quality:coverage` — exit 0; 747 tests passed. Coverage was 100% statements
+  (1,781/1,781), 99.51% branches (1,029/1,034), 100% functions (398/398), and 100% lines
+  (1,751/1,751). Every domain metric remained 100%.
+- `pnpm quality:crap` — exit 0; 30 source files, 416 units, zero violations, maximum CRAP 6.
+- `pnpm quality:knip` — exit 0; zero issues and zero configuration or tag hints.
+- `pnpm quality:mutation` within the final full chain — exit 0; 4,238 mutants across 30 source
+  files: 3,077 runnable mutants were `Killed`, 1,161 checker-rejected mutants were `CompileError`,
+  and no survived, uncovered, ignored, timed-out, test-failed, or runtime-error status occurred.
+- `pnpm quality:sonar` within the final full chain — exit 0; real analysis
+  `2eaebf1b-26df-4ad8-8bb0-ab1591cce778` completed with computed gate `OK` and the approved remote
+  policy. The token was neither printed nor persisted.
+- `pnpm quality:full` — exit 0; the exact fail-fast
+  `quick -> coverage -> crap -> knip -> mutation -> sonar` order completed without skips.
+- Focused mutation evidence for the new TypeScript evaluator reported 107 `Killed`, 41
+  `CompileError`, and no other status. The new built-in prompts reported 2 `Killed`, 1
+  `CompileError`, and no other status. Diagnostic runs used `coverageAnalysis: perTest`; the checked
+  complete-project policy remained unchanged at `coverageAnalysis: "all"`.
+- A real authenticated Codex dogfood run discovered `tsqh.config.ts` without `--config`, completed
+  the requested two-file smoke change, passed `quick -> coverage -> crap -> knip`, failed mutation
+  on two unrelated prompt mutants, selected the configured repairer, and restarted from `quick`.
+  The repairer correctly refused to change files outside the exact smoke task. That diagnostic run
+  was interrupted during its second mutation attempt after the same outcome was established; it is
+  not claimed as a passed smoke.
+- Final authenticated Codex dogfood run `f4489a57-df80-4ff3-a2ab-507172b8eba5` — exit 0 in a fresh
+  disposable clean copy. It discovered the repository-root partial configuration without
+  `--config`, produced exactly the requested `src/` and `test/` smoke files, and recorded
+  `implement(completed) -> quick(passed) -> coverage(passed) -> crap(passed) -> knip(passed) ->
+  mutation(passed) -> passed`. Its complete mutation gate reported 3,078 `Killed` runnable mutants,
+  1,161 `CompileError`, and no other status across 4,239 mutants. The trace contained zero Sonar
+  events, proving that `quality: { sonar: false }` connected mutation directly to `passed`.
 
 ## Verified local evidence — 2026-08-25
 
@@ -144,7 +233,19 @@
 - The repository targets Node.js `>=22.12.0`, uses pnpm exclusively, and has one
   `pnpm-lock.yaml`.
 
-## Fixed scope and next action
+## Completed TSQH-MVP-003 scope
+
+- `TSQH-MVP-003` adds automatic repository-root `tsqh.config.ts` discovery when `--config` is
+  omitted, a strict partial configuration overlay, and a built-in default workflow.
+- The first partial surface controls enablement of the existing ordered native quality stages. A
+  disabled stage is omitted from the resolved graph and never recorded as a synthetic pass.
+- Explicit JSON configuration remains supported. The planner, controller transition authority,
+  trace schema, sequential runtime, role write enforcement, and native-gate semantics do not
+  change.
+- Exact next action: none within the completed specification; approve a new local specification
+  before broadening the product surface.
+
+## Fixed scope and prior release state
 
 - Quality targets remain: CRAP at or below 6, at least 90% global coverage, 100% domain coverage,
   zero Knip findings, every runnable mutant `Killed` with TypeScript-checker `CompileError`
@@ -157,6 +258,6 @@
 - Deferred version 0 non-goals remain concurrency, daemon mode, remote execution, managed
   worktrees, merge, crash-safe resume, leases, cache, server/dashboard, provider SDKs, and
   same-account hostile-process protection.
-- Exact local next action: no work remains under `TSQH-MVP-002`; define and approve a new local
-  specification before expanding product scope.
-- Release blockers: none.
+- `TSQH-MVP-001` and `TSQH-MVP-002` remain complete with no release blockers in their delivered
+  scope.
+- Current blockers: none.

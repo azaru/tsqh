@@ -2,6 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
     "src/quality/cli.ts",
+    "tsqh.config.ts",
     "scripts/**/*.mjs"
   ],
   "project": [

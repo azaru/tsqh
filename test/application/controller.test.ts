@@ -5,6 +5,8 @@ import { runController, type ControllerInput } from "../../src/application/contr
 import { runCli } from "../../src/cli/main.js";
 import { JsonlTraceStore } from "../../src/adapters/trace-store.js";
 import { loadConfiguration } from "../../src/adapters/config-loader.js";
+import { BUILT_IN_PROMPTS } from "../../src/application/default-prompts.js";
+import { expandProjectConfiguration, QUALITY_STAGE_IDS } from "../../src/domain/project-configuration.js";
 import { reduceTrace } from "../../src/domain/reducer.js";
 import type { CommandRequest, RuntimeServices } from "../../src/application/ports.js";
 import type {
@@ -167,6 +169,66 @@ describe("foreground controller", () => {
       "gate:crap",
       "gate:knip",
       "gate:mutation",
+    ]);
+    expect(stepStarts(result.events)).not.toContain("sonar");
+  });
+
+  it("never spawns or records a disabled default gate", async () => {
+    const harness = directHarness({
+      configuration: expandProjectConfiguration({ quality: { sonar: false } }),
+      prompts: BUILT_IN_PROMPTS,
+    });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(stepStarts(result.events)).toEqual([
+      "implement",
+      "quick",
+      "coverage",
+      "crap",
+      "knip",
+      "mutation",
+      "passed",
+    ]);
+    expect(harness.commands.map(({ executable, args }) => [executable, args[0]])).toEqual([
+      ["codex", "exec"],
+      ["pnpm", "quality:quick"],
+      ["pnpm", "quality:coverage"],
+      ["pnpm", "quality:crap"],
+      ["pnpm", "quality:knip"],
+      ["pnpm", "quality:mutation"],
+    ]);
+    expect(finishedSteps(result.events).some(({ stepId }) => stepId === "sonar")).toBe(false);
+  });
+
+  it("uses the expanded repair edge and reruns only enabled default gates", async () => {
+    const enabledGateCount = QUALITY_STAGE_IDS.length - 1;
+    const successful = processArtifact("exited");
+    const harness = directHarness({
+      configuration: expandProjectConfiguration({ quality: { sonar: false } }),
+      prompts: BUILT_IN_PROMPTS,
+      processes: [
+        successful,
+        processArtifact("exited", null, 1),
+        successful,
+        ...Array.from({ length: enabledGateCount }, () => successful),
+      ],
+    });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(stepStarts(result.events)).toEqual([
+      "implement",
+      "quick",
+      "repair",
+      "quick",
+      "coverage",
+      "crap",
+      "knip",
+      "mutation",
+      "passed",
     ]);
     expect(stepStarts(result.events)).not.toContain("sonar");
   });
@@ -448,6 +510,15 @@ describe("foreground controller", () => {
     expect(harness.traceEvents).toEqual([]);
   });
 
+  it("does not invent protected paths for built-in configuration or prompts", async () => {
+    const harness = directHarness({ configPath: null, promptPaths: [] });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(harness.openedProtectedPaths).toEqual(["/task.md", "/runs"]);
+  });
+
   it("records an exact configured terminal blocker", async () => {
     const harness = directHarness({ configuration: terminalConfiguration("blocked") });
     const result = await runController(harness.input, harness.services);
@@ -656,6 +727,8 @@ describe("foreground controller", () => {
 interface DirectHarnessOptions {
   readonly configuration?: Configuration;
   readonly prompts?: Readonly<Record<string, string>>;
+  readonly configPath?: string | null;
+  readonly promptPaths?: readonly string[];
   readonly process?: ProcessArtifact;
   readonly processes?: readonly ProcessArtifact[];
   readonly cleanWorkspacePath?: string;
@@ -679,8 +752,8 @@ function directHarness(options: DirectHarnessOptions = {}): {
   const input: ControllerInput = {
     configuration: options.configuration ?? agentConfiguration(),
     prompts: options.prompts ?? { worker: "Stable worker prompt." },
-    configPath: "/configuration/workflow.json",
-    promptPaths: ["/configuration/worker.md"],
+    configPath: options.configPath === undefined ? "/configuration/workflow.json" : options.configPath,
+    promptPaths: options.promptPaths ?? ["/configuration/worker.md"],
     workspacePath: "/workspace",
     task: "Perform the direct test task.",
     taskPath: "/task.md",

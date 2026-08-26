@@ -11,11 +11,15 @@ current milestone state of `tsqh-orchestrator`.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
-3. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
+3. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
+   — the completed unified TypeScript configuration specification.
+4. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
+   — the completed discovered partial configuration specification.
+5. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
    — the completed quality and bounded Swarm Forge Lite specification.
-4. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
+6. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
-5. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
+7. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
 
 ## Product slice
 
@@ -56,6 +60,13 @@ the sequential fail-fast package scripts are present. The final non-incremental 
 no other status. The dedicated Sonar target reports computed gate `OK` with zero open issues after
 all 19 initial findings were fixed. The exact `quality:full` chain exits zero; see
 [`STATUS.md`](STATUS.md) for the complete evidence.
+
+`TSQH-MVP-003` made `--config` optional and added repository-root `tsqh.config.ts` discovery.
+`TSQH-MVP-004` is complete and unifies that TypeScript surface: its strict default export may be
+either a partial overlay on the built-in sequential workflow or a complete version 1 workflow. An
+absent file uses the unchanged default. A project can enable or disable native quality stages
+without copying the complete workflow, while advanced projects can stay in TypeScript when they
+replace the full graph. Explicit complete JSON configurations remain supported.
 
 The completed specification includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
@@ -150,11 +161,68 @@ from `project_status`; they remain mandatory in the gate definition.
 
 ## Configuration
 
-[`schemas/workflow.schema.json`](schemas/workflow.schema.json) is the strict version 1 JSON schema.
-The controller rejects unknown properties and then validates all graph references, transition
-edges, visit limits, command values, repository-relative paths, reachability, and terminal
-behavior. Prompt files must be regular UTF-8 files beneath the configuration directory, including
-after symlink resolution.
+For the normal project-local path, place `tsqh.config.ts` at the exact candidate worktree root. TSQH
+does not search parent directories. Its default export accepts one of two strict forms.
+
+The partial form overlays the built-in workflow. Every property is optional and all six built-in
+quality stages default to enabled:
+
+```ts
+export default {
+  quality: {
+    sonar: false,
+  },
+};
+```
+
+The built-in order is:
+
+```text
+implement -> quick -> coverage -> crap -> knip -> mutation -> sonar -> passed
+                  \-> repair --------------------------------------/
+```
+
+When a stage is `false`, TSQH omits that step and profile and reconnects the preceding pass edge to
+the next enabled stage. Repair returns to the first enabled stage. Disabling every stage connects
+`implement` directly to `passed` as an explicit project-policy choice.
+
+The complete form is the same version 1 object accepted from `workflow.json`:
+
+```ts
+export default {
+  schemaVersion: 1,
+  workflow: { /* complete workflow graph */ },
+  roles: { /* complete logical role map */ },
+  providers: { /* complete command-provider map */ },
+  profiles: { /* complete native-gate profile map */ },
+};
+```
+
+`schemaVersion` is the discriminator: when present, the value must pass the complete workflow
+schema and graph validation; TSQH never retries it as a partial overlay. To migrate an existing
+workflow JSON, preserve its object and add `export default` before it. Raw JSON without a default
+export is not a TypeScript module.
+
+`tsqh.config.ts` is executable trusted project policy. TSQH evaluates it in a fresh bounded Node.js
+process with built-in type stripping, a fixed argument array, `shell: false`, a short timeout,
+bounded output, and no forwarded credentials. A dedicated pipe carries the evaluator envelope;
+configuration writes to standard output or standard error are rejected and cannot impersonate that
+envelope. The default export must be one plain JSON-compatible value; functions, class instances,
+accessors, sparse or augmented arrays, cycles, symbols, and non-finite numbers are rejected. The
+selected object must satisfy either the partial
+[`schemas/project-config.schema.json`](schemas/project-config.schema.json) contract or the complete
+[`schemas/workflow.schema.json`](schemas/workflow.schema.json) contract. Unknown properties and
+malformed evaluator output fail before Git, agents, gates, or trace creation. The file is protected
+from agent writes when it is inside the candidate.
+
+For generated or legacy use, `--config /path/to/workflow.json` still loads one complete version 1
+configuration. [`schemas/workflow.schema.json`](schemas/workflow.schema.json) is the strict full
+workflow schema for both formats. An explicit path named `tsqh.config.ts` selects the unified
+TypeScript contract; other formats are rejected. Complete configurations reject unknown properties
+and validate all graph references,
+transition edges, visit limits, command values, repository-relative paths, reachability, and
+terminal behavior. Prompt files must be regular UTF-8 files beneath the selected complete
+configuration's directory, including after symlink resolution.
 
 Configuration keeps these concerns independent:
 
@@ -174,13 +242,21 @@ receive the additional values; agent-provider processes retain the fixed minimal
 See [`examples/workflow.json`](examples/workflow.json) for two writing roles sharing one generic
 Codex command provider, six native pnpm quality profiles, and explicit bounded repair edges. The
 provider arguments match the locally inspected Codex CLI 0.149.1 interface; they remain ordinary
-configuration and may need adjustment for another Codex release.
+configuration and may need adjustment for another Codex release. Its two role references reuse the
+concise prompt files from the Swarm Forge Lite pack; no duplicate prompt copies are kept under
+`examples/prompts/`.
 
 The separate [`examples/swarm-forge-lite/workflow.json`](examples/swarm-forge-lite/workflow.json)
 runs `implementer -> cleaner -> reviewer -> hardener -> qa` before the same six profiles. Its
 implementer, cleaner, hardener, and repairer are scoped to `src/` and `test/`; reviewer and QA have
 empty write authority. Every gate failure selects repairer, which returns to `quick` within fixed
 visit limits. Concise prompts and a task live beside that configuration.
+
+Those concise workflow-specific prompts are intentionally distinct from the complete ten-role
+catalog under [`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md): the catalog
+contains the reusable high-assurance contracts and provenance, while the Lite pack contains short
+assignment overlays. A digest audit confirms there are no byte-identical prompt files across those
+two directories.
 
 The controller now supplies the latest successfully completed agent's bounded, sanitized stdout to
 the next configured agent with source identity and truncation state. Gates preserve that handoff,
@@ -195,6 +271,11 @@ Build before invoking the package script:
 
 ```sh
 pnpm tsqh run \
+  --workspace /absolute/path/to/a/clean-git-worktree \
+  --task /absolute/path/to/task.md
+
+# Optional complete-workflow override:
+pnpm tsqh run \
   --config examples/workflow.json \
   --workspace /absolute/path/to/a/clean-git-worktree \
   --task /absolute/path/to/task.md
@@ -207,8 +288,9 @@ Add `--json` to either command for one machine-readable JSON result. Add
 `<system-temporary-directory>/tsqh-runs`. The runs root cannot equal the candidate workspace, and
 controller configuration, task, prompts, and in-workspace run data are protected from agent edits.
 
-`run` first validates the complete configuration and prompt set, reads the task, and only then asks
-Git to prove that the explicit workspace is an existing clean worktree root. It records
+`run` first resolves and validates the explicit, discovered, or built-in configuration and prompt
+set, reads the task, and only then asks Git to prove that the explicit workspace is an existing
+clean worktree root. It records
 `run-created`, paired `step-started`/`step-finished` events, and `run-finished` as bounded append-only
 JSONL. Agents may write only within their logical role's configured prefixes. Git-derived path
 fingerprints identify changes made during each individual agent visit, including further edits to
@@ -259,3 +341,7 @@ Version 0 intentionally has no parallelism, daemon, remote executor, managed wor
 authority, crash-safe resume, locking, cache, snapshots, provider SDK, server, or dashboard. It
 trusts the one local controller process and configured executables. JSONL is an audit/status trace,
 not a power-loss recovery protocol.
+
+A discovered `tsqh.config.ts` is also trusted project-owned executable policy. Its evaluator is
+bounded and receives no credential environment, but version 0 does not sandbox a hostile
+configuration module from ordinary same-account filesystem or network access.

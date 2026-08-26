@@ -188,6 +188,12 @@ describe("strict configuration loading", () => {
       "sonar",
     ]);
     expect(loaded.configuration.workflow.steps.repair).toMatchObject({ onCompleted: "quick" });
+    expect(loaded.configuration.roles.implementer?.promptPath).toBe(
+      "swarm-forge-lite/prompts/implementer.md",
+    );
+    expect(loaded.configuration.roles.repairer?.promptPath).toBe(
+      "swarm-forge-lite/prompts/repairer.md",
+    );
     expect(loaded.prompts.implementer).toContain("# Implementer");
     expect(loaded.prompts.repairer).toContain("# Repairer");
   });

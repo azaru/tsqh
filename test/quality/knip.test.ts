@@ -96,7 +96,7 @@ describe("Knip evidence", () => {
       "cycles",
     ]);
     expect(config).toMatchObject({ treatConfigHintsAsErrors: true, treatTagHintsAsErrors: true });
-    expect(config.entry).toEqual(["src/quality/cli.ts", "scripts/**/*.mjs"]);
+    expect(config.entry).toEqual(["src/quality/cli.ts", "tsqh.config.ts", "scripts/**/*.mjs"]);
     expect(config.project).toContain("test/**/*.ts");
     expect(config.ignoreDependencies).toEqual(["@azaru/tscrap", "@sonar/scan"]);
   });

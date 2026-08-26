@@ -168,7 +168,6 @@
     },
     "profiles": {
       "type": "object",
-      "minProperties": 1,
       "maxProperties": 256,
       "propertyNames": { "$ref": "#/$defs/id" },
       "additionalProperties": { "$ref": "#/$defs/profile" }

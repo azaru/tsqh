@@ -1,10 +1,14 @@
-import { access, mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { access, chmod, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 import { runCli } from "../../src/cli/main.js";
 import type { WorkflowStep } from "../../src/domain/types.js";
 import { createScenario } from "../helpers/scenario.js";
+
+const execFileAsync = promisify(execFile);
 
 describe("CLI acceptance", () => {
   it("runs a validated workflow and renders machine-readable status", async () => {
@@ -57,6 +61,127 @@ describe("CLI acceptance", () => {
       `Run directory: ${String(report.runDirectory)}`,
       "",
     ].join("\n"));
+  });
+
+  it("discovers a partial tsqh.config.ts when --config is omitted", async () => {
+    const scenario = await createScenario({
+      steps: { passed: { type: "terminal", outcome: "passed" } },
+    });
+    await installProjectConfiguration(scenario.workspace);
+    const binRoot = join(scenario.root, "bin");
+    const invocationPath = join(scenario.root, "codex-invocation.json");
+    await installFakeCodex(binRoot, `
+      await import("node:fs/promises").then(({ writeFile }) =>
+        writeFile(${JSON.stringify(invocationPath)}, JSON.stringify(process.argv.slice(2)), "utf8")
+      );
+    `);
+    const output: string[] = [];
+    const errors: string[] = [];
+
+    const exitCode = await withExecutablePath(binRoot, () => runCli(
+      [
+        "run",
+        "--workspace",
+        scenario.workspace,
+        "--task",
+        scenario.taskPath,
+        "--runs-root",
+        scenario.runsRoot,
+        "--json",
+      ],
+      {
+        stdout: { write: (value) => { output.push(String(value)); return true; } },
+        stderr: { write: (value) => { errors.push(String(value)); return true; } },
+      },
+    ));
+
+    expect(exitCode).toBe(0);
+    expect(errors).toEqual([]);
+    expect(JSON.parse(output.join(""))).toMatchObject({
+      workflowId: "default",
+      terminalState: "passed",
+      visitCounts: { implement: 1, passed: 1 },
+    });
+    expect(JSON.parse(await readFile(invocationPath, "utf8"))).toEqual([
+      "exec",
+      "--sandbox",
+      "workspace-write",
+      "-",
+    ]);
+  });
+
+  it("discovers and runs a complete tsqh.config.ts when --config is omitted", async () => {
+    const scenario = await createScenario({
+      steps: { passed: { type: "terminal", outcome: "passed" } },
+    });
+    await installCompleteProjectConfiguration(scenario.workspace);
+    const output: string[] = [];
+    const errors: string[] = [];
+
+    const exitCode = await runCli(
+      [
+        "run",
+        "--workspace",
+        scenario.workspace,
+        "--task",
+        scenario.taskPath,
+        "--runs-root",
+        scenario.runsRoot,
+        "--json",
+      ],
+      {
+        stdout: { write: (value) => { output.push(String(value)); return true; } },
+        stderr: { write: (value) => { errors.push(String(value)); return true; } },
+      },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(errors).toEqual([]);
+    expect(JSON.parse(output.join(""))).toMatchObject({
+      workflowId: "typescript-complete",
+      terminalState: "passed",
+      visitCounts: { passed: 1 },
+    });
+  });
+
+  it("protects a discovered tsqh.config.ts from the default writing role", async () => {
+    const scenario = await createScenario({
+      steps: { passed: { type: "terminal", outcome: "passed" } },
+    });
+    await installProjectConfiguration(scenario.workspace);
+    const binRoot = join(scenario.root, "bin");
+    await installFakeCodex(
+      binRoot,
+      "await import('node:fs/promises').then(({ writeFile }) => writeFile('tsqh.config.ts', 'export default {};\\n', 'utf8'));",
+    );
+    const output: string[] = [];
+
+    const exitCode = await withExecutablePath(binRoot, () => runCli(
+      [
+        "run",
+        "--workspace",
+        scenario.workspace,
+        "--task",
+        scenario.taskPath,
+        "--runs-root",
+        scenario.runsRoot,
+        "--json",
+      ],
+      {
+        stdout: { write: (value) => { output.push(String(value)); return true; } },
+        stderr: { write: () => true },
+      },
+    ));
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(output.join(""))).toMatchObject({
+      terminalState: "blocked",
+      blocker: {
+        code: "unauthorized-changes",
+        stepId: "implement",
+      },
+    });
+    expect(output.join("")).toContain("tsqh.config.ts");
   });
 
   it("uses the default runs root and returns one for a configured blocked run and status", async () => {
@@ -143,7 +268,7 @@ describe("CLI acceptance", () => {
     [["status", "--run", ""], `Missing required option '--run'.\n${usage()}`],
     [["status", "--run", "one", "--run", "two"], "Option '--run' was provided more than once."],
     [["status", "--wat"], `Unknown option '--wat'.\n${usage()}`],
-    [["run", "--json"], `Missing required option '--config'.\n${usage()}`],
+    [["run", "--json"], `Missing required option '--workspace'.\n${usage()}`],
     [["status", "--json"], `Missing required option '--run'.\n${usage()}`],
     [["run", "--run", "value"], `Unknown option '--run'.\n${usage()}`],
     [["status", "--config", "value"], `Unknown option '--config'.\n${usage()}`],
@@ -162,11 +287,88 @@ describe("CLI acceptance", () => {
 function usage(): string {
   return [
     "Usage:",
-    "  tsqh run --config <file> --workspace <clean-git-worktree> --task <file> [--runs-root <directory>] [--json]",
+    "  tsqh run [--config <file>] --workspace <clean-git-worktree> --task <file> [--runs-root <directory>] [--json]",
     "  tsqh status --run <run-directory> [--json]",
   ].join("\n");
 }
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function installProjectConfiguration(workspace: string): Promise<void> {
+  await writeFile(join(workspace, "tsqh.config.ts"), `
+    export default {
+      quality: {
+        quick: false,
+        coverage: false,
+        crap: false,
+        knip: false,
+        mutation: false,
+        sonar: false,
+      },
+    };
+  `, "utf8");
+  await execFileAsync("git", ["add", "tsqh.config.ts"], { cwd: workspace });
+  await execFileAsync("git", ["commit", "--quiet", "-m", "add project configuration"], {
+    cwd: workspace,
+  });
+}
+
+async function installCompleteProjectConfiguration(workspace: string): Promise<void> {
+  await mkdir(join(workspace, "prompts"));
+  await writeFile(join(workspace, "prompts", "worker.md"), "Unused worker prompt.\n", "utf8");
+  await writeFile(join(workspace, "tsqh.config.ts"), `
+    export default {
+      schemaVersion: 1,
+      workflow: {
+        id: "typescript-complete",
+        entryStepId: "passed",
+        steps: { passed: { type: "terminal", outcome: "passed" } },
+      },
+      roles: {
+        worker: {
+          provider: "local",
+          promptPath: "prompts/worker.md",
+          allowedPathPrefixes: [],
+        },
+      },
+      providers: {
+        local: {
+          type: "command",
+          executable: "agent",
+          args: ["run"],
+          promptTransport: "stdin",
+        },
+      },
+      profiles: {},
+    };
+  `, "utf8");
+  await execFileAsync("git", ["add", "tsqh.config.ts", "prompts/worker.md"], { cwd: workspace });
+  await execFileAsync("git", ["commit", "--quiet", "-m", "add complete project configuration"], {
+    cwd: workspace,
+  });
+}
+
+async function installFakeCodex(binRoot: string, body: string): Promise<void> {
+  await mkdir(binRoot);
+  const executable = join(binRoot, "codex");
+  await writeFile(executable, `#!/usr/bin/env node
+process.stdin.resume();
+await new Promise((resolve) => process.stdin.on("end", resolve));
+${body}
+process.stdout.write("completed\\n");
+`, "utf8");
+  await chmod(executable, 0o755);
+}
+
+async function withExecutablePath<T>(binRoot: string, action: () => Promise<T>): Promise<T> {
+  const previous = process.env.PATH;
+  process.env.PATH = previous === undefined ? binRoot : `${binRoot}:${previous}`;
+  try {
+    return await action();
+  } finally {
+    if (previous === undefined) delete process.env.PATH;
+    else process.env.PATH = previous;
+  }
 }

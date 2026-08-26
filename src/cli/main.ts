@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { runController } from "../application/controller.js";
 import { SpawnCommandRunner } from "../adapters/command-runner.js";
-import { loadConfiguration, loadTask } from "../adapters/config-loader.js";
+import { loadRunConfiguration, loadTask } from "../adapters/config-loader.js";
 import { LocalGitInspector } from "../adapters/git-inspector.js";
 import { JsonlTraceStore } from "../adapters/trace-store.js";
 import { reduceTrace } from "../domain/reducer.js";
@@ -37,10 +37,9 @@ export async function runCli(
       return state.terminalState === "blocked" ? 1 : 0;
     }
 
-    const configInput = requireStringOption(parsed.options, "config");
     const workspaceInput = requireStringOption(parsed.options, "workspace");
     const taskInput = requireStringOption(parsed.options, "task");
-    const loaded = await loadConfiguration(configInput);
+    const loaded = await loadRunConfiguration(configurationInput(parsed.options, workspaceInput));
     const task = await loadTask(taskInput);
     const runsRootOption = parsed.options["runs-root"];
     const runsRoot =
@@ -70,6 +69,14 @@ export async function runCli(
     streams.stderr.write(`TSQH error: ${errorMessage(error)}\n`);
     return 2;
   }
+}
+
+function configurationInput(
+  options: Readonly<Record<string, string | true>>,
+  workspacePath: string,
+): Parameters<typeof loadRunConfiguration>[0] {
+  const config = options.config;
+  return typeof config === "string" ? { workspacePath, explicitConfigPath: config } : { workspacePath };
 }
 
 function parseArguments(argv: readonly string[]): ParsedCommand {
@@ -186,7 +193,7 @@ function renderStatus(
 function usage(): string {
   return [
     "Usage:",
-    "  tsqh run --config <file> --workspace <clean-git-worktree> --task <file> [--runs-root <directory>] [--json]",
+    "  tsqh run [--config <file>] --workspace <clean-git-worktree> --task <file> [--runs-root <directory>] [--json]",
     "  tsqh status --run <run-directory> [--json]",
   ].join("\n");
 }

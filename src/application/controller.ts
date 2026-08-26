@@ -28,7 +28,7 @@ const STEP_TYPES = {
 export interface ControllerInput {
   readonly configuration: Configuration;
   readonly prompts: Readonly<Record<string, string>>;
-  readonly configPath: string;
+  readonly configPath: string | null;
   readonly promptPaths: readonly string[];
   readonly workspacePath: string;
   readonly task: string;
@@ -47,7 +47,12 @@ export async function runController(
   input: ControllerInput,
   services: RuntimeServices,
 ): Promise<ControllerResult> {
-  const protectedAbsolutePaths = [input.configPath, input.taskPath, input.runsRoot, ...input.promptPaths];
+  const protectedAbsolutePaths = [
+    ...(input.configPath === null ? [] : [input.configPath]),
+    input.taskPath,
+    input.runsRoot,
+    ...input.promptPaths,
+  ];
   const workspace = await services.git.openCleanWorkspace(input.workspacePath, protectedAbsolutePaths);
   if (workspace.path === input.runsRoot) {
     throw new Error("The runs root cannot be the workspace root.");

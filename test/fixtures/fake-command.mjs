@@ -26,7 +26,10 @@ if (mode.startsWith("agent-")) {
     await writeFile("workflow-policy.json", "{}\n", "utf8");
   } else if (mode === "agent-protected-config") {
     await writeFile("workflow.json", "{}\n", "utf8");
-  } else if (mode !== "agent-lite" || (step !== "reviewer" && step !== "qa")) {
+  } else if (
+    mode !== "agent-workflow" ||
+    !new Set(["specifier", "architect", "qa"]).has(step)
+  ) {
     await mkdir("src", { recursive: true });
     await appendFile("src/order.txt", `${step}\n`, "utf8");
   }

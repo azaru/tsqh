@@ -1,5 +1,6 @@
 import { composeAssignmentPrompt } from "./prompt.js";
 import type { CleanWorkspace, GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
+import { renderAgentArguments, resolveAgentSelection } from "../domain/agent-selection.js";
 import { planNextAction } from "../domain/planner.js";
 import { reduceTrace } from "../domain/reducer.js";
 import type {
@@ -15,6 +16,7 @@ import type {
   RunState,
   StepFinishedEvent,
   StepStartedEvent,
+  WorkflowStep,
 } from "../domain/types.js";
 
 const DEFAULT_AGENT_TIMEOUT_MS = 900_000;
@@ -274,6 +276,7 @@ interface AgentDefinition {
   readonly role: Role;
   readonly provider: CommandProvider;
   readonly prompt: string;
+  readonly args: readonly string[];
 }
 
 async function executeAgent(
@@ -281,7 +284,7 @@ async function executeAgent(
   state: RunState,
   action: Extract<ExecutableAction, { readonly type: "dispatch-agent" }>,
 ): Promise<void> {
-  const definition = requireAgentDefinition(context.input, action.roleId);
+  const definition = requireAgentDefinition(context.input, action.stepId, action.roleId);
   const before = await inspectBefore(context, action.stepId);
   if (before.snapshot === null) {
     await appendAgentResult(context, action, null, [], before.blocker);
@@ -294,7 +297,11 @@ async function executeAgent(
   await appendAgentResult(context, action, process, inspection.changedPaths, blocker);
 }
 
-function requireAgentDefinition(input: ControllerInput, roleId: string): AgentDefinition {
+function requireAgentDefinition(input: ControllerInput, stepId: string, roleId: string): AgentDefinition {
+  const step = input.configuration.workflow.steps[stepId] as Extract<
+    WorkflowStep,
+    { readonly type: "agent" }
+  >;
   const role = input.configuration.roles[roleId];
   if (role === undefined) {
     throw new Error(`Planner selected unknown role '${roleId}'.`);
@@ -307,7 +314,8 @@ function requireAgentDefinition(input: ControllerInput, roleId: string): AgentDe
   if (prompt === undefined) {
     throw new Error(`No loaded prompt is available for role '${roleId}'.`);
   }
-  return { role, provider, prompt };
+  const selection = resolveAgentSelection(step, role, provider);
+  return { role, provider, prompt, args: renderAgentArguments(provider.args, selection) };
 }
 
 type BeforeInspection =
@@ -333,7 +341,7 @@ async function runAgentProcess(
 ): Promise<ProcessArtifact> {
   return context.services.commandRunner.run({
     executable: definition.provider.executable,
-    args: definition.provider.args,
+    args: definition.args,
     cwd: context.workspace.path,
     stdin: composeAssignmentPrompt({
       rolePrompt: definition.prompt,

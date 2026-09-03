@@ -2,9 +2,13 @@
 
 ## Current state
 
-- Product: small configurable sequential Swarm Forge Lite guardrail controller.
-- Active specification: none.
+- Product: small configurable sequential guardrail controller with simple and adapted Swarm Forge
+  workflow packs.
+- Active specification: none. MVP-007 is the latest completed increment.
 - Completed specifications:
+  `specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md` (`complete`),
+  `specs/TSQH-MVP-006-provider-aware-agent-selection.md` (`complete`),
+  `specs/TSQH-MVP-005-self-contained-workflow-packs.md` (`complete`),
   `specs/TSQH-MVP-004-unified-typescript-configuration.md` (`complete`),
   `specs/TSQH-MVP-003-discovered-project-configuration.md` (`complete`),
   `specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md` (`complete`), and
@@ -14,19 +18,19 @@
   exhaustion behavior, and the previously authenticated Codex smoke are preserved.
 - The safe local hardening implementation is complete. `quality:quick`, `quality:coverage`,
   `quality:crap`, `quality:knip`, `quality:mutation`, `quality:sonar`, and the exact sequential
-  fail-fast `quality:full` chain are wired. Native evidence is freshly generated, validated, and
-  summarized; missing or contradictory evidence blocks.
-- The example workflow exposes `quick -> coverage -> crap -> knip -> mutation -> sonar`. Every
-  failure uses the configured repair role, returns to `quick`, and remains bounded by `maxVisits`.
-- The adapted ten-role catalog, immutable provenance, and digest validation remain present under
-  `prompts/swarm-forge-adapted/`.
+  fail-fast `quality:full` chain are wired. Historical MVP-005–007 evidence is recorded below;
+  this recovery does not claim a new full-chain run.
+- The self-contained simple workflow exposes `quick -> coverage -> crap -> knip -> mutation ->
+  sonar`. Every ordinary failure reuses its one configured implementation owner, returns to `quick`,
+  and remains bounded by `maxVisits`.
+- The adapted Swarm Forge workflow, its six referenced prompts, immutable provenance, and digest
+  validation are colocated under `workflows/swarm-forge/`.
 - Runtime scope remains version 0: one foreground run, one action at a time, one caller-supplied
   clean Git worktree, and generic command providers. There is no concurrency or remote executor.
-- The approved Swarm Forge Lite continuation is deliberately small: pass the prior completed
+- The approved Swarm Forge continuation is deliberately small: pass the prior completed
   agent's bounded, sanitized stdout to the next configured agent as untrusted context; block gates
-  that mutate the candidate; and add a separate sequential
-  `implementer -> cleaner -> reviewer -> hardener -> qa` example followed by the unchanged six-gate
-  quality chain.
+  that mutate the candidate; and run a sequential `specifier -> implementer -> cleaner -> architect
+  -> hardener -> qa` workflow followed by the unchanged six-gate quality chain.
 - Bounded previous-role handoff is implemented without a trace migration: reduction derives the
   latest successful agent stdout, source step, visit, and truncation state from the existing bounded
   process artifact. Gates preserve it; blocked or nonzero agents do not create one; and prompt text
@@ -36,9 +40,15 @@
   compares candidate paths afterward, blocks tracked or untracked mutations even when the command
   exits zero, and permits regeneration of ignored owned quality reports. Inspection failures block
   with exact diagnostics, and a mutating nonzero gate cannot take its repair edge.
-- The separate `examples/swarm-forge-lite/` pack is implemented with one shared command provider,
-  fresh sequential role processes, bounded writer/read-only permissions, concise local prompts,
-  all six native gates, and two bounded repair visits that restart at `quick`.
+- `TSQH-MVP-007` is complete. An ordinary failed gate reduces to a pure
+  `GateFailureContext` with an 8 KiB head/tail excerpt per stream and explicit capture/context
+  truncation facts. Gate-driven assignments omit the previous successful-agent handoff. Passed and
+  blocked gates retain their previous behavior.
+- The two packs under `workflows/` are self-contained. The simple pack owns one concise writer
+  prompt; the Swarm Forge pack owns only the six adapted prompts it dispatches. Both use one shared
+  command provider and all six native gates. Simple reuses implementer for bounded rework; Swarm
+  Forge routes quick to implementer, coverage/CRAP/Knip to cleaner, and mutation/Sonar to hardener,
+  with three separate finite owner-rework steps that restart at `quick`.
 - A dedicated local Sonar target is now provisioned on the existing localhost service: project
   `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
@@ -54,6 +64,132 @@
 - `TSQH-MVP-004` is complete. It makes `tsqh.config.ts` the unified primary surface by accepting
   either the existing partial quality overlay or a complete version 1 workflow default export,
   while retaining explicit JSON compatibility and every existing validation boundary.
+- `TSQH-MVP-006` is complete. It adds provider, role, and agent-step model/effort selection with
+  independent `step -> role -> provider` precedence and provider-owned argument templates. The
+  Swarm Forge pack uses Sol/xhigh only for specifier and architect and Luna/max for every other
+  agent dispatch.
+
+## MVP-005–007 recovery verification — 2026-09-03
+
+- Focused verification — exit 0; Vitest passed 253 tests across 10 files.
+- Final task-isolated `pnpm quality:quick` — exit 0; 792 tests passed across 30 files, and the
+  domain architecture boundary passed with 8 entries inspected.
+- Local Sonar preflight — exit 7 (connection refused); `SONAR_TOKEN` was absent. Per the low-cost
+  verification plan, `pnpm quality:full` was not run and remains the exact external
+  release-verification blocker.
+- No real Codex smoke was run or claimed.
+
+## TSQH-MVP-007 completion evidence — 2026-08-26
+
+- The trace schema remains unchanged. Reduction creates a pure `GateFailureContext` only for an
+  ordinary failed gate; passed and blocked gates preserve their previous semantics. Each stream
+  supplies an exact UTF-8-safe head/tail excerpt bounded to 8,192 bytes with captured, included,
+  process-truncated, and context-truncated facts. A gate-driven prompt omits the prior successful
+  agent handoff and labels native output as untrusted diagnostic context.
+- The built-in and simple workflows reuse implementer at their bounded `repair` step and contain no
+  repairer role or prompt. The Swarm Forge pack contains six dispatched roles and three explicit
+  owner-rework steps: quick to implementer, coverage/CRAP/Knip to cleaner, and mutation/Sonar to
+  hardener. Every rework edge returns to quick and remains independently visit-bounded.
+- Immutable upstream comparison used Swarm Forge `main`
+  `8e83a09a41a7970edf8107f074cc41c12b953a08`, `six-pack`
+  `c8650d14becf6c33be537c75b6dacebccf965d4b`, and `squad`
+  `b0d63d57a8f0c2e678c0449c16ee953132b9d306`. The squad Troubleshooter repairs persistent swarm
+  state outside the product state machine; it is not evidence for a generic product repairer.
+- Final affected typecheck and behavioral command — exit 0; 59 tests across the gate-context,
+  prompt, and controller files passed. Focused `gate-failure-context.ts` mutation — exit 0; 36
+  mutants: 24 runnable `Killed`, 12 checker-rejected `CompileError`, and no other status.
+- Final `pnpm quality:quick` before the full chain — exit 0; strict test typecheck, build, 789 tests
+  across 30 files, and the eight-entry domain architecture boundary passed.
+- Coverage in the final full chain — exit 0; 789 tests passed. Coverage was 100% statements
+  (1,865/1,865), 99.53% branches (1,074/1,079), 100% functions (422/422), and 100% lines
+  (1,833/1,833).
+- CRAP in the final full chain — exit 0; 32 source files, 443 units, zero violations, and maximum
+  CRAP 6. Knip exited 0 with zero issues, configuration hints, or tag hints.
+- Complete non-incremental mutation in the final full chain — exit 0; all 3,187 runnable mutants
+  were `Killed`, 1,211 checker-rejected mutants were `CompileError`, and no other status occurred
+  across 4,398 mutants and 30 source files.
+- The first complete attempt correctly stopped at mutation because four loop mutations timed out;
+  the UTF-8 boundary logic was rewritten as a bounded four-byte search and the focused report then
+  proved zero timeouts. A later complete attempt passed mutation and correctly stopped at Sonar
+  because the ignored private environment had not been loaded.
+- Final `pnpm quality:full` with the existing ignored environment loaded — exit 0 in the exact
+  `quick -> coverage -> crap -> knip -> mutation -> sonar` order. Sonar analysis
+  `2dea0d8b-7f87-4ef8-b86c-ab93f6f814f5` returned computed gate `OK` and the approved remote policy
+  on dedicated project `azaru_tsqh_mvp`.
+- The private Sonar token was not added to tracked files. Its value was accidentally included in a
+  local diagnostic tool output while locating the existing ignored environment, so it should be
+  rotated; this does not change the recorded gate result.
+- No real Codex agent smoke was run or claimed for this increment.
+
+## TSQH-MVP-006 completion evidence — 2026-08-26
+
+- Complete JSON and TypeScript configuration accept bounded provider-, role-, and agent-step-level
+  `model` and `effort` values. Each field resolves independently as `step -> role -> provider` for
+  the provider selected by the role.
+- Provider arguments render exact `{model}` and `{effort}` placeholders without a shell and without
+  splitting one selection into additional arguments. Missing values, missing placeholders,
+  duplicate placeholders, unsupported placeholders, unsafe values, and selection properties on
+  non-agent steps fail closed.
+- The Swarm Forge provider defaults to `gpt-5.6-luna` at effort `max`; only specifier and architect
+  override it with `gpt-5.6-sol` at `xhigh`. Implementer, cleaner, hardener, QA, and repairer all
+  resolve to Luna/max. The local `codex-cli 0.149.1` help verified the configured argument surface.
+- Targeted verification — exit 0; 232 tests across seven affected domain, configuration,
+  controller, and prompt-pack test files passed.
+- Final `pnpm quality:quick` — exit 0; strict test typecheck, build, 780 tests across 29 files, and
+  the seven-entry domain architecture boundary passed.
+- Coverage in the final full chain — exit 0; 780 tests passed. Coverage was 100% statements
+  (1,833/1,833), 99.53% branches (1,064/1,069), 100% functions (411/411), and 100% lines
+  (1,801/1,801).
+- CRAP in the final full chain — exit 0; 31 source files, 431 units, zero violations, and maximum
+  CRAP 6. Knip exited 0 with zero issues, configuration hints, or tag hints.
+- Focused mutation for selection, validation, and dispatch — exit 0; 102 runnable mutants were
+  `Killed`, 42 checker-rejected mutants were `CompileError`, and no other status occurred across
+  144 mutants.
+- Complete non-incremental mutation in the final full chain — exit 0; all 3,148 runnable mutants
+  were `Killed`, 1,195 checker-rejected mutants were `CompileError`, and no other status occurred
+  across 4,343 mutants.
+- The first full attempt ran through complete mutation and correctly stopped at Sonar because the
+  approved localhost service was not running (`ECONNREFUSED 127.0.0.1:9000`). Only the checked-in
+  `infra/sonar/compose.yaml` service was started; a standalone Sonar run then passed as analysis
+  `4299f347-7428-448b-9dec-98ba59b56ca5`.
+- Final `pnpm quality:full` — exit 0 in the exact fail-fast
+  `quick -> coverage -> crap -> knip -> mutation -> sonar` order. Sonar analysis
+  `4eaeae6e-409a-4a1c-9ba0-08d98fd19bc1` returned computed gate `OK` with the approved dedicated
+  project, gate, profile, and new-code policy. The ignored private environment was parsed without
+  printing or persisting its credentials.
+- No real Codex agent smoke was run or claimed for this increment. The local Sonar Compose service
+  remains running after verification.
+
+## TSQH-MVP-005 completion evidence — 2026-08-26
+
+- `examples/` and the top-level `prompts/` content root were removed completely. Exactly two
+  self-contained packs remain: `workflows/simple/` owns the complete minimal hardening graph and
+  its two prompts; `workflows/swarm-forge/` owns its complete specialist graph, task, seven adapted
+  prompts, manifest, provenance, and documentation.
+- The Swarm Forge workflow now executes `specifier -> implementer -> cleaner -> architect ->
+  hardener -> qa` before `quick -> coverage -> crap -> knip -> mutation -> sonar`. Specifier,
+  architect, and QA are read-only; the four writer roles remain restricted to `src/` and `test/`.
+- Manifest verification proves there are no unused Swarm Forge prompt files, every configured role
+  is dispatched, every prompt path matches its role, every digest matches, and all source mappings
+  use the immutable researched commits.
+- Targeted migration verification — exit 0; 129 tests across the four configuration, controller,
+  and prompt-pack test files passed.
+- `pnpm quality:quick` — exit 0; strict test typecheck, build, 762 tests across 28 files, and the
+  six-entry domain architecture boundary passed.
+- Coverage within `pnpm quality:full` — exit 0; 762 tests passed. Coverage was 100% statements
+  (1,785/1,785), 99.51% branches (1,034/1,039), 100% functions (400/400), and 100% lines
+  (1,755/1,755).
+- CRAP within the full chain — exit 0; 30 source files, 418 units, zero violations, and maximum CRAP
+  6. Knip exited 0 with zero issues, configuration hints, or tag hints.
+- Complete non-incremental mutation within the full chain — exit 0; 4,254 mutants across 30 source
+  files: all 3,083 runnable mutants were `Killed`, 1,171 checker-rejected mutants were
+  `CompileError`, and no other status occurred.
+- `pnpm quality:sonar` within the full chain — exit 0; real analysis
+  `0deb3bfb-d442-4f87-88cf-abb01fc15fc8` completed with computed gate `OK` and the approved remote
+  policy on dedicated project `azaru_tsqh_mvp`. The token was neither printed nor persisted.
+- `pnpm quality:full` — exit 0 in the exact fail-fast
+  `quick -> coverage -> crap -> knip -> mutation -> sonar` order without skips.
+- No new authenticated Codex smoke was run or claimed for this content-layout increment.
 
 ## Completed release evidence
 
@@ -78,14 +214,13 @@
 - Unified TypeScript loading accepts both the existing strict partial quality overlay and a strict
   complete version 1 workflow. `schemaVersion` selects the complete contract fail-closed; complete
   prompt paths reuse the JSON loader's configuration-root containment and validation.
-- The object from `examples/swarm-forge-lite/workflow.json`, when wrapped in `export default`,
+- The object from `workflows/swarm-forge/workflow.json`, when wrapped in `export default`,
   resolves to the same workflow and prompt contents as the JSON source. Normal JSON-compatible
   arrays are accepted by the bounded evaluator; sparse, augmented, accessor-bearing, subclassed,
   and cyclic arrays remain rejected.
-- Prompt audit: the complete ten-role catalog and six concise Lite prompts have no matching file
-  digest and remain separate by purpose. The two byte-identical copies formerly under
-  `examples/prompts/` were removed; `examples/workflow.json` now reuses the Lite prompt paths. A
-  behavioral digest test prevents those two prompt sets from becoming duplicate content.
+- Prompt audit: each workflow now owns exactly the prompts it dispatches. The overlapping
+  `examples/` and top-level `prompts/` roots were replaced by `workflows/simple/` and
+  `workflows/swarm-forge/`; no compatibility copies remain.
 - Latest `pnpm quality:quick` — exit 0; strict test typecheck, build, 761 tests across 28 files, and
   the six-entry domain architecture boundary passed.
 - Coverage within the latest full attempt — exit 0; 761 tests passed. Coverage was 100% statements
@@ -212,13 +347,15 @@
 - Handoff trace: `implement` output reaches `review` across `quick`; `review` output then replaces it
   and reaches `verify` across `full`. Empty and truncated output retain source identity, and embedded
   pass, skip, transition, task, and permission claims do not affect configured execution.
-- Lite happy trace:
-  `implementer -> cleaner -> reviewer -> hardener -> qa -> quick -> coverage -> crap -> knip -> mutation -> sonar -> passed`.
-  Reviewer output reaches hardener, QA output remains the latest evidence across native gates, and
+- Swarm Forge happy trace:
+  `specifier -> implementer -> cleaner -> architect -> hardener -> qa -> quick -> coverage -> crap -> knip -> mutation -> sonar -> passed`.
+  Architect output reaches hardener, QA output remains the latest evidence across native gates, and
   only the configured writer roles change the fake candidate.
-- Lite exhaustion trace: a persistent mutation failure selects repairer twice, restarts at `quick`
-  after each completed repair, reruns through mutation three times, then blocks at the repairer
-  visit limit without starting Sonar.
+- Swarm Forge owner-routing trace: one-time quick, coverage, and mutation failures select
+  implementation-rework, cleanup-rework, and hardening-rework respectively, then restart at `quick`.
+- Swarm Forge exhaustion trace: a persistent mutation failure selects hardening-rework twice,
+  restarts at `quick` after each completed rework, reruns through mutation three times, then blocks
+  at the hardening-rework visit limit without starting Sonar.
 - Existing version 0 authenticated smoke remains historical evidence only: Codex CLI 0.149.1 ran
   `implement(completed) -> quick(passed) -> review(completed) -> full(passed) -> verify(completed) -> passed`
   in disposable run `454a9357-a181-40dc-acca-f950b4ec53d9`.
@@ -242,7 +379,7 @@
 - Explicit JSON configuration remains supported. The planner, controller transition authority,
   trace schema, sequential runtime, role write enforcement, and native-gate semantics do not
   change.
-- Exact next action: none within the completed specification; approve a new local specification
+- Exact next action: none within the completed specifications; approve a new local specification
   before broadening the product surface.
 
 ## Fixed scope and prior release state
@@ -260,4 +397,5 @@
   same-account hostile-process protection.
 - `TSQH-MVP-001` and `TSQH-MVP-002` remain complete with no release blockers in their delivered
   scope.
-- Current blockers: none.
+- No active specification is pending. No new full-chain run or real Codex smoke is claimed by this
+  recovery; the completion evidence above remains historical evidence for MVP-005 through MVP-007.

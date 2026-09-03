@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfiguration, loadTask } from "../../src/adapters/config-loader.js";
+import { resolveAgentSelection } from "../../src/domain/agent-selection.js";
 
 describe("strict configuration loading", () => {
   it("loads and freezes a valid independent configuration", async () => {
@@ -15,6 +16,36 @@ describe("strict configuration loading", () => {
     expect(Object.isFrozen(loaded.configuration.roles.worker!.allowedPathPrefixes)).toBe(true);
     expect(Object.isFrozen(loaded.prompts)).toBe(true);
     expect(Object.isFrozen(loaded.promptPaths)).toBe(true);
+  });
+
+  it("loads provider, role, and agent-step model and effort selections", async () => {
+    const value = validConfiguration();
+    const step = agentStep(value);
+    const worker = role(value);
+    const providers = value.providers as Record<string, Record<string, unknown>>;
+    const local = providers.local!;
+    local.args = ["run", "--model", "{model}", "--effort={effort}"];
+    local.model = "provider-model";
+    local.effort = "provider-effort";
+    worker.model = "role-model";
+    worker.effort = "role-effort";
+    step.model = "step-model";
+    step.effort = "step-effort";
+
+    const loaded = await loadConfiguration(await writeConfiguration(value));
+
+    expect(loaded.configuration.workflow.steps.work).toMatchObject({
+      model: "step-model",
+      effort: "step-effort",
+    });
+    expect(loaded.configuration.roles.worker).toMatchObject({
+      model: "role-model",
+      effort: "role-effort",
+    });
+    expect(loaded.configuration.providers.local).toMatchObject({
+      model: "provider-model",
+      effort: "provider-effort",
+    });
   });
 
   it("reports malformed JSON and schema details exactly", async () => {
@@ -154,6 +185,23 @@ describe("strict configuration loading", () => {
     ["absolute prompt path", (value: Record<string, unknown>) => role(value).promptPath = "/tmp/escape.md"],
     ["invalid allowed prefix", (value: Record<string, unknown>) => role(value).allowedPathPrefixes = ["src/../policy/"]],
     ["unknown step type", (value: Record<string, unknown>) => agentStep(value).type = "oracle"],
+    ["model on a gate step", (value: Record<string, unknown>) => {
+      const steps = workflow(value).steps as Record<string, Record<string, unknown>>;
+      steps.work = {
+        type: "gate",
+        profile: "quick",
+        model: "forbidden",
+        maxVisits: 1,
+        onPassed: "passed",
+        onFailed: "passed",
+      };
+    }],
+    ["invalid agent model", (value: Record<string, unknown>) => agentStep(value).model = " bad"],
+    ["invalid role effort", (value: Record<string, unknown>) => role(value).effort = "bad effort"],
+    ["invalid provider model", (value: Record<string, unknown>) => {
+      const providers = value.providers as Record<string, Record<string, unknown>>;
+      providers.local!.model = "-flag";
+    }],
     ["unknown transition target", (value: Record<string, unknown>) => agentStep(value).onCompleted = "missing"],
     ["invalid profile environment key", (value: Record<string, unknown>) => {
       const profiles = value.profiles as Record<string, Record<string, unknown>>;
@@ -176,8 +224,8 @@ describe("strict configuration loading", () => {
     await expect(loadConfiguration(path)).rejects.toThrow(/no path to terminal behavior/);
   });
 
-  it("loads the example hardening workflow and its adapted writing prompts", async () => {
-    const loaded = await loadConfiguration(resolve("examples/workflow.json"));
+  it("loads the simple workflow pack and its owned writing prompts", async () => {
+    const loaded = await loadConfiguration(resolve("workflows/simple/workflow.json"));
 
     expect(Object.keys(loaded.configuration.profiles)).toEqual([
       "quick",
@@ -188,24 +236,23 @@ describe("strict configuration loading", () => {
       "sonar",
     ]);
     expect(loaded.configuration.workflow.steps.repair).toMatchObject({ onCompleted: "quick" });
-    expect(loaded.configuration.roles.implementer?.promptPath).toBe(
-      "swarm-forge-lite/prompts/implementer.md",
-    );
-    expect(loaded.configuration.roles.repairer?.promptPath).toBe(
-      "swarm-forge-lite/prompts/repairer.md",
-    );
+    expect(loaded.configuration.workflow.id).toBe("simple");
+    expect(loaded.configuration.roles.implementer?.promptPath).toBe("prompts/implementer.md");
+    expect(loaded.configuration.workflow.steps.repair).toMatchObject({ role: "implementer" });
+    expect(Object.keys(loaded.configuration.roles)).toEqual(["implementer"]);
     expect(loaded.prompts.implementer).toContain("# Implementer");
-    expect(loaded.prompts.repairer).toContain("# Repairer");
+    expect(loaded.prompts.implementer).toContain("compact context");
   });
 
-  it("loads the separate Swarm Forge Lite example with exact role boundaries", async () => {
-    const loaded = await loadConfiguration(resolve("examples/swarm-forge-lite/workflow.json"));
+  it("loads the adapted Swarm Forge workflow pack with exact role boundaries", async () => {
+    const loaded = await loadConfiguration(resolve("workflows/swarm-forge/workflow.json"));
     const { configuration } = loaded;
 
     expect(Object.keys(configuration.workflow.steps)).toEqual([
+      "specifier",
       "implementer",
       "cleaner",
-      "reviewer",
+      "architect",
       "hardener",
       "qa",
       "quick",
@@ -214,25 +261,60 @@ describe("strict configuration loading", () => {
       "knip",
       "mutation",
       "sonar",
-      "repairer",
+      "implementation-rework",
+      "cleanup-rework",
+      "hardening-rework",
       "passed",
     ]);
     expect(new Set(Object.values(configuration.roles).map(({ provider }) => provider))).toEqual(
       new Set(["codex"]),
     );
-    expect(configuration.roles.reviewer?.allowedPathPrefixes).toEqual([]);
-    expect(configuration.roles.qa?.allowedPathPrefixes).toEqual([]);
-    for (const roleId of ["implementer", "cleaner", "hardener", "repairer"] as const) {
+    for (const roleId of ["specifier", "architect", "qa"] as const) {
+      expect(configuration.roles[roleId]?.allowedPathPrefixes).toEqual([]);
+    }
+    for (const roleId of ["implementer", "cleaner", "hardener"] as const) {
       expect(configuration.roles[roleId]?.allowedPathPrefixes).toEqual(["src/", "test/"]);
     }
-    for (const gateId of ["quick", "coverage", "crap", "knip", "mutation", "sonar"] as const) {
-      expect(configuration.workflow.steps[gateId]).toMatchObject({ onFailed: "repairer" });
+    expect(configuration.workflow.steps.quick).toMatchObject({ onFailed: "implementation-rework" });
+    for (const gateId of ["coverage", "crap", "knip"] as const) {
+      expect(configuration.workflow.steps[gateId]).toMatchObject({ onFailed: "cleanup-rework" });
     }
-    expect(configuration.workflow.steps.repairer).toMatchObject({
-      maxVisits: 2,
-      onCompleted: "quick",
+    for (const gateId of ["mutation", "sonar"] as const) {
+      expect(configuration.workflow.steps[gateId]).toMatchObject({ onFailed: "hardening-rework" });
+    }
+    const provider = configuration.providers.codex!;
+    const selections: Record<string, { readonly model: string | undefined; readonly effort: string | undefined }> = {};
+    for (const [stepId, step] of Object.entries(configuration.workflow.steps)) {
+      if (step.type === "agent") {
+        selections[stepId] = resolveAgentSelection(step, configuration.roles[step.role]!, provider);
+      }
+    }
+    expect(selections).toEqual({
+      specifier: { model: "gpt-5.6-sol", effort: "xhigh" },
+      implementer: { model: "gpt-5.6-luna", effort: "max" },
+      cleaner: { model: "gpt-5.6-luna", effort: "max" },
+      architect: { model: "gpt-5.6-sol", effort: "xhigh" },
+      hardener: { model: "gpt-5.6-luna", effort: "max" },
+      qa: { model: "gpt-5.6-luna", effort: "max" },
+      "implementation-rework": { model: "gpt-5.6-luna", effort: "max" },
+      "cleanup-rework": { model: "gpt-5.6-luna", effort: "max" },
+      "hardening-rework": { model: "gpt-5.6-luna", effort: "max" },
     });
-    expect(loaded.prompts.reviewer).toContain("# Reviewer");
+    expect(provider.args).toEqual([
+      "exec",
+      "--sandbox",
+      "workspace-write",
+      "--model",
+      "{model}",
+      "--config",
+      "model_reasoning_effort=\"{effort}\"",
+      "-",
+    ]);
+    for (const stepId of ["implementation-rework", "cleanup-rework", "hardening-rework"] as const) {
+      expect(configuration.workflow.steps[stepId]).toMatchObject({ maxVisits: 2, onCompleted: "quick" });
+    }
+    expect(loaded.prompts.specifier).toContain("# Specifier");
+    expect(loaded.prompts.architect).toContain("# Architect");
     expect(loaded.prompts.qa).toContain("# QA verifier");
   });
 });

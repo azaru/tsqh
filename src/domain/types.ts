@@ -4,6 +4,8 @@ type TerminalState = "passed" | "blocked";
 interface AgentStep {
   readonly type: "agent";
   readonly role: string;
+  readonly model?: string;
+  readonly effort?: string;
   readonly maxVisits: number;
   readonly onCompleted: string;
 }
@@ -31,6 +33,8 @@ interface Workflow {
 
 export interface Role {
   readonly provider: string;
+  readonly model?: string;
+  readonly effort?: string;
   readonly promptPath: string;
   readonly allowedPathPrefixes: readonly string[];
 }
@@ -39,6 +43,8 @@ export interface CommandProvider {
   readonly type: "command";
   readonly executable: string;
   readonly args: readonly string[];
+  readonly model?: string;
+  readonly effort?: string;
   readonly promptTransport: "stdin";
   readonly timeoutMs?: number;
 }
@@ -126,10 +132,22 @@ export interface LatestOutcome {
   readonly blocker: Blocker | null;
 }
 
-export interface GateFailure {
+export interface GateFailureStreamContext {
+  readonly text: string;
+  readonly capturedBytes: number;
+  readonly includedBytes: number;
+  readonly processTruncated: boolean;
+  readonly contextTruncated: boolean;
+}
+
+export interface GateFailureContext {
   readonly stepId: string;
   readonly visit: number;
-  readonly process: ProcessArtifact;
+  readonly processKind: ProcessArtifact["kind"];
+  readonly exitCode: number | null;
+  readonly signal: string | null;
+  readonly standardOutput: GateFailureStreamContext;
+  readonly standardError: GateFailureStreamContext;
 }
 
 export interface AgentHandoff {
@@ -148,7 +166,7 @@ export interface RunState {
   readonly visitCounts: Readonly<Record<string, number>>;
   readonly latestOutcome: LatestOutcome | null;
   readonly mostRecentAgentHandoff: AgentHandoff | null;
-  readonly mostRecentGateFailure: GateFailure | null;
+  readonly mostRecentGateFailure: GateFailureContext | null;
   readonly terminalState: TerminalState | null;
   readonly blocker: Blocker | null;
 }

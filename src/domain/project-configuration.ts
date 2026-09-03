@@ -78,7 +78,7 @@ export function expandProjectConfiguration(
   if (enabledStages.length > 0) {
     steps.repair = {
       type: "agent",
-      role: "repairer",
+      role: "implementer",
       maxVisits: 2,
       onCompleted: firstTarget,
     };
@@ -98,15 +98,6 @@ export function expandProjectConfiguration(
         promptPath: "builtin/implementer.md",
         allowedPathPrefixes: ["src/", "test/"],
       },
-      ...(enabledStages.length === 0
-        ? {}
-        : {
-            repairer: {
-              provider: "codex",
-              promptPath: "builtin/repairer.md",
-              allowedPathPrefixes: ["src/", "test/"],
-            },
-          }),
     },
     providers: {
       codex: {

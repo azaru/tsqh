@@ -46,6 +46,12 @@
       "type": "string",
       "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
     },
+    "agentSelection": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,127}$"
+    },
     "agentStep": {
       "type": "object",
       "additionalProperties": false,
@@ -53,6 +59,8 @@
       "properties": {
         "type": { "const": "agent" },
         "role": { "$ref": "#/$defs/id" },
+        "model": { "$ref": "#/$defs/agentSelection" },
+        "effort": { "$ref": "#/$defs/agentSelection" },
         "maxVisits": { "$ref": "#/$defs/visitable" },
         "onCompleted": { "$ref": "#/$defs/id" }
       }
@@ -107,6 +115,8 @@
       "required": ["provider", "promptPath", "allowedPathPrefixes"],
       "properties": {
         "provider": { "$ref": "#/$defs/id" },
+        "model": { "$ref": "#/$defs/agentSelection" },
+        "effort": { "$ref": "#/$defs/agentSelection" },
         "promptPath": { "$ref": "#/$defs/relativePath" },
         "allowedPathPrefixes": {
           "type": "array",
@@ -135,6 +145,8 @@
           "maxItems": 64,
           "items": { "$ref": "#/$defs/safeString" }
         },
+        "model": { "$ref": "#/$defs/agentSelection" },
+        "effort": { "$ref": "#/$defs/agentSelection" },
         "promptTransport": { "const": "stdin" },
         "timeoutMs": { "$ref": "#/$defs/timeout" }
       }

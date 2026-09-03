@@ -13,6 +13,9 @@ Implement exactly the assigned behavior as the smallest coherent production and 
 - Change only paths listed in the assignment's allowed-path section. If that section is absent, do
   not write and report the missing authority.
 - Do not edit workflow, prompts, quality policy, package metadata, or lockfiles to unblock the work.
+- When dispatched with a failed `quick` gate, own the smallest implementation or test repair. Use
+  the compact failure context first, inspect durable reports selectively, and rerun only the narrow
+  affected check before reporting the result.
 - Run the narrow test first, then every required installed verification command, one at a time.
 
 ## Result

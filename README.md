@@ -11,15 +11,21 @@ current milestone state of `tsqh-orchestrator`.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
-3. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
+3. [`specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md`](specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
+   — the completed compact gate-context and owner-routed rework specification.
+4. [`specs/TSQH-MVP-006-provider-aware-agent-selection.md`](specs/TSQH-MVP-006-provider-aware-agent-selection.md)
+   — the completed provider-aware model and effort selection specification.
+5. [`specs/TSQH-MVP-005-self-contained-workflow-packs.md`](specs/TSQH-MVP-005-self-contained-workflow-packs.md)
+   — the completed self-contained workflow-pack specification.
+6. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
    — the completed unified TypeScript configuration specification.
-4. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
+7. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
    — the completed discovered partial configuration specification.
-5. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
+8. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
    — the completed quality and bounded Swarm Forge Lite specification.
-6. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
+9. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
-7. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
+10. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
 
 ## Product slice
 
@@ -30,7 +36,7 @@ validated configuration
   -> additional specialist roles in the same candidate
   -> native quality gate
   -> next configured step
-  -> configured repair agent on failure
+  -> compact failure context for the configured writing owner
   -> retry within a fixed visit budget
   -> passed or an exact blocker
 ```
@@ -50,15 +56,18 @@ quick -> coverage -> crap -> knip -> mutation -> sonar
 ```
 
 These remain mandatory native configured gates; they do not become role names or branches in
-controller code. Every failure uses the ordinary configured repair edge and reruns the chain from
-`quick` within finite visit budgets.
+controller code. Every ordinary failure uses its configured rework edge and reruns the chain from
+`quick` within finite visit budgets. Failed process output is reduced to at most 8 KiB from each
+stream, preserving both ends and every truncation fact; successful gate output never enters a model
+prompt.
 
 Hardening is complete: strict local wrappers and evidence validators, tool configuration, the
 six-gate example graph, deterministic failure tests, the approved pinned development packages, and
-the sequential fail-fast package scripts are present. The final non-incremental Stryker report has
-2,890 killed runnable mutants and 1,061 separately reported checker `CompileError` mutations, with
-no other status. The dedicated Sonar target reports computed gate `OK` with zero open issues after
-all 19 initial findings were fixed. The exact `quality:full` chain exits zero; see
+the sequential fail-fast package scripts are present. Historical MVP-005–007 evidence includes a
+non-incremental Stryker report with 3,187 killed runnable mutants and 1,211 separately reported
+checker `CompileError` mutations, with no other status. The dedicated Sonar target reported computed
+gate `OK` with zero open issues after all 19 initial findings were fixed. The historical
+`quality:full` chain exited zero; see
 [`STATUS.md`](STATUS.md) for the complete evidence.
 
 `TSQH-MVP-003` made `--config` optional and added repository-root `tsqh.config.ts` discovery.
@@ -68,29 +77,44 @@ absent file uses the unchanged default. A project can enable or disable native q
 without copying the complete workflow, while advanced projects can stay in TypeScript when they
 replace the full graph. Explicit complete JSON configurations remain supported.
 
-The completed specification includes the smallest useful Swarm Forge collaboration primitive:
+`TSQH-MVP-006` is complete. Complete workflows can set provider defaults and refine model and
+effort independently at role or individual agent-step level. Resolution is
+`step -> role -> provider`; the selected provider owns exact argument placeholders and invalid or
+incomplete rendering contracts fail before execution. The Swarm Forge pack uses Sol/xhigh only for
+specifier and architect and Luna/max for every other agent dispatch.
+
+`TSQH-MVP-007` is complete. Failed native-gate output is reduced deterministically to a bounded
+`GateFailureContext`, while passed-gate output is not sent to the next model prompt. The simple
+policy reuses its implementation owner for rework; the Swarm Forge policy routes failures to the
+configured implementer, cleaner, or hardener according to concern ownership and does not adapt the
+squad Troubleshooter into a universal product repairer.
+
+`TSQH-MVP-007` is the latest completed specification. There is no active specification; the
+completed increments and their historical evidence are summarized in [`STATUS.md`](STATUS.md).
+
+The completed controller includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
 configured agent. Native gates are also candidate-stable: the controller compares Git snapshots
 around each gate and blocks any Git-visible candidate-path mutation while permitting configured
-gates to regenerate ignored quality reports. The separate
-[`examples/swarm-forge-lite/`](examples/swarm-forge-lite/) pack now demonstrates five fresh,
-sequential specialist roles followed by the complete six-gate chain and bounded repair. The planner
-remains the only transition authority; there is no peer messaging, persistent leader, dynamic
-spawning, daemon, or per-role worktree.
+gates to regenerate ignored quality reports.
 
-The repository already contains an original attributed role catalog at
-[`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md), informed by the `main`,
-`two-pack`, `four-pack`, `six-pack`, `adversaries`, and `squad` branches of Swarm Forge. Its prompts
-retain focused ownership, TDD, architecture, adversarial review, hardening, and independent QA while
-removing upstream coordination commands and agent-selected transitions. The immutable source map
-and missing-upstream-license notice are in
-[`PROVENANCE.md`](prompts/swarm-forge-adapted/PROVENANCE.md).
+Two self-contained packs live under [`workflows/`](workflows/). The
+[`simple`](workflows/simple/README.md) pack demonstrates one implementation owner, the complete
+six-gate chain, and bounded redispatch to that owner. The
+[`swarm-forge`](workflows/swarm-forge/README.md) pack uses the sequential
+`specifier -> implementer -> cleaner -> architect -> hardener -> qa` spine before the same native
+gates. Its configured rework edges route quick to implementer, coverage/CRAP/Knip to cleaner, and
+mutation/Sonar to hardener. Its original paraphrased prompts are informed by the `main`, `two-pack`,
+`four-pack`, `six-pack`, and `squad` branches. The planner remains
+the only transition authority; there is no peer messaging, persistent leader, dynamic spawning,
+daemon, or per-role worktree. The immutable source map and missing-upstream-license notice are in
+the pack's [`PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md).
 
 ## Upstream design references
 
 The completed local specification is authoritative for this repository. The primary product
 references are the immutable Swarm Forge `main`, `six-pack`, and `squad` commits recorded in
-[`PROVENANCE.md`](prompts/swarm-forge-adapted/PROVENANCE.md). They contribute role separation,
+[`PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md). They contribute role separation,
 bounded handoff, and controller/worker ideas without importing their tmux, daemon, worktree, or
 dashboard runtime.
 
@@ -231,39 +255,95 @@ workflow step -> logical role -> command provider
               -> quality profile
 ```
 
+Complete workflows may select an agent `model` and `effort` at three levels. Each field resolves
+independently through `step -> role -> provider`; an absent value continues to the next level. The
+selected provider owns the command syntax through exact `{model}` and `{effort}` placeholders in
+its argument array. A resolved value and a matching placeholder must both exist, and substitution
+never invokes a shell or creates additional arguments. Values are provider-defined bounded
+identifiers rather than a controller-owned model catalog.
+
+For example, a provider default can be refined by a role and one specific step:
+
+```ts
+export default {
+  schemaVersion: 1,
+  workflow: {
+    id: "example",
+    entryStepId: "specify",
+    steps: {
+      specify: {
+        type: "agent",
+        role: "specifier",
+        model: "gpt-5.6-sol",
+        effort: "xhigh",
+        maxVisits: 1,
+        onCompleted: "passed",
+      },
+      passed: { type: "terminal", outcome: "passed" },
+    },
+  },
+  roles: {
+    specifier: {
+      provider: "codex",
+      effort: "high",
+      promptPath: "prompts/specifier.md",
+      allowedPathPrefixes: [],
+    },
+  },
+  providers: {
+    codex: {
+      type: "command",
+      executable: "codex",
+      args: ["exec", "--model", "{model}", "--config", "model_reasoning_effort=\"{effort}\"", "-"],
+      model: "gpt-5.6-luna",
+      effort: "max",
+      promptTransport: "stdin",
+    },
+  },
+  profiles: {},
+};
+```
+
 Agent and gate commands are always spawned as one executable plus an exact argument array with
 `shell: false`. Agent prompts travel only over standard input. Provider and profile `timeoutMs`
 values are optional and may be between 1 ms and 24 hours; both default to 15 minutes. Each output
 stream is sanitized and limited to 64 KiB before it is persisted.
 
+An ordinary failed gate is additionally reduced to a `GateFailureContext` before another agent is
+dispatched. Each stream excerpt is limited to 8 KiB and retains a UTF-8-safe beginning and end plus
+capture and context-truncation facts. A gate-driven assignment omits the previous successful-agent
+handoff, so a stale 64 KiB prose result is not duplicated beside the failure evidence. The bounded
+raw process artifact stays in the trace and complete machine reports stay in the workspace for
+selective inspection.
+
 Quality profiles may also name explicit `environmentKeys`. Only those configured gate processes
 receive the additional values; agent-provider processes retain the fixed minimal environment.
 
-See [`examples/workflow.json`](examples/workflow.json) for two writing roles sharing one generic
-Codex command provider, six native pnpm quality profiles, and explicit bounded repair edges. The
-provider arguments match the locally inspected Codex CLI 0.149.1 interface; they remain ordinary
-configuration and may need adjustment for another Codex release. Its two role references reuse the
-concise prompt files from the Swarm Forge Lite pack; no duplicate prompt copies are kept under
-`examples/prompts/`.
+The repository ships exactly two self-contained complete workflow packs. The
+[`simple`](workflows/simple/workflow.json) pack has one implementation role, six native pnpm quality
+profiles, and explicit bounded rework edges. Its repair step reuses the same `implementer` role and
+prompt under [`workflows/simple/prompts/`](workflows/simple/prompts/).
 
-The separate [`examples/swarm-forge-lite/workflow.json`](examples/swarm-forge-lite/workflow.json)
-runs `implementer -> cleaner -> reviewer -> hardener -> qa` before the same six profiles. Its
-implementer, cleaner, hardener, and repairer are scoped to `src/` and `test/`; reviewer and QA have
-empty write authority. Every gate failure selects repairer, which returns to `quick` within fixed
-visit limits. Concise prompts and a task live beside that configuration.
+The [`swarm-forge`](workflows/swarm-forge/workflow.json) pack runs
+`specifier -> implementer -> cleaner -> architect -> hardener -> qa` before the same six profiles.
+Specifier, architect, and QA have empty write authority; implementer, cleaner, and hardener are
+scoped to `src/` and `test/`. Quick failure selects implementation rework, coverage/CRAP/Knip
+select cleanup rework, and mutation/Sonar select hardening rework; each returns to `quick` within
+fixed visit limits. Only prompts referenced by this workflow remain in its owned
+[`prompts/`](workflows/swarm-forge/prompts/) directory. Its manifest validates their immutable
+digests and upstream source mapping.
 
-Those concise workflow-specific prompts are intentionally distinct from the complete ten-role
-catalog under [`prompts/swarm-forge-adapted/`](prompts/swarm-forge-adapted/README.md): the catalog
-contains the reusable high-assurance contracts and provenance, while the Lite pack contains short
-assignment overlays. A digest audit confirms there are no byte-identical prompt files across those
-two directories.
+Both packs use one generic Codex command provider. The provider arguments match the locally
+inspected Codex CLI interface; they remain ordinary configuration and may need adjustment for
+another Codex release. The Swarm Forge pack defaults to Luna/max and overrides only its specifier
+and architect steps to Sol/xhigh. The simple pack leaves model and effort absent, so Codex retains
+its externally configured defaults.
 
 The controller now supplies the latest successfully completed agent's bounded, sanitized stdout to
 the next configured agent with source identity and truncation state. Gates preserve that handoff,
 and its text cannot alter task, provider, write authority, transitions, visits, or gate outcomes.
-The Lite pack remains separate from this verified hardening example. Native gates compare Git state
-before and after execution and block tracked or untracked candidate changes; owned ignored quality
-reports remain outside that candidate diff.
+Native gates compare Git state before and after execution and block tracked or untracked candidate
+changes; owned ignored quality reports remain outside that candidate diff.
 
 ## Run and status
 
@@ -276,7 +356,7 @@ pnpm tsqh run \
 
 # Optional complete-workflow override:
 pnpm tsqh run \
-  --config examples/workflow.json \
+  --config workflows/simple/workflow.json \
   --workspace /absolute/path/to/a/clean-git-worktree \
   --task /absolute/path/to/task.md
 
@@ -309,16 +389,16 @@ returns exit 1.
 
 ## Manual local Codex smoke
 
-The example task deliberately writes only under `src/` and `test/`. Run the smoke only when
+The simple workflow task deliberately writes only under `src/` and `test/`. Run the smoke only when
 `codex --version` succeeds and `codex login status` confirms authentication. Use a disposable,
 clean Git copy of this repository so the example agents cannot touch the development checkout:
 
 ```sh
 pnpm build
 pnpm tsqh run \
-  --config examples/workflow.json \
+  --config workflows/simple/workflow.json \
   --workspace /absolute/path/to/disposable-clean-tsqh-copy \
-  --task examples/task.md \
+  --task workflows/simple/task.md \
   --runs-root /absolute/path/to/disposable-run-store \
   --json
 ```

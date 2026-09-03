@@ -28,6 +28,11 @@ export interface ScenarioOptions {
   readonly providerMode?: string;
   readonly providerExecutable?: string;
   readonly providerTimeoutMs?: number;
+  readonly providerSelection?: {
+    readonly model: string;
+    readonly effort: string;
+    readonly argumentTemplates: readonly string[];
+  };
   readonly profiles?: Configuration["profiles"];
   readonly roles?: Configuration["roles"];
 }
@@ -62,7 +67,18 @@ export async function createScenario(options: ScenarioOptions): Promise<Scenario
   const provider = {
     type: "command" as const,
     executable: options.providerExecutable ?? process.execPath,
-    args: [fakeCommandPath, options.providerMode ?? "agent-log", stateDirectory],
+    args: [
+      fakeCommandPath,
+      options.providerMode ?? "agent-log",
+      stateDirectory,
+      ...(options.providerSelection?.argumentTemplates ?? []),
+    ],
+    ...(options.providerSelection === undefined
+      ? {}
+      : {
+          model: options.providerSelection.model,
+          effort: options.providerSelection.effort,
+        }),
     promptTransport: "stdin" as const,
     timeoutMs: options.providerTimeoutMs ?? 2_000,
   };

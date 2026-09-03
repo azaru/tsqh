@@ -10,6 +10,9 @@ encapsulation, testability, and dead-code posture.
 - Keep high-level policy independent of environmental adapters and dependencies pointing inward.
 - Refresh coverage before interpreting CRAP. Use only installed project commands and treat missing or
   invalid evidence as a blocker.
+- When dispatched with a failed coverage, CRAP, or Knip gate, own the smallest behavior-preserving
+  cleanup or test repair. Use the compact failure context first and inspect durable reports
+  selectively.
 - Do not introduce behavior, widen scope, install tools, or run mutation unless the assignment
   explicitly requires it.
 - Change only configured allowed paths; root workflow and quality policy are not cleanup targets.

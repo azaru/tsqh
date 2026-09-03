@@ -1,36 +1,12 @@
 {
   "schemaVersion": 1,
   "workflow": {
-    "id": "swarm-forge-lite",
-    "entryStepId": "implementer",
+    "id": "simple",
+    "entryStepId": "implement",
     "steps": {
-      "implementer": {
+      "implement": {
         "type": "agent",
         "role": "implementer",
-        "maxVisits": 1,
-        "onCompleted": "cleaner"
-      },
-      "cleaner": {
-        "type": "agent",
-        "role": "cleaner",
-        "maxVisits": 1,
-        "onCompleted": "reviewer"
-      },
-      "reviewer": {
-        "type": "agent",
-        "role": "reviewer",
-        "maxVisits": 1,
-        "onCompleted": "hardener"
-      },
-      "hardener": {
-        "type": "agent",
-        "role": "hardener",
-        "maxVisits": 1,
-        "onCompleted": "qa"
-      },
-      "qa": {
-        "type": "agent",
-        "role": "qa",
         "maxVisits": 1,
         "onCompleted": "quick"
       },
@@ -39,46 +15,46 @@
         "profile": "quick",
         "maxVisits": 3,
         "onPassed": "coverage",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
       "coverage": {
         "type": "gate",
         "profile": "coverage",
         "maxVisits": 3,
         "onPassed": "crap",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
       "crap": {
         "type": "gate",
         "profile": "crap",
         "maxVisits": 3,
         "onPassed": "knip",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
       "knip": {
         "type": "gate",
         "profile": "knip",
         "maxVisits": 3,
         "onPassed": "mutation",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
       "mutation": {
         "type": "gate",
         "profile": "mutation",
         "maxVisits": 3,
         "onPassed": "sonar",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
       "sonar": {
         "type": "gate",
         "profile": "sonar",
         "maxVisits": 3,
         "onPassed": "passed",
-        "onFailed": "repairer"
+        "onFailed": "repair"
       },
-      "repairer": {
+      "repair": {
         "type": "agent",
-        "role": "repairer",
+        "role": "implementer",
         "maxVisits": 2,
         "onCompleted": "quick"
       },
@@ -92,31 +68,6 @@
     "implementer": {
       "provider": "codex",
       "promptPath": "prompts/implementer.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "cleaner": {
-      "provider": "codex",
-      "promptPath": "prompts/cleaner.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "reviewer": {
-      "provider": "codex",
-      "promptPath": "prompts/reviewer.md",
-      "allowedPathPrefixes": []
-    },
-    "hardener": {
-      "provider": "codex",
-      "promptPath": "prompts/hardener.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "qa": {
-      "provider": "codex",
-      "promptPath": "prompts/qa.md",
-      "allowedPathPrefixes": []
-    },
-    "repairer": {
-      "provider": "codex",
-      "promptPath": "prompts/repairer.md",
       "allowedPathPrefixes": ["src/", "test/"]
     }
   },

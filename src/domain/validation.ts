@@ -1,4 +1,12 @@
-import type { Configuration, WorkflowStep } from "./types.js";
+import {
+  AGENT_SELECTION_PLACEHOLDERS,
+  findArgumentPlaceholders,
+  resolveAgentSelection,
+  type AgentSelectionKey,
+} from "./agent-selection.js";
+import type { CommandProvider, Configuration, WorkflowStep } from "./types.js";
+
+const AGENT_SELECTION_KEYS = ["model", "effort"] as const satisfies readonly AgentSelectionKey[];
 
 export class ConfigurationValidationError extends Error {
   public readonly issues: readonly string[];
@@ -85,6 +93,7 @@ function validateRoles(configuration: Configuration, issues: string[]): void {
     if (!(role.provider in configuration.providers)) {
       issues.push(`role '${roleId}' references unknown provider '${role.provider}'`);
     }
+    validateAgentSelection(role, `role '${roleId}'`, issues);
     if (!isSafeRelativeFilePath(role.promptPath)) {
       issues.push(`role '${roleId}' has invalid promptPath '${role.promptPath}'`);
     }
@@ -100,6 +109,8 @@ function validateProviders(configuration: Configuration, issues: string[]): void
   for (const [providerId, provider] of Object.entries(configuration.providers)) {
     validateId(providerId, `providers key '${providerId}'`, issues);
     validateCommand(provider.executable, provider.args, provider.timeoutMs, `provider '${providerId}'`, issues);
+    validateAgentSelection(provider, `provider '${providerId}'`, issues);
+    validateProviderPlaceholders(providerId, provider, issues);
   }
 }
 
@@ -143,10 +154,97 @@ function validateAgentStep(
   configuration: Configuration,
   issues: string[],
 ): void {
+  validateAgentSelection(step, `agent step '${stepId}'`, issues);
   if (!(step.role in configuration.roles)) {
     issues.push(`agent step '${stepId}' references unknown role '${step.role}'`);
+  } else {
+    validateAgentStepSelection(stepId, step, configuration, issues);
   }
   validateTransition(stepId, "onCompleted", step.onCompleted, configuration, issues);
+}
+
+function validateAgentStepSelection(
+  stepId: string,
+  step: Extract<WorkflowStep, { readonly type: "agent" }>,
+  configuration: Configuration,
+  issues: string[],
+): void {
+  const role = configuration.roles[step.role]!;
+  if (!(role.provider in configuration.providers)) {
+    return;
+  }
+  const provider = configuration.providers[role.provider]!;
+  const selection = resolveAgentSelection(step, role, provider);
+  const placeholders = provider.args.flatMap(findArgumentPlaceholders);
+  for (const key of AGENT_SELECTION_KEYS) {
+    validateResolvedSelection(
+      stepId,
+      role.provider,
+      key,
+      selection[key],
+      placeholders,
+      issues,
+    );
+  }
+}
+
+function validateResolvedSelection(
+  stepId: string,
+  providerId: string,
+  key: AgentSelectionKey,
+  value: string | undefined,
+  placeholders: readonly string[],
+  issues: string[],
+): void {
+  const placeholder = AGENT_SELECTION_PLACEHOLDERS[key];
+  const hasPlaceholder = placeholders.includes(placeholder);
+  if (value === undefined && hasPlaceholder) {
+    issues.push(
+      `agent step '${stepId}' cannot resolve ${key} required by provider '${providerId}' placeholder '${placeholder}'`,
+    );
+  } else if (value !== undefined && !hasPlaceholder) {
+    issues.push(
+      `agent step '${stepId}' resolves ${key} '${value}' but provider '${providerId}' has no '${placeholder}' placeholder`,
+    );
+  }
+}
+
+function validateAgentSelection(
+  selection: { readonly model?: string; readonly effort?: string },
+  location: string,
+  issues: string[],
+): void {
+  for (const key of AGENT_SELECTION_KEYS) {
+    const value = selection[key];
+    if (value !== undefined && !isValidAgentSelection(value)) {
+      issues.push(`${location} has invalid ${key} '${value}'`);
+    }
+  }
+}
+
+function isValidAgentSelection(value: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,127}$/u.test(value);
+}
+
+function validateProviderPlaceholders(
+  providerId: string,
+  provider: CommandProvider,
+  issues: string[],
+): void {
+  const placeholders = provider.args.flatMap(findArgumentPlaceholders);
+  for (const placeholder of new Set(placeholders)) {
+    if (!Object.values(AGENT_SELECTION_PLACEHOLDERS).includes(
+      placeholder as (typeof AGENT_SELECTION_PLACEHOLDERS)[AgentSelectionKey],
+    )) {
+      issues.push(`provider '${providerId}' has unsupported argument placeholder '${placeholder}'`);
+    }
+  }
+  for (const key of AGENT_SELECTION_KEYS) {
+    const placeholder = AGENT_SELECTION_PLACEHOLDERS[key];
+    if (placeholders.filter((value) => value === placeholder).length > 1) {
+      issues.push(`provider '${providerId}' has duplicate '${placeholder}' placeholders`);
+    }
+  }
 }
 
 function validateGateStep(

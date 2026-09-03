@@ -6,6 +6,7 @@ import { runCli } from "../../src/cli/main.js";
 import { JsonlTraceStore } from "../../src/adapters/trace-store.js";
 import { loadConfiguration } from "../../src/adapters/config-loader.js";
 import { BUILT_IN_PROMPTS } from "../../src/application/default-prompts.js";
+import { GATE_FAILURE_OMISSION_MARKER } from "../../src/domain/gate-failure-context.js";
 import { expandProjectConfiguration, QUALITY_STAGE_IDS } from "../../src/domain/project-configuration.js";
 import { reduceTrace } from "../../src/domain/reducer.js";
 import type { CommandRequest, RuntimeServices } from "../../src/application/ports.js";
@@ -205,12 +206,19 @@ describe("foreground controller", () => {
   it("uses the expanded repair edge and reruns only enabled default gates", async () => {
     const enabledGateCount = QUALITY_STAGE_IDS.length - 1;
     const successful = processArtifact("exited");
+    const omitted = "middle diagnostic that must not reach the provider";
+    const failedOutput = `failure-head:${"x".repeat(5_000)}${omitted}${"y".repeat(5_000)}:failure-tail`;
     const harness = directHarness({
       configuration: expandProjectConfiguration({ quality: { sonar: false } }),
       prompts: BUILT_IN_PROMPTS,
       processes: [
-        successful,
-        processArtifact("exited", null, 1),
+        { ...successful, stdout: "previous implementation handoff must be omitted" },
+        {
+          ...processArtifact("exited", null, 1),
+          stdout: failedOutput,
+          stderr: "quick failed at the decisive final line",
+          stdoutTruncated: true,
+        },
         successful,
         ...Array.from({ length: enabledGateCount }, () => successful),
       ],
@@ -231,14 +239,34 @@ describe("foreground controller", () => {
       "passed",
     ]);
     expect(stepStarts(result.events)).not.toContain("sonar");
+    const repairPrompt = harness.commands[2]!.stdin;
+    expect(repairPrompt).toContain("Logical role: implementer");
+    expect(repairPrompt).toContain(
+      "Omitted because this assignment is driven by the most recent native gate failure.",
+    );
+    expect(repairPrompt).not.toContain("previous implementation handoff must be omitted");
+    expect(repairPrompt).toContain("failure-head:");
+    expect(repairPrompt).toContain(":failure-tail");
+    expect(repairPrompt).toContain(GATE_FAILURE_OMISSION_MARKER);
+    expect(repairPrompt).not.toContain(omitted);
+    expect(repairPrompt).toContain("Process capture truncated: yes");
+    expect(repairPrompt).toContain("Context compacted: yes");
+    expect(repairPrompt).toContain("quick failed at the decisive final line");
   });
 
-  it("executes the fake-provider Swarm Forge Lite example in exact configured order", async () => {
-    const scenario = await createLiteScenario();
+  it("executes the fake-provider Swarm Forge workflow in exact configured order", async () => {
+    const scenario = await createSwarmForgeScenario();
 
     const result = await runScenario(scenario);
 
-    const agentSteps = ["implementer", "cleaner", "reviewer", "hardener", "qa"] as const;
+    const agentSteps = [
+      "specifier",
+      "implementer",
+      "cleaner",
+      "architect",
+      "hardener",
+      "qa",
+    ] as const;
     expect(result.state).toMatchObject({
       terminalState: "passed",
       mostRecentAgentHandoff: { sourceStepId: "qa", sourceVisit: 1 },
@@ -256,39 +284,67 @@ describe("foreground controller", () => {
       join(scenario.stateDirectory, "prompt-hardener-1.txt"),
       "utf8",
     );
-    expect(hardenerPrompt).toContain("Source step: reviewer\nSource visit: 1");
+    expect(hardenerPrompt).toContain("Source step: architect\nSource visit: 1");
     const qaPrompt = await readFile(join(scenario.stateDirectory, "prompt-qa-1.txt"), "utf8");
     expect(qaPrompt).toContain("Source step: hardener\nSource visit: 1");
   });
 
-  it("exhausts the Lite repairer on persistent gate failure before downstream work", async () => {
-    const scenario = await createLiteScenario({ mutation: "gate-always-fail" });
+  it.each([
+    ["quick", "implementation-rework", "implementer"],
+    ["coverage", "cleanup-rework", "cleaner"],
+    ["mutation", "hardening-rework", "hardener"],
+  ] as const)("routes a failed %s gate to its configured %s owner", async (gate, reworkStep, role) => {
+    const scenario = await createSwarmForgeScenario({ [gate]: "gate-fail-once" });
+
+    const result = await runScenario(scenario);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(stepStarts(result.events)).toContain(reworkStep);
+    expect(await readExecutionLog(scenario)).toContain(`agent:${reworkStep}:1`);
+    const prompt = await readFile(
+      join(scenario.stateDirectory, `prompt-${reworkStep}-1.txt`),
+      "utf8",
+    );
+    expect(prompt).toContain(`Logical role: ${role}`);
+    expect(prompt).toContain(`Step: ${gate}`);
+    expect(prompt).toContain("simulated gate failure");
+    expect(prompt).toContain(
+      "Most recent gate failure",
+    );
+  }, 15_000);
+
+  it("routes Swarm Forge persistent mutation failure to hardening owner", async () => {
+    const scenario = await createSwarmForgeScenario({ mutation: "gate-always-fail" });
 
     const result = await runScenario(scenario);
 
     const throughMutation = ["quick", "coverage", "crap", "knip", "mutation"] as const;
     expect(result.state).toMatchObject({
       terminalState: "blocked",
-      blocker: { code: "visit-limit-exceeded", stepId: "repairer" },
+      blocker: { code: "visit-limit-exceeded", stepId: "hardening-rework" },
     });
     expect(await readExecutionLog(scenario)).toEqual([
+      "agent:specifier:1",
       "agent:implementer:1",
       "agent:cleaner:1",
-      "agent:reviewer:1",
+      "agent:architect:1",
       "agent:hardener:1",
       "agent:qa:1",
       ...throughMutation.map((gate) => `gate:${gate}`),
-      "agent:repairer:1",
+      "agent:hardening-rework:1",
       ...throughMutation.map((gate) => `gate:${gate}`),
-      "agent:repairer:2",
+      "agent:hardening-rework:2",
       ...throughMutation.map((gate) => `gate:${gate}`),
     ]);
     expect(stepStarts(result.events)).not.toContain("sonar");
     const repairPrompt = await readFile(
-      join(scenario.stateDirectory, "prompt-repairer-1.txt"),
+      join(scenario.stateDirectory, "prompt-hardening-rework-1.txt"),
       "utf8",
     );
-    expect(repairPrompt).toContain("Source step: qa\nSource visit: 1");
+    expect(repairPrompt).toContain(
+      "Omitted because this assignment is driven by the most recent native gate failure.",
+    );
+    expect(repairPrompt).not.toContain("Source step: qa\nSource visit: 1");
     expect(repairPrompt).toContain("simulated persistent gate failure");
   });
 
@@ -572,6 +628,33 @@ describe("foreground controller", () => {
     expect(startedSteps(agentResult.events)[0]).toEqual({ stepId: "work", stepType: "agent" });
   });
 
+  it("resolves provider, role, and step model and effort before rendering exact arguments", async () => {
+    const configuration = agentSelectionConfiguration();
+    const harness = directHarness({
+      configuration,
+      prompts: {
+        providerRole: "Provider defaults.",
+        selectedRole: "Role defaults and step overrides.",
+      },
+    });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(harness.commands.map(({ args }) => args)).toEqual([
+      ["run", "--model", "provider-model", "--effort=provider-effort"],
+      ["run", "--model", "role-model", "--effort=role-effort"],
+      ["run", "--model", "step-model", "--effort=role-effort"],
+      ["run", "--model", "role-model", "--effort=step-effort"],
+    ]);
+    expect(configuration.providers.local?.args).toEqual([
+      "run",
+      "--model",
+      "{model}",
+      "--effort={effort}",
+    ]);
+  });
+
   it.each([
     ["agent spawn", agentConfiguration(), processArtifact("spawn-error"), "agent-spawn-error", "Agent step 'work' could not be launched."],
     ["agent timeout", agentConfiguration(), processArtifact("timeout"), "agent-timeout", "Agent step 'work' timed out."],
@@ -848,6 +931,70 @@ function agentConfiguration(): Configuration {
   };
 }
 
+function agentSelectionConfiguration(): Configuration {
+  return {
+    schemaVersion: 1,
+    workflow: {
+      id: "agent-selection",
+      entryStepId: "provider",
+      steps: {
+        provider: {
+          type: "agent",
+          role: "providerRole",
+          maxVisits: 1,
+          onCompleted: "role",
+        },
+        role: {
+          type: "agent",
+          role: "selectedRole",
+          maxVisits: 1,
+          onCompleted: "stepModel",
+        },
+        stepModel: {
+          type: "agent",
+          role: "selectedRole",
+          model: "step-model",
+          maxVisits: 1,
+          onCompleted: "stepEffort",
+        },
+        stepEffort: {
+          type: "agent",
+          role: "selectedRole",
+          effort: "step-effort",
+          maxVisits: 1,
+          onCompleted: "passed",
+        },
+        passed: { type: "terminal", outcome: "passed" },
+      },
+    },
+    roles: {
+      providerRole: {
+        provider: "local",
+        promptPath: "provider.md",
+        allowedPathPrefixes: [],
+      },
+      selectedRole: {
+        provider: "local",
+        model: "role-model",
+        effort: "role-effort",
+        promptPath: "selected.md",
+        allowedPathPrefixes: [],
+      },
+    },
+    providers: {
+      local: {
+        type: "command",
+        executable: "agent",
+        args: ["run", "--model", "{model}", "--effort={effort}"],
+        model: "provider-model",
+        effort: "provider-effort",
+        promptTransport: "stdin",
+      },
+    },
+    profiles: {},
+  };
+}
+
 function gateConfiguration(): Configuration {
   return {
     schemaVersion: 1,
@@ -989,10 +1136,10 @@ function hardeningProfiles(
   );
 }
 
-async function createLiteScenario(
+async function createSwarmForgeScenario(
   overrides: Partial<Record<(typeof hardeningGateIds)[number], string>> = {},
 ): Promise<Awaited<ReturnType<typeof createScenario>>> {
-  const example = await loadConfiguration(resolve("examples/swarm-forge-lite/workflow.json"));
+  const example = await loadConfiguration(resolve("workflows/swarm-forge/workflow.json"));
   const roles = Object.fromEntries(
     Object.entries(example.configuration.roles).map(([roleId, role]) => [
       roleId,
@@ -1002,7 +1149,12 @@ async function createLiteScenario(
   const scenario = await createScenario({
     steps: example.configuration.workflow.steps,
     entryStepId: example.configuration.workflow.entryStepId,
-    providerMode: "agent-lite",
+    providerMode: "agent-workflow",
+    providerSelection: {
+      model: "provider-model",
+      effort: "provider-effort",
+      argumentTemplates: ["--model={model}", "--effort={effort}"],
+    },
     profiles: hardeningProfiles("gate-pass", "pending"),
     roles,
   });

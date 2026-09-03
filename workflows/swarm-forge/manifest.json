@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "tsqh.swarm-forge",
+  "adaptationDate": "2026-08-26",
+  "authority": "TSQH configuration and controller transitions remain authoritative",
+  "rightsNotice": "No upstream license file was observed; entries are original paraphrased adaptations",
+  "upstream": {
+    "repository": "https://github.com/unclebob/swarm-forge",
+    "commits": {
+      "main": "8e83a09a41a7970edf8107f074cc41c12b953a08",
+      "two-pack": "f2791781b9070fc43c33d460f396f297447e5833",
+      "four-pack": "83f819307e6258296f6c1934b583ba888346cb2f",
+      "six-pack": "c8650d14becf6c33be537c75b6dacebccf965d4b",
+      "squad": "b0d63d57a8f0c2e678c0449c16ee953132b9d306"
+    }
+  },
+  "roles": [
+    {
+      "id": "specifier",
+      "file": "specifier.md",
+      "sha256": "cce88cad0af8c05ff32a4eab07830155b9ee120305beb5e07f9ad01b818b5075",
+      "dispatchable": true,
+      "writePosture": "read-only; returns specification through process output",
+      "sources": [
+        { "branch": "four-pack", "path": "swarmforge/roles/specifier.prompt" },
+        { "branch": "six-pack", "path": "swarmforge/roles/specifier.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/gherkin-writer.prompt" }
+      ]
+    },
+    {
+      "id": "implementer",
+      "file": "implementer.md",
+      "sha256": "6f223ce35d4c93a402ecd92cf353e122646d7f0a660b6375dca7480ac0254fea",
+      "dispatchable": true,
+      "writePosture": "configured production and test paths",
+      "sources": [
+        { "branch": "two-pack", "path": "swarmforge/roles/coder.prompt" },
+        { "branch": "four-pack", "path": "swarmforge/roles/coder.prompt" },
+        { "branch": "six-pack", "path": "swarmforge/roles/coder.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/implementer.prompt" }
+      ]
+    },
+    {
+      "id": "cleaner",
+      "file": "cleaner.md",
+      "sha256": "a50e8ba04c76974fee6287636dfccc8e1657a3173a3083ca1f8084aad279aac7",
+      "dispatchable": true,
+      "writePosture": "configured production and test paths",
+      "sources": [
+        { "branch": "two-pack", "path": "swarmforge/roles/cleaner.prompt" },
+        { "branch": "four-pack", "path": "swarmforge/roles/refactorer.prompt" },
+        { "branch": "six-pack", "path": "swarmforge/roles/cleaner.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/cleaner.prompt" }
+      ]
+    },
+    {
+      "id": "architect",
+      "file": "architect.md",
+      "sha256": "3af408306fc991ed9f3b98b2b1268af5a34b76c31f8cd947436eb0f7e3e14d6f",
+      "dispatchable": true,
+      "writePosture": "read-only; returns architecture findings through process output",
+      "sources": [
+        { "branch": "four-pack", "path": "swarmforge/roles/architect.prompt" },
+        { "branch": "six-pack", "path": "swarmforge/roles/architect.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/architect.prompt" }
+      ]
+    },
+    {
+      "id": "hardener",
+      "file": "hardener.md",
+      "sha256": "71ad03090b0da6e12b9d4c3f1ce1a9cb0a46661728006fb4337a8c662877202b",
+      "dispatchable": true,
+      "writePosture": "configured production and test paths",
+      "sources": [
+        { "branch": "six-pack", "path": "swarmforge/roles/hardender.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/hardener.prompt" }
+      ]
+    },
+    {
+      "id": "qa",
+      "file": "qa.md",
+      "sha256": "5e02fc07618ffa6eab084b0bed6721344388e613239a110e905564acc645697c",
+      "dispatchable": true,
+      "writePosture": "read-only; returns QA evidence through process output",
+      "sources": [
+        { "branch": "six-pack", "path": "swarmforge/roles/QA.prompt" },
+        { "branch": "squad", "path": "swarmforge/role-templates/qa.prompt" }
+      ]
+    }
+  ]
+}

@@ -245,7 +245,27 @@ describe("trace guards", () => {
         process: exited(2),
       }),
     ];
-    expect(reduceTrace(failed).mostRecentGateFailure).toMatchObject({ stepId: "gate", visit: 1 });
+    expect(reduceTrace(failed).mostRecentGateFailure).toEqual({
+      stepId: "gate",
+      visit: 1,
+      processKind: "exited",
+      exitCode: 2,
+      signal: null,
+      standardOutput: {
+        text: "",
+        capturedBytes: 0,
+        includedBytes: 0,
+        processTruncated: false,
+        contextTruncated: false,
+      },
+      standardError: {
+        text: "",
+        capturedBytes: 0,
+        includedBytes: 0,
+        processTruncated: false,
+        contextTruncated: false,
+      },
+    });
 
     const preserved = [
       ...failed,
@@ -601,6 +621,88 @@ describe("configuration graph guards", () => {
   });
 
   it.each([
+    [
+      "provider selection",
+      (value: MutableConfiguration): void => {
+        value.providers.local!.model = " invalid";
+        value.providers.local!.args = ["{model}"];
+      },
+      "provider 'local' has invalid model ' invalid'",
+    ],
+    [
+      "role selection",
+      (value: MutableConfiguration): void => {
+        value.roles.worker!.effort = "bad effort";
+        value.providers.local!.args = ["{effort}"];
+      },
+      "role 'worker' has invalid effort 'bad effort'",
+    ],
+    [
+      "step selection",
+      (value: MutableConfiguration): void => {
+        value.workflow.steps.work!.model = "-flag";
+        value.providers.local!.args = ["{model}"];
+      },
+      "agent step 'work' has invalid model '-flag'",
+    ],
+  ] as const)("rejects an invalid %s value", (_label, mutate, expectedIssue) => {
+    const value = mutableConfiguration();
+    mutate(value);
+    expect(validationIssues(value)).toEqual([expectedIssue]);
+  });
+
+  it.each([
+    [
+      "missing model placeholder",
+      (value: MutableConfiguration): void => { value.providers.local!.model = "provider-model"; },
+      "agent step 'work' resolves model 'provider-model' but provider 'local' has no '{model}' placeholder",
+    ],
+    [
+      "unresolved effort placeholder",
+      (value: MutableConfiguration): void => { value.providers.local!.args = ["{effort}"]; },
+      "agent step 'work' cannot resolve effort required by provider 'local' placeholder '{effort}'",
+    ],
+    [
+      "duplicate model placeholder",
+      (value: MutableConfiguration): void => {
+        value.providers.local!.model = "provider-model";
+        value.providers.local!.args = ["{model}", "prefix={model}"];
+      },
+      "provider 'local' has duplicate '{model}' placeholders",
+    ],
+    [
+      "unsupported placeholder",
+      (value: MutableConfiguration): void => { value.providers.local!.args = ["{temperature}"]; },
+      "provider 'local' has unsupported argument placeholder '{temperature}'",
+    ],
+  ] as const)("rejects a provider with %s", (_label, mutate, expectedIssue) => {
+    const value = mutableConfiguration();
+    mutate(value);
+    expect(validationIssues(value)).toEqual([expectedIssue]);
+  });
+
+  it("enforces the complete bounded agent selection pattern", () => {
+    const valid = mutableConfiguration();
+    valid.providers.local!.model = "a.b/c:d+e-f_0";
+    valid.providers.local!.args = ["{model}"];
+    expect(() => validateConfigurationGraph(valid as unknown as Configuration)).not.toThrow();
+
+    const invalidLeading = mutableConfiguration();
+    invalidLeading.providers.local!.model = "_model";
+    invalidLeading.providers.local!.args = ["{model}"];
+    expect(validationIssues(invalidLeading)).toEqual([
+      "provider 'local' has invalid model '_model'",
+    ]);
+
+    const invalidLength = mutableConfiguration();
+    invalidLength.providers.local!.model = `a${"b".repeat(128)}`;
+    invalidLength.providers.local!.args = ["{model}"];
+    expect(validationIssues(invalidLength)).toEqual([
+      `provider 'local' has invalid model '${invalidLength.providers.local!.model}'`,
+    ]);
+  });
+
+  it.each([
     "",
     " padded",
     "has\0null",
@@ -776,8 +878,22 @@ interface MutableConfiguration {
     entryStepId: string;
     steps: Record<string, Record<string, unknown>>;
   };
-  roles: Record<string, { provider: string; promptPath: string; allowedPathPrefixes: string[] }>;
-  providers: Record<string, { type: string; executable: string; args: string[]; promptTransport: string; timeoutMs?: number }>;
+  roles: Record<string, {
+    provider: string;
+    model?: string;
+    effort?: string;
+    promptPath: string;
+    allowedPathPrefixes: string[];
+  }>;
+  providers: Record<string, {
+    type: string;
+    executable: string;
+    args: string[];
+    model?: string;
+    effort?: string;
+    promptTransport: string;
+    timeoutMs?: number;
+  }>;
   profiles: Record<string, { executable: string; args: string[]; environmentKeys?: string[]; timeoutMs?: number }>;
 }
 

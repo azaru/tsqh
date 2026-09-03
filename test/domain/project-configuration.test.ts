@@ -29,12 +29,12 @@ describe("built-in project configuration expansion", () => {
     }
     expect(configuration.workflow.steps.repair).toEqual({
       type: "agent",
-      role: "repairer",
+      role: "implementer",
       maxVisits: 2,
       onCompleted: "quick",
     });
     expect(configuration.roles.implementer?.allowedPathPrefixes).toEqual(["src/", "test/"]);
-    expect(configuration.roles.repairer?.allowedPathPrefixes).toEqual(["src/", "test/"]);
+    expect(Object.keys(configuration.roles)).toEqual(["implementer"]);
     expect(Object.isFrozen(configuration)).toBe(true);
     expect(Object.isFrozen(configuration.workflow.steps)).toBe(true);
     expect(Object.isFrozen(configuration.profiles.sonar?.environmentKeys)).toBe(true);
@@ -88,7 +88,7 @@ describe("built-in project configuration expansion", () => {
       },
       passed: { type: "terminal", outcome: "passed" },
     });
-    expect(configuration.roles.repairer).toBeUndefined();
+    expect(Object.keys(configuration.roles)).toEqual(["implementer"]);
     expect(configuration.profiles).toEqual({});
   });
 });

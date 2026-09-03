@@ -25,7 +25,7 @@ describe("project configuration discovery", () => {
       "passed",
     ]);
     expect(loaded.prompts).toHaveProperty("implementer");
-    expect(loaded.prompts).toHaveProperty("repairer");
+    expect(Object.keys(loaded.prompts)).toEqual(["implementer"]);
     expect(Object.isFrozen(loaded.configuration)).toBe(true);
     expect(Object.isFrozen(loaded.configuration.workflow.steps)).toBe(true);
   });
@@ -99,6 +99,30 @@ describe("project configuration discovery", () => {
     expect(loaded.promptPaths).toEqual([join(canonicalWorkspace, "prompts", "worker.md")]);
   });
 
+  it("loads provider, role, and step selections from complete TypeScript configuration", async () => {
+    const workspace = await temporaryWorkspace();
+    const configuration = completeWorkflow();
+    const workflow = configuration.workflow as Record<string, unknown>;
+    const steps = workflow.steps as Record<string, Record<string, unknown>>;
+    const roles = configuration.roles as Record<string, Record<string, unknown>>;
+    const providers = configuration.providers as Record<string, Record<string, unknown>>;
+    steps.work!.model = "step-model";
+    roles.worker!.effort = "role-effort";
+    providers.local!.model = "provider-model";
+    providers.local!.effort = "provider-effort";
+    providers.local!.args = ["run", "{model}", "{effort}"];
+    await writeCompleteTypescriptConfiguration(workspace, configuration);
+
+    const loaded = await loadRunConfiguration({ workspacePath: workspace });
+
+    expect(loaded.configuration.workflow.steps.work).toMatchObject({ model: "step-model" });
+    expect(loaded.configuration.roles.worker).toMatchObject({ effort: "role-effort" });
+    expect(loaded.configuration.providers.local).toMatchObject({
+      model: "provider-model",
+      effort: "provider-effort",
+    });
+  });
+
   it("loads an explicit complete tsqh.config.ts outside the candidate workspace", async () => {
     const workspace = await temporaryWorkspace();
     const configurationRoot = await temporaryWorkspace();
@@ -117,11 +141,11 @@ describe("project configuration discovery", () => {
     expect(loaded.prompts.worker).toBe("Complete TypeScript worker prompt.\n");
   });
 
-  it("loads a default-exported Swarm Forge Lite JSON object equivalently", async () => {
-    const jsonPath = resolve("examples/swarm-forge-lite/workflow.json");
+  it("loads a default-exported Swarm Forge workflow object equivalently", async () => {
+    const jsonPath = resolve("workflows/swarm-forge/workflow.json");
     const jsonSource = await readFile(jsonPath, "utf8");
     const configurationRoot = await temporaryWorkspace();
-    await cp(resolve("examples/swarm-forge-lite/prompts"), join(configurationRoot, "prompts"), {
+    await cp(resolve("workflows/swarm-forge/prompts"), join(configurationRoot, "prompts"), {
       recursive: true,
     });
     const typescriptPath = await writeProjectConfiguration(
@@ -136,7 +160,7 @@ describe("project configuration discovery", () => {
 
     expect(typescript.configuration).toEqual(json.configuration);
     expect(typescript.prompts).toEqual(json.prompts);
-    expect(typescript.configuration.workflow.id).toBe("swarm-forge-lite");
+    expect(typescript.configuration.workflow.id).toBe("swarm-forge");
   });
 
   it("does not forward a configured Sonar credential to TypeScript policy", async () => {

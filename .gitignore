@@ -3,9 +3,10 @@ dist/
 coverage/
 reports/
 .scannerwork/
-.stryker-tmp/
+tmp/codex-quality-mutation/
 .tsqh/*
 *.tsbuildinfo
 .env
 .env.*
 !.env.example
+.codex

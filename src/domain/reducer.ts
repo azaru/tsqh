@@ -1,10 +1,11 @@
 import type {
   AgentHandoff,
-  GateFailure,
+  GateFailureContext,
   RunEvent,
   RunState,
   StepFinishedEvent,
 } from "./types.js";
+import { createGateFailureContext } from "./gate-failure-context.js";
 
 export class TraceValidationError extends Error {
   public constructor(message: string) {
@@ -177,7 +178,10 @@ function updatedAgentHandoff(
   };
 }
 
-function updatedGateFailure(previous: GateFailure | null, event: StepFinishedEvent): GateFailure | null {
+function updatedGateFailure(
+  previous: GateFailureContext | null,
+  event: StepFinishedEvent,
+): GateFailureContext | null {
   if (event.stepType !== "gate") {
     return previous;
   }
@@ -185,7 +189,7 @@ function updatedGateFailure(previous: GateFailure | null, event: StepFinishedEve
     return null;
   }
   if (event.outcome === "failed" && event.process !== null) {
-    return { stepId: event.stepId, visit: event.visit, process: event.process };
+    return createGateFailureContext(event.stepId, event.visit, event.process);
   }
   return previous;
 }

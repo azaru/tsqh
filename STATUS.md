@@ -18,8 +18,8 @@
   exhaustion behavior, and the previously authenticated Codex smoke are preserved.
 - The safe local hardening implementation is complete. `quality:quick`, `quality:coverage`,
   `quality:crap`, `quality:knip`, `quality:mutation`, `quality:sonar`, and the exact sequential
-  fail-fast `quality:full` chain are wired. Historical MVP-005–007 evidence is recorded below;
-  this recovery does not claim a new full-chain run.
+  fail-fast `quality:full` chain are wired. Historical MVP-005–007 evidence and the latest
+  fail-fast verification are recorded below; no successful new full-chain run is claimed.
 - The self-contained simple workflow exposes `quick -> coverage -> crap -> knip -> mutation ->
   sonar`. Every ordinary failure reuses its one configured implementation owner, returns to `quick`,
   and remains bounded by `maxVisits`.
@@ -68,6 +68,22 @@
   independent `step -> role -> provider` precedence and provider-owned argument templates. The
   Swarm Forge pack uses Sol/xhigh only for specifier and architect and Luna/max for every other
   agent dispatch.
+
+## Latest Sonar/full-chain verification — 2026-09-03
+
+- Sonar Compose startup — exit 0; `infra/sonar/compose.yaml` started the dedicated local service.
+  Postgres was healthy, SonarQube was up on `127.0.0.1:9000`, and `/api/system/status` returned
+  `UP` for SonarQube `26.7.0.124771`.
+- `pnpm quality:full` — exit 1 in the exact fail-fast order. Quick passed 792 tests across 30
+  files and the eight-entry architecture boundary; coverage passed with 100% statements,
+  functions, and lines and 99.54% branches; CRAP and Knip passed with zero findings.
+- Mutation blocked the chain: the fresh report covered 30 source files and 4,435 mutants, with
+  3,214 `Killed`, 1,205 checker-rejected `CompileError`, 15 `Survived`, and 1 `Timeout`. Sonar
+  was not reached because the chain is fail-fast.
+- Standalone `pnpm quality:sonar` — exit 1; the running scanner reached SonarQube but bootstrap
+  authentication returned HTTP 401. The ignored `SONAR_TOKEN` was not written to tracked files.
+- Current release blockers are the 15 surviving and one timed-out runnable mutation, plus the
+  rejected/expired Sonar token. No temporary harness changes remain in the tracked configuration.
 
 ## MVP-005–007 recovery verification — 2026-09-03
 

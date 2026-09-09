@@ -51,5 +51,6 @@ gates to the configured implementer, cleaner, or hardener rework step.
 
 No `LICENSE`, `COPYING`, or `NOTICE` file was present in the inspected branches. These files are
 original paraphrased adaptations of ideas and role boundaries, not substantial verbatim copies.
-Attribution does not itself grant redistribution rights to upstream text. Do not add literal
-upstream passages without separate rights confirmation.
+The repository MIT license covers its original material; it does not grant redistribution rights
+to upstream text, names, or trademarks. Do not add literal upstream passages without separate rights
+confirmation.

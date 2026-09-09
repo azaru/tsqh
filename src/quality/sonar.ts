@@ -39,6 +39,8 @@ export interface SonarEnvironment {
 
 export interface SonarPreflight {
   readonly coverageDigest: string;
+  readonly coverageReportDigest: string;
+  readonly sourceDigests: Readonly<Record<string, string>>;
   readonly expectedPolicy: SonarPolicyIdentity;
   readonly hostUrl: string;
   readonly organization: string | null;
@@ -77,6 +79,8 @@ export async function validateSonarPreflight(
   const coverage = await validateCoverage({ workspace, invocationStartedAtMs: 0 });
   return {
     coverageDigest: coverage.lcovDigest,
+    coverageReportDigest: coverage.coverageDigest,
+    sourceDigests: coverage.sourceDigests,
     expectedPolicy: {
       newCodeDefinition: policy.newCodeDefinition,
       qualityGate: policy.qualityGate,

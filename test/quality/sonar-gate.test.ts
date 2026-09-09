@@ -6,6 +6,7 @@ import type { CommandRequest, CommandRunner } from "../../src/application/ports.
 import type { ProcessArtifact } from "../../src/domain/types.js";
 import type { SonarApi, SonarApiRequest } from "../../src/quality/sonar-api.js";
 import { runSonarQualityGate, type SonarGateRuntime } from "../../src/quality/sonar-gate.js";
+import { validateCoverage } from "../../src/quality/coverage.js";
 
 const token = "sonar-runner-secret";
 
@@ -34,6 +35,8 @@ describe("Sonar quality gate wrapper", () => {
       args: [],
     });
     expect(result.summary.inputDigests).toEqual({
+      "src/domain/value.ts": expect.stringMatching(/^[a-f0-9]{64}$/u),
+      "coverage/coverage-final.json": expect.stringMatching(/^[a-f0-9]{64}$/u),
       "coverage/lcov.info": expect.stringMatching(/^[a-f0-9]{64}$/u),
     });
     expect(result.summary.thresholds).toEqual({
@@ -307,6 +310,17 @@ async function createFixture(): Promise<string> {
     [`SF:${source}`, "FNF:0", "FNH:0", "BRF:0", "BRH:0", "LF:1", "LH:1", "end_of_record", ""].join("\n"),
     "utf8",
   );
+  const validation = await validateCoverage({ workspace: root, invocationStartedAtMs: 0 });
+  await writeJson(join(root, "reports/quality/coverage-summary.json"), {
+    gateId: "coverage",
+    status: "passed",
+    process: { kind: "exited", exitCode: 0 },
+    inputDigests: validation.sourceDigests,
+    outputDigests: {
+      "coverage/coverage-final.json": validation.coverageDigest,
+      "coverage/lcov.info": validation.lcovDigest,
+    },
+  });
   return root;
 }
 

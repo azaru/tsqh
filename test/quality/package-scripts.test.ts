@@ -36,6 +36,13 @@ describe("quality package scripts", () => {
 
     expect(result.status).toBe(0);
     await expect(readLog(fixture.log)).resolves.toEqual(stages);
+    await expect(readEnvironmentLog(fixture.environmentLog)).resolves.toEqual(
+      stages.map((stage) => ({
+        stage,
+        testSecret: "missing",
+        sonarToken: stage === "quality:sonar" ? "sonar-test-token" : "missing",
+      })),
+    );
   });
 
   it("stops at the first failed stage and preserves its exit status", async () => {
@@ -67,23 +74,26 @@ interface FakePnpmFixture {
   readonly exitCode: number;
   readonly failStage: string;
   readonly log: string;
+  readonly environmentLog: string;
 }
 
 async function createFakePnpm(failStage = "", exitCode = 1): Promise<FakePnpmFixture> {
   const directory = await mkdtemp(join(tmpdir(), "tsqh-quality-pnpm-"));
   const bin = join(directory, "pnpm");
   const log = join(directory, "calls.log");
+  const environmentLog = join(directory, "environment.log");
   const source = [
     `#!${process.execPath}`,
     'const { appendFileSync } = require("node:fs");',
     'const stage = process.argv[2] ?? "";',
-    'appendFileSync(process.env.TSQH_TEST_QUALITY_LOG, `${stage}\\n`);',
-    'if (stage === process.env.TSQH_TEST_FAIL_STAGE) process.exitCode = Number(process.env.TSQH_TEST_EXIT_CODE);',
+    `appendFileSync(${JSON.stringify(log)}, \`${"${stage}"}\\n\`);`,
+    `appendFileSync(${JSON.stringify(environmentLog)}, JSON.stringify({ stage, testSecret: process.env.TSQH_TEST_SECRET ?? "missing", sonarToken: process.env.SONAR_TOKEN ?? "missing" }) + "\\n");`,
+    `if (stage === ${JSON.stringify(failStage)}) process.exitCode = ${String(exitCode)};`,
     "",
   ].join("\n");
   await writeFile(bin, source, "utf8");
   await chmod(bin, 0o755);
-  return { bin, exitCode, failStage, log };
+  return { bin, exitCode, failStage, log, environmentLog };
 }
 
 function runFull(fixture: FakePnpmFixture): ReturnType<typeof spawnSync> {
@@ -93,9 +103,8 @@ function runFull(fixture: FakePnpmFixture): ReturnType<typeof spawnSync> {
     env: {
       ...process.env,
       PATH: `${dirname(fixture.bin)}${delimiter}${process.env.PATH ?? ""}`,
-      TSQH_TEST_QUALITY_LOG: fixture.log,
-      TSQH_TEST_FAIL_STAGE: fixture.failStage,
-      TSQH_TEST_EXIT_CODE: String(fixture.exitCode),
+      TSQH_TEST_SECRET: "test-secret-must-not-leak",
+      SONAR_TOKEN: "sonar-test-token",
     },
     shell: false,
   });
@@ -103,4 +112,19 @@ function runFull(fixture: FakePnpmFixture): ReturnType<typeof spawnSync> {
 
 async function readLog(path: string): Promise<readonly string[]> {
   return (await readFile(path, "utf8")).trim().split("\n");
+}
+
+async function readEnvironmentLog(path: string): Promise<readonly {
+  readonly stage: string;
+  readonly testSecret: string;
+  readonly sonarToken: string;
+}[]> {
+  return (await readFile(path, "utf8"))
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as {
+      readonly stage: string;
+      readonly testSecret: string;
+      readonly sonarToken: string;
+    });
 }

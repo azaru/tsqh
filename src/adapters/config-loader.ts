@@ -7,7 +7,7 @@ import { compareStrings } from "../domain/order.js";
 import {
   expandProjectConfiguration,
   type TsqhProjectConfiguration,
-} from "../domain/project-configuration.js";
+} from "../application/default-project-configuration.js";
 import { validateConfigurationGraph } from "../domain/validation.js";
 import type { Configuration } from "../domain/types.js";
 import { evaluateTypescriptConfiguration } from "./typescript-config-evaluator.js";

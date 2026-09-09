@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { CommandRunner } from "../application/ports.js";
 import type { ProcessArtifact } from "../domain/types.js";
-import { validateCoverage } from "./coverage.js";
+import { assertCurrentCoverageSummary, validateCoverage } from "./coverage.js";
 import { validateCrapReport } from "./crap.js";
 import {
   assertNativeQualitySuccess,
@@ -138,7 +138,9 @@ export async function runLocalQualityGate(
     toolVersions = await loadPinnedToolVersions(workspace, spec.packages);
     if (gateId === "crap") {
       const coverage = await validateCoverage({ workspace, invocationStartedAtMs: 0 });
+      await assertCurrentCoverageSummary(workspace, coverage);
       inputDigests = {
+        ...coverage.sourceDigests,
         "coverage/coverage-final.json": coverage.coverageDigest,
         "coverage/lcov.info": coverage.lcovDigest,
       };
@@ -152,7 +154,9 @@ export async function runLocalQualityGate(
       timeoutMs: spec.timeoutMs,
     });
     assertNativeQualitySuccess(gateId, process);
-    outputDigests = await validateGateEvidence(gateId, workspace, invocationStartedAtMs, process);
+    const evidence = await validateGateEvidence(gateId, workspace, invocationStartedAtMs, process);
+    inputDigests = { ...inputDigests, ...evidence.inputDigests };
+    outputDigests = evidence.outputDigests;
     status = "passed";
     reason = `${gateId} evidence is current, complete, and satisfies policy.`;
     exitCode = 0;
@@ -192,12 +196,18 @@ async function validateGateEvidence(
   workspace: string,
   invocationStartedAtMs: number,
   process: ProcessArtifact,
-): Promise<Readonly<Record<string, string>>> {
+): Promise<{
+  readonly inputDigests: Readonly<Record<string, string>>;
+  readonly outputDigests: Readonly<Record<string, string>>;
+}> {
   if (gateId === "coverage") {
     const result = await validateCoverage({ workspace, invocationStartedAtMs });
     return {
-      "coverage/coverage-final.json": result.coverageDigest,
-      "coverage/lcov.info": result.lcovDigest,
+      inputDigests: result.sourceDigests,
+      outputDigests: {
+        "coverage/coverage-final.json": result.coverageDigest,
+        "coverage/lcov.info": result.lcovDigest,
+      },
     };
   }
   if (gateId === "crap") {
@@ -206,18 +216,18 @@ async function validateGateEvidence(
       invocationStartedAtMs,
       processExitCode: process.exitCode,
     });
-    return { "reports/quality/crap.json": result.digest };
+    return { inputDigests: {}, outputDigests: { "reports/quality/crap.json": result.digest } };
   }
   if (gateId === "knip") {
     validateKnipResult({ processExitCode: process.exitCode, stdout: process.stdout });
     await mkdir(join(workspace, "reports/quality"), { recursive: true });
     await writeFile(join(workspace, "reports/quality/knip.json"), process.stdout, "utf8");
-    return { "reports/quality/knip.json": digestText(process.stdout) };
+    return { inputDigests: {}, outputDigests: { "reports/quality/knip.json": digestText(process.stdout) } };
   }
   const result = await validateMutationReport({
     workspace,
     invocationStartedAtMs,
     processExitCode: process.exitCode,
   });
-  return { "reports/mutation/mutation.json": result.digest };
+  return { inputDigests: {}, outputDigests: { "reports/mutation/mutation.json": result.digest } };
 }

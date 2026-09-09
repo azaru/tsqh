@@ -89,24 +89,25 @@ interface ControllerContext {
 type ExecutableAction = Exclude<PlannedAction, { readonly type: "finish" }>;
 
 async function runLoop(context: ControllerContext): Promise<ControllerResult> {
-  const { input, events } = context;
-  const state = reduceTrace(events);
-  const action = planNextAction(input.configuration, state);
-  if (action.type === "finish") {
-    return finishRun(context, action);
-  }
+  while (true) {
+    const { input, events } = context;
+    const state = reduceTrace(events);
+    const action = planNextAction(input.configuration, state);
+    if (action.type === "finish") {
+      return finishRun(context, action);
+    }
 
-  await appendStepStarted(
-    events,
-    context.trace,
-    context.runId,
-    context.services,
-    action.stepId,
-    STEP_TYPES[action.type],
-    action.visit,
-  );
-  await executeAction(context, state, action);
-  return runLoop(context);
+    await appendStepStarted(
+      events,
+      context.trace,
+      context.runId,
+      context.services,
+      action.stepId,
+      STEP_TYPES[action.type],
+      action.visit,
+    );
+    await executeAction(context, state, action);
+  }
 }
 
 async function finishRun(

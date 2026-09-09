@@ -12,6 +12,7 @@ import {
 } from "./gate-support.js";
 import type { QualityGateRunResult, QualityGateRuntime } from "./gates.js";
 import type { SonarApi } from "./sonar-api.js";
+import { assertCurrentCoverageSummary } from "./coverage.js";
 import {
   readRemoteSonarPolicy,
   readSonarTaskIdentity,
@@ -65,10 +66,19 @@ export async function runSonarQualityGate(
     await assertQualityWorkspace(workspace);
     await cleanQualityPaths(workspace, "sonar", [".scannerwork"]);
     const preflight = await validateSonarPreflight(workspace, runtime.environment);
+    await assertCurrentCoverageSummary(workspace, {
+      coverageDigest: preflight.coverageReportDigest,
+      lcovDigest: preflight.coverageDigest,
+      sourceDigests: preflight.sourceDigests,
+    });
     const validatedToken = token!;
     configDigests = await digestQualityFiles(workspace, CONFIG_FILES);
     toolVersions = await loadPinnedToolVersions(workspace, { "@sonar/scan": "5.0.0" });
-    inputDigests = { "coverage/lcov.info": preflight.coverageDigest };
+    inputDigests = {
+      ...preflight.sourceDigests,
+      "coverage/coverage-final.json": preflight.coverageReportDigest,
+      "coverage/lcov.info": preflight.coverageDigest,
+    };
 
     const rawProcess = await runtime.commandRunner.run({
       executable: join(workspace, executable),

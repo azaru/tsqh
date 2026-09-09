@@ -1,4 +1,4 @@
-import type { Configuration, QualityProfile, WorkflowStep } from "./types.js";
+import type { Configuration, QualityProfile, WorkflowStep } from "../domain/types.js";
 
 export const QUALITY_STAGE_IDS = [
   "quick",

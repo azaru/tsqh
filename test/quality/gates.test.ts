@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, unlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import {
   runLocalQualityGate,
   type LocalQualityGateId,
 } from "../../src/quality/gates.js";
+import { validateCoverage } from "../../src/quality/coverage.js";
 
 const PACKAGE_VERSIONS = {
   vitest: "4.1.11",
@@ -134,7 +135,11 @@ describe("local quality gate wrappers", () => {
       });
       expect(Object.keys(result.summary.configDigests).sort()).toEqual([...expected.configFiles].sort());
       expect(Object.keys(result.summary.inputDigests).sort()).toEqual(
-        gateId === "crap" ? ["coverage/coverage-final.json", "coverage/lcov.info"] : [],
+        gateId === "coverage"
+          ? ["src/domain/value.ts"]
+          : gateId === "crap"
+            ? ["coverage/coverage-final.json", "coverage/lcov.info", "src/domain/value.ts"]
+            : [],
       );
       expect(Object.keys(result.summary.outputDigests).sort()).toEqual([...expected.outputFiles].sort());
       expect(result.summaryDigest).toMatch(/^[a-f0-9]{64}$/u);
@@ -160,6 +165,27 @@ describe("local quality gate wrappers", () => {
       exitCode: 2,
       summary: { status: "failed", reason: "crap process exited with status 2." },
     });
+  });
+
+  it("blocks CRAP when coverage was generated for different production sources", async () => {
+    const root = await createFixture();
+    await writeCoverage(root);
+    const source = join(root, "src/domain/value.ts");
+    await writeFile(source, "export const value = 2;\n", "utf8");
+    await utimes(source, 0, 0);
+    const runner = new FakeRunner(async () => exited());
+
+    const result = await runLocalQualityGate("crap", root, { commandRunner: runner, now: () => 0 });
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      process: null,
+      summary: {
+        status: "blocked",
+        reason: "Coverage quality summary is bound to different production sources.",
+      },
+    });
+    expect(runner.requests).toEqual([]);
   });
 
   it("blocks green native output without required evidence", async () => {
@@ -354,6 +380,17 @@ async function writeCoverage(root: string): Promise<void> {
     [`SF:${source}`, "FNF:0", "FNH:0", "BRF:0", "BRH:0", "LF:1", "LH:1", "end_of_record", ""].join("\n"),
     "utf8",
   );
+  const validation = await validateCoverage({ workspace: root, invocationStartedAtMs: 0 });
+  await writeJson(join(root, "reports/quality/coverage-summary.json"), {
+    gateId: "coverage",
+    status: "passed",
+    process: { kind: "exited", exitCode: 0 },
+    inputDigests: validation.sourceDigests,
+    outputDigests: {
+      "coverage/coverage-final.json": validation.coverageDigest,
+      "coverage/lcov.info": validation.lcovDigest,
+    },
+  });
 }
 
 async function writeCrapReport(root: string): Promise<void> {

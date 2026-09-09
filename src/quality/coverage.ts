@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
@@ -26,6 +27,7 @@ type Counts = Readonly<Record<MetricName, Count>>;
 export interface CoverageValidation {
   readonly coverageDigest: string;
   readonly lcovDigest: string;
+  readonly sourceDigests: Readonly<Record<string, string>>;
   readonly productionFiles: readonly string[];
   readonly global: Readonly<Record<MetricName, number>>;
   readonly domain: Readonly<Record<MetricName, number>>;
@@ -85,15 +87,43 @@ export async function validateCoverage(
   return {
     coverageDigest: coverage.digest,
     lcovDigest: lcov.digest,
+    sourceDigests: sources.sourceDigests,
     productionFiles: sources.executable,
     global,
     domain,
   };
 }
 
+export async function assertCurrentCoverageSummary(
+  workspacePath: string,
+  coverage: Pick<CoverageValidation, "coverageDigest" | "lcovDigest" | "sourceDigests">,
+): Promise<void> {
+  const evidence = await readFreshEvidence(
+    join(resolve(workspacePath), "reports/quality/coverage-summary.json"),
+    "Coverage quality summary",
+    0,
+  );
+  const summary = parseJsonObject(evidence.content, "Coverage quality summary");
+  if (summary.gateId !== "coverage" || summary.status !== "passed") {
+    throw new EvidenceError("Coverage quality summary is not a passed coverage gate.");
+  }
+  if (!isRecord(summary.process) || summary.process.kind !== "exited" || summary.process.exitCode !== 0) {
+    throw new EvidenceError("Coverage quality summary does not describe a successful process.");
+  }
+  if (!isRecord(summary.inputDigests) || !sameDigests(summary.inputDigests, coverage.sourceDigests)) {
+    throw new EvidenceError("Coverage quality summary is bound to different production sources.");
+  }
+  if (!isRecord(summary.outputDigests)
+    || summary.outputDigests["coverage/coverage-final.json"] !== coverage.coverageDigest
+    || summary.outputDigests["coverage/lcov.info"] !== coverage.lcovDigest) {
+    throw new EvidenceError("Coverage quality summary is bound to different coverage reports.");
+  }
+}
+
 interface SourceInventory {
   readonly all: ReadonlySet<string>;
   readonly executable: readonly string[];
+  readonly sourceDigests: Readonly<Record<string, string>>;
   readonly newestMtimeMs: number;
 }
 
@@ -107,6 +137,7 @@ async function discoverSources(workspace: string): Promise<SourceInventory> {
   });
   const all = new Set<string>();
   const executable: string[] = [];
+  const sourceDigests: Record<string, string> = {};
   let newestMtimeMs = 0;
 
   for (const absolutePath of files) {
@@ -116,11 +147,31 @@ async function discoverSources(workspace: string): Promise<SourceInventory> {
     newestMtimeMs = Math.max(newestMtimeMs, details.mtimeMs);
     if (!absolutePath.endsWith(".d.ts") && hasRuntimeCode(source, absolutePath)) {
       executable.push(relativePath);
+      sourceDigests[relativePath] = digestText(source);
     }
   }
 
   executable.sort(compareStrings);
-  return { all, executable, newestMtimeMs };
+  const orderedSourceDigests = Object.fromEntries(
+    executable.map((source) => [source, sourceDigests[source]!]),
+  );
+  return { all, executable, sourceDigests: orderedSourceDigests, newestMtimeMs };
+}
+
+function digestText(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function sameDigests(
+  actual: Record<string, unknown>,
+  expected: Readonly<Record<string, string>>,
+): boolean {
+  const actualKeys = Object.keys(actual).sort(compareStrings);
+  const expectedKeys = Object.keys(expected).sort(compareStrings);
+  if (actualKeys.length !== expectedKeys.length || actualKeys.some((key, index) => key !== expectedKeys[index])) {
+    return false;
+  }
+  return expectedKeys.every((key) => actual[key] === expected[key]);
 }
 
 async function walkTypeScript(directory: string): Promise<string[]> {

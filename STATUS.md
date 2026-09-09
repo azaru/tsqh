@@ -2,9 +2,18 @@
 
 ## Current state
 
+- Repository presentation hardening is implemented: built-in project defaults now live in the
+  application layer, child quality processes receive an explicit environment allowlist, the
+  controller uses an iterative loop, status rendering handles an unfinished run, and coverage
+  summaries are content-bound before CRAP or Sonar can consume them. Added public-repository
+  hygiene includes an MIT license, CI, a safe environment example, and self-contained links.
+- This hardening pass was verified with targeted checks only. The heavy mutation and Sonar stages
+  were intentionally not launched during this review; their last recorded blockers remain below.
+
 - Product: small configurable sequential guardrail controller with simple and adapted Swarm Forge
   workflow packs.
-- Active specification: none. MVP-007 is the latest completed increment.
+- Active specification: `specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md` (`planned`).
+  MVP-007 is the latest completed increment; the new gates are not implemented.
 - Completed specifications:
   `specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md` (`complete`),
   `specs/TSQH-MVP-006-provider-aware-agent-selection.md` (`complete`),
@@ -69,6 +78,91 @@
   Swarm Forge pack uses Sol/xhigh only for specifier and architect and Luna/max for every other
   agent dispatch.
 
+## MVP-010 specification — 2026-09-08
+
+- Planned successor: `specs/TSQH-MVP-010-execution-profiles-and-deterministic-escalation.md`,
+  dependent on MVP-009. MVP-008 remains the active planned specification.
+- Defines explicit compact/reviewed/specialized complete configurations, identical required quality
+  policy, structured native failure routing, bounded specialist branches, and candidate-bound final
+  QA after all required gates. A repair invalidates prior QA and requires complete verification.
+- Planner and architecture diagnosis remain read-only. Profile/model selection is local policy;
+  no automatic capability ranking, runtime spawning policy, or permission expansion is introduced.
+- Includes nine normative requirements, 21 acceptance scenarios, and a paired evaluation/reporting
+  contract. Real model benchmarking is operator-initiated and no performance advantage is assumed.
+- Specification delivery changes only the new specification, README, and this status section.
+  No runtime, pack, dependency or prior specification is modified; no real Codex smoke, native
+  protocol fixture or model benchmark is claimed. Documented traces are future acceptance targets.
+- Documentation validation: seven checks passed (exit 0), covering metadata, nine requirement IDs,
+  21 acceptance scenarios, local links, README/STATUS references and preservation of active MVP-008.
+  `git diff --check` exited 0.
+- `pnpm quality:quick` and `pnpm quality:full` each exited 1 in the task-owned copy under
+  `tmp/codex-spec-010-validation/`, with TMPDIR redirected beneath that directory. Each passed
+  typecheck/build and reported 789 passed, 3 failed tests across 30 files (28 passed, 2 failed).
+  Full stopped in quick; no later gate ran.
+- The three failures reproduce the recorded isolated-fixture issues: the plain Git-directory
+  fixture discovers the parent repository, and two CommonJS fake package commands inherit its ESM
+  package scope. No harness or quality policy was changed to obtain green. Existing mutation and
+  Sonar blockers remain unresolved; no new runtime workflow trace is claimed.
+- Validation processes completed and task-owned temporary paths were removed. Earlier specification
+  changes, pre-existing temporary paths and quality reports were preserved.
+
+## MVP-009 specification — 2026-09-08
+
+- Planned successor: `specs/TSQH-MVP-009-approved-work-orders-and-openspec-adapter.md`.
+  MVP-008 remains active and planned; MVP-009 depends on it and is not implemented.
+- The contract separates OpenSpec preparation from execution: strict producer-neutral JSON bundles,
+  explicit content-bound operator approval, immutable run inputs, local policy authority, native
+  requirement evidence, and a durable candidate-bound execution result.
+- The planned Swarm Forge execution pack removes specifier while preserving the other specialists
+  and MVP-008 repair/gate policy. Conditional specialists, managed worktrees, merge/recovery and
+  automatic OpenSpec sync/archive remain outside this increment.
+- This specification delivery changes only the new specification, README, and this status section.
+  No dependencies, runtime, workflow packs, or historical specifications are changed. No real
+  OpenSpec fixture or Codex smoke has run for MVP-009; its traces describe required future behavior.
+- Documentation validation: seven checks passed (exit 0), covering metadata, 10 requirement IDs,
+  22 acceptance scenarios, local links, README/STATUS references, and preservation of active MVP-008.
+  `git diff --check` exited 0.
+- Required `pnpm quality:quick` and `pnpm quality:full` each exited 1 in a task-owned validation
+  copy under `tmp/codex-spec-009-validation/`, with TMPDIR redirected beneath that directory.
+  Each invocation passed typecheck/build and reported 789 passed, 3 failed tests across 30 files
+  (28 passed, 2 failed). Full stopped in quick; no later gate executed.
+- These reproduce the MVP-008 isolated-fixture failures: the plain-directory Git fixture discovers
+  the parent repository, and two package-script fixtures execute CommonJS fake commands beneath
+  the parent ESM package. No test/harness/policy changes were made to obtain green. Existing
+  mutation and Sonar release blockers remain unresolved; no new runtime workflow trace is claimed.
+- Validation processes completed and task-owned temporary paths were removed. Pre-existing
+  temporary paths, quality reports, and the earlier MVP-008 documentation changes were preserved.
+
+## MVP-008 specification — 2026-09-08
+
+- The next increment specifies typed ESLint, dependency-cruiser inside quick, redacted Gitleaks
+  candidate/history scanning, and complete pnpm-lockfile OSV scanning.
+- Planned repository delivery order:
+  `secrets -> lint -> quick -> sca -> coverage -> crap -> knip -> mutation -> sonar`.
+  The current executable chain still contains the original six stages.
+- Absent and legacy partial configuration retain their six-stage defaults. New partial switches
+  are opt-in; both bundled complete packs will adopt the new chain during implementation.
+- Secrets and SCA failures select a configured blocked terminal because remediation can require
+  authority outside bundled writer paths. Other failures retain finite owner-routed repair.
+- Independent SAST requires a CodeQL feasibility decision, not a mandatory licensed gate in this
+  increment. Package publication checks remain deferred for this private package.
+- Specification delivery changes only this status, README, and the new specification. No tools
+  have been installed, no runtime behavior has changed, and no new real Codex smoke is claimed.
+- Documentation validation: metadata, delivery order, and active-spec references passed six
+  checks (exit 0); `git diff --check` exited 0.
+- Verification ran in a task-owned copy under `tmp/codex-spec-008-validation/`, with temporary
+  test data redirected beneath the same task directory. `pnpm quality:quick` and
+  `pnpm quality:full` each exited 1: 789 tests passed and 3 failed across 30 files (28 passed,
+  2 failed). Full stopped in quick; no later gate ran. Typecheck and build passed.
+- The isolated-copy failures concern fixture environment: the plain-directory Git test discovers
+  the parent repository, and two package-script tests run a CommonJS fake executable beneath the
+  parent ESM package. These are not evidence of a new runtime regression or a passing release.
+  No source, tests, thresholds, or harness configuration were changed to obtain green.
+- Task-owned validation files were removed after processes completed. Existing quality reports
+  and pre-existing temporary files were preserved.
+- Next action: implement MVP-008 in its specified sequence, preserving the release blockers below
+  until fresh evidence resolves them.
+
 ## Latest Sonar/full-chain verification — 2026-09-03
 
 - Sonar Compose startup — exit 0; `infra/sonar/compose.yaml` started the dedicated local service.
@@ -132,9 +226,7 @@
   `quick -> coverage -> crap -> knip -> mutation -> sonar` order. Sonar analysis
   `2dea0d8b-7f87-4ef8-b86c-ab93f6f814f5` returned computed gate `OK` and the approved remote policy
   on dedicated project `azaru_tsqh_mvp`.
-- The private Sonar token was not added to tracked files. Its value was accidentally included in a
-  local diagnostic tool output while locating the existing ignored environment, so it should be
-  rotated; this does not change the recorded gate result.
+- The private Sonar token is environment-only and was not added to tracked files.
 - No real Codex agent smoke was run or claimed for this increment.
 
 ## TSQH-MVP-006 completion evidence — 2026-08-26
@@ -395,8 +487,8 @@
 - Explicit JSON configuration remains supported. The planner, controller transition authority,
   trace schema, sequential runtime, role write enforcement, and native-gate semantics do not
   change.
-- Exact next action: none within the completed specifications; approve a new local specification
-  before broadening the product surface.
+- Exact next action: implement the active planned MVP-008 specification; completed increments
+  remain the baseline for behavior not explicitly changed by that specification.
 
 ## Fixed scope and prior release state
 
@@ -413,5 +505,6 @@
   same-account hostile-process protection.
 - `TSQH-MVP-001` and `TSQH-MVP-002` remain complete with no release blockers in their delivered
   scope.
-- No active specification is pending. No new full-chain run or real Codex smoke is claimed by this
-  recovery; the completion evidence above remains historical evidence for MVP-005 through MVP-007.
+- MVP-008 is planned and not implemented. No new full-chain run or real Codex smoke is claimed by
+  its specification delivery; the completion evidence above remains historical evidence for
+  MVP-005 through MVP-007, subject to the latest recorded release blockers.

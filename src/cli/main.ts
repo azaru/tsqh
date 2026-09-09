@@ -182,7 +182,7 @@ function renderStatus(
       `State: ${report.terminalState ?? state.phase}`,
       `Current step: ${report.currentStep}`,
       `Visits: ${JSON.stringify(report.visitCounts)}`,
-      `Latest outcome: ${report.latestOutcome!.outcome}`,
+      `Latest outcome: ${report.latestOutcome?.outcome ?? "none"}`,
       `Blocker: ${blocker}`,
       `Run directory: ${report.runDirectory}`,
       "",

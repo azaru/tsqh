@@ -7,7 +7,10 @@ import { JsonlTraceStore } from "../../src/adapters/trace-store.js";
 import { loadConfiguration } from "../../src/adapters/config-loader.js";
 import { BUILT_IN_PROMPTS } from "../../src/application/default-prompts.js";
 import { GATE_FAILURE_OMISSION_MARKER } from "../../src/domain/gate-failure-context.js";
-import { expandProjectConfiguration, QUALITY_STAGE_IDS } from "../../src/domain/project-configuration.js";
+import {
+  expandProjectConfiguration,
+  QUALITY_STAGE_IDS,
+} from "../../src/application/default-project-configuration.js";
 import { reduceTrace } from "../../src/domain/reducer.js";
 import type { CommandRequest, RuntimeServices } from "../../src/application/ports.js";
 import type {

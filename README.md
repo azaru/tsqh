@@ -4,10 +4,23 @@ TSQH MVP is a deliberately small, configurable, sequential multi-step and multi-
 It proves one claim: project configuration, not an agent, selects every next step, required quality
 gate, repair transition, and terminal result.
 
-This repository is a clean implementation experiment. It does not copy the implementation or
-current milestone state of `tsqh-orchestrator`.
+This repository is a clean implementation experiment. It does not copy implementation or
+provisional APIs from external projects.
 
 ## Read first
+
+Active planned increment: [`TSQH-MVP-008`](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md)
+defines typed lint, stronger architecture checks, secrets, and dependency-vulnerability scanning.
+Read it after `STATUS.md` before implementing new work. The runtime described below still reflects
+the completed MVP-001 through MVP-007 implementation.
+
+Next planned increment: [`TSQH-MVP-009`](specs/TSQH-MVP-009-approved-work-orders-and-openspec-adapter.md)
+defines approved immutable work orders, a preparation-only OpenSpec adapter, and candidate-bound
+requirement evidence. It depends on MVP-008 and does not change the active specification or runtime.
+
+Following MVP-009, [`TSQH-MVP-010`](specs/TSQH-MVP-010-execution-profiles-and-deterministic-escalation.md)
+plans explicit compact/reviewed/specialized profiles, classified native-failure routing, and fresh
+final QA with identical required quality policy. It is not implemented.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
@@ -25,7 +38,6 @@ current milestone state of `tsqh-orchestrator`.
    — the completed quality and bounded Swarm Forge Lite specification.
 9. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
-10. [`GOAL.md`](GOAL.md) — retained completion prompt and execution record.
 
 ## Product slice
 
@@ -89,8 +101,9 @@ policy reuses its implementation owner for rework; the Swarm Forge policy routes
 configured implementer, cleaner, or hardener according to concern ownership and does not adapt the
 squad Troubleshooter into a universal product repairer.
 
-`TSQH-MVP-007` is the latest completed specification. There is no active specification; the
-completed increments and their historical evidence are summarized in [`STATUS.md`](STATUS.md).
+`TSQH-MVP-007` is the latest completed specification. `TSQH-MVP-008` is the active planned
+specification; it is not implemented. The completed increments and their historical evidence are
+summarized in [`STATUS.md`](STATUS.md).
 
 The completed controller includes the smallest useful Swarm Forge collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
@@ -110,29 +123,13 @@ the only transition authority; there is no peer messaging, persistent leader, dy
 daemon, or per-role worktree. The immutable source map and missing-upstream-license notice are in
 the pack's [`PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md).
 
-## Upstream design references
+## Design provenance
 
-The completed local specification is authoritative for this repository. The primary product
-references are the immutable Swarm Forge `main`, `six-pack`, and `squad` commits recorded in
-[`PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md). They contribute role separation,
-bounded handoff, and controller/worker ideas without importing their tmux, daemon, worktree, or
-dashboard runtime.
-
-These sibling-project files provide additional design rationale without importing their active
-milestone or implementation:
-
-- [`../tsqh-orchestrator/VISION.md`](../tsqh-orchestrator/VISION.md) — deterministic transition
-  authority and fail-closed principles.
-- [`../tsqh-orchestrator/docs/04-deterministic-control-plane.md`](../tsqh-orchestrator/docs/04-deterministic-control-plane.md)
-  — pure planning and typed actions.
-- [`../tsqh-orchestrator/docs/06-agents-roles-and-assignments.md`](../tsqh-orchestrator/docs/06-agents-roles-and-assignments.md)
-  — separation of workflow steps, logical roles, and providers.
-- [`../tsqh-orchestrator/docs/05-evidence-and-reviews.md`](../tsqh-orchestrator/docs/05-evidence-and-reviews.md)
-  — subject-bound evidence direction.
-- [`../tsqh-orchestrator/docs/12-security-and-threat-model.md`](../tsqh-orchestrator/docs/12-security-and-threat-model.md)
-  — command, path, secret, and agent trust boundaries.
-
-Do not modify `../tsqh-orchestrator` while implementing this repository.
+The local specifications are authoritative for this repository. The immutable Swarm Forge source
+map, commit identities, and adaptation boundaries are recorded in
+[`workflows/swarm-forge/PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md). The implementation
+keeps those ideas as original paraphrased adaptations and does not depend on a sibling checkout
+or import another project's runtime.
 
 ## Requirements and setup
 
@@ -176,6 +173,14 @@ pnpm quality:sonar
 
 Do not commit an environment file or token. A fresh server must reproduce the exact identities in
 the completed specification and must not modify the sibling `azaru_tsqh` project.
+
+## Public repository checklist
+
+The repository includes an MIT license, a dependency-frozen GitHub Actions workflow, a safe
+`.env.example`, and no required path outside this checkout. Quality reports and credentials remain
+ignored. The CI workflow runs the fast static/build/test/architecture checks; the mutation and
+Sonar stages remain explicit local release checks because they need longer runtimes and private
+service credentials.
 
 The fail-closed wrapper checks three distinct kinds of remote evidence: `project_status` proves the
 computed result is `OK` with ignored conditions disabled; the assigned gate and its definition

@@ -4,7 +4,7 @@ import {
   QUALITY_STAGE_IDS,
   type QualityStageId,
   type TsqhProjectConfiguration,
-} from "../../src/domain/project-configuration.js";
+} from "../../src/application/default-project-configuration.js";
 
 describe("built-in project configuration expansion", () => {
   it("expands the complete default quality chain with bounded repair", () => {

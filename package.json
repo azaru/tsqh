@@ -2,6 +2,7 @@
   "name": "tsqh-mvp",
   "version": "0.0.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "A deterministic sequential multi-agent guardrail controller.",
   "engines": {

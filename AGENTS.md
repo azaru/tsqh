@@ -3,13 +3,14 @@
 ## Read order
 
 Before coding, read `README.md`, `STATUS.md`, the active specification named by `STATUS.md`, and the
-upstream design references linked from `README.md`.
+local design provenance referenced by `README.md`.
 
 ## Development contract
 
-- Work only on the local active specification. Do not inherit the active milestone or provisional
-  APIs from `../tsqh-orchestrator`.
-- Treat `../tsqh-orchestrator` as read-only design evidence. Never modify it from this repository.
+- Work only on the local active specification. Do not inherit provisional APIs from another
+  checkout.
+- Treat external design material recorded in local provenance as read-only evidence. This
+  repository must remain self-contained and must not require a sibling checkout.
 - Keep every repository file, identifier, prompt, comment, test, and generated artifact in English.
 - Use pnpm exclusively and keep one `pnpm-lock.yaml`.
 - Target Node.js 22 or newer, ESM, and strict TypeScript.

@@ -14,10 +14,7 @@ Before implementation:
 
 1. Read the repository instructions, active specification, and local design provenance in the
    required order.
-2. Identify the clean integration baseline, existing quality policy, workflow pack, and known
-   blockers. Do not treat historical evidence as current evidence.
-3. Use the latest client version that this project has actually validated—not an upstream
-   `latest` value. Verify that exact version before every task; do not change it mid-campaign.
+2. Identify the existing quality policy and workflow pack.
 
 Create one task specification under `specs/tasks/` for each independently verifiable slice. Each
 task must state its objective, scope, non-goals, dependencies, allowed and protected paths,
@@ -50,8 +47,8 @@ package:
 
 Do not use `pnpm link`, workspace links, sibling checkouts, source imports, consumer scripts in
 place of package-owned commands, or an unbuilt source path to satisfy this boundary. If the current
-baseline cannot yet produce an installable artifact, make package-boundary bootstrap the first
-task and require the external-consumer check for every subsequent implementation task.
+implementation cannot yet produce an installable artifact, make package-boundary bootstrap the
+first task and require the external-consumer check for every subsequent implementation task.
 
 Documentation-only tasks do not need a package installation unless they change a tool-consumed
 input. Markdown prompts, task files, workflow instructions, schemas, configuration, package
@@ -59,17 +56,16 @@ metadata, and scripts are executable or policy inputs, not documentation-only ch
 
 ## 3. Execute tasks one at a time
 
-For each task, create a new worktree from the latest green integration state and run this loop:
+For each task, create a new worktree from the current integration state and run this loop:
 
 ```text
 task specification
   -> clean task worktree
-  -> exact client/runtime preflight
   -> external-package consumer check
   -> configured TSQH workflow
   -> path/evidence validation
   -> required gates
-       | pass -> integrate and use this commit as the next baseline
+       | pass -> integrate and use this commit as the next integration state
        | fail -> configured finite repair -> rerun from its restart point
        | blocker/exhaustion -> stop with an exact diagnosis
 ```
@@ -111,7 +107,7 @@ Do not skip, weaken, relabel, or reorder required gates. Preserve checker-reject
 Integrate only when the controller reaches its success terminal, acceptance evidence exists, the
 external-consumer check has passed for implementation tasks, all required checks/gates pass, and
 all candidate changes are authorized. The next task starts from the resulting clean integration
-commit, never from the original baseline.
+commit, never from an older integration state.
 
 ## 5. Finish the campaign
 
@@ -122,7 +118,7 @@ After all tasks are integrated:
 2. Reconcile delivered files with the task plan and acceptance evidence.
 3. Confirm that task worktrees, consumer fixtures, temporary paths, reports, and package artifacts
    are either cleaned up or explicitly retained as evidence.
-4. Report exact changed files, commands and exit statuses, client/runtime/package versions,
+4. Report exact changed files, commands and exit statuses, package versions,
    test totals, task-by-task traces, repairs, limitations, and blockers.
 
 Never claim a real client smoke, package-install result, native service result, or other external

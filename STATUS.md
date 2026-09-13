@@ -1,6 +1,6 @@
 # Development Status
 
-Updated: 2026-09-13
+Updated: 2026-09-14
 
 This file is the concise current snapshot. Detailed verification, completed-increment evidence,
 and superseded blockers live in [`STATUS-HISTORY.md`](STATUS-HISTORY.md).
@@ -16,21 +16,23 @@ and superseded blockers live in [`STATUS-HISTORY.md`](STATUS-HISTORY.md).
 
 ## Current verification and blockers
 
-- `CI=true pnpm test` — exit 1: 792 passed and 3 failed tests across 30 files. The known failures
-  are the temporary Git-worktree and CommonJS fixture issues.
-- `CI=true pnpm quality:quick` — exit 1 with the same test result. `pnpm quality:full` therefore
-  stops in `quick`; no current complete full-chain pass is claimed.
-- The latest recorded full-chain attempt remains blocked by 15 surviving and 1 timed-out runnable
-  mutation, and the approved Sonar verification remains blocked by HTTP 401 authentication.
-- No new real Codex smoke is claimed for the current preparation pass or MVP-008 specification
-  delivery.
+- The restarted Task 01 run was stopped at the user's request before a completed tester result
+  was observed. Its candidate worktree and recovered task inputs were removed. The user then
+  removed temporary run evidence; no retained trace or real Codex smoke pass is claimed.
+- Eight new task specifications and a campaign plan were authored from the current MVP-008
+  specification and operational workflow under ignored `specs/tasks/`. No replacement run has
+  started, no task has been integrated, and no candidate implementation remains from this restart.
+- Dependency installation and the controller build exited zero during the cancelled preparation;
+  their temporary logs are no longer available. These observations are not release evidence.
+- No fresh test-suite, `quality:quick`, `quality:full`, package-install, mutation, or Sonar success
+  is claimed. Earlier mutation and Sonar blockers need fresh verification before integration.
 
 ## Next action
 
-Implement MVP-008 in its specified order: package distribution and package-root tool resolution,
-consumer preflight and scope, dependency-cruiser, typed lint/security, redacted Gitleaks,
-integration and demo, then the required fixture, package-install, demo, quality, mutation, and
-Sonar verification.
+Use the newly authored campaign plan in `specs/tasks/mvp008-campaign.md`. Before dispatching its
+Task 01, inspect the current committed integration state and validate the necessary harness and
+policy prerequisites. Run implementation only through the checked-in simple workflow in a fresh
+worktree; require installed-consumer evidence and all required gates before integration.
 
 ## Maintenance rule
 

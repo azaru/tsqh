@@ -522,3 +522,42 @@ the current status changes; do not rewrite historical results to make them appea
 - MVP-008 is planned and not implemented. No new full-chain run or real Codex smoke is claimed by
   its specification delivery; the completion evidence above remains historical evidence for
   MVP-005 through MVP-007, subject to the latest recorded release blockers.
+
+
+## 2026-09-14 — dogfooding harness isolation verified
+
+MVP-008 Task 01 attempt 01 remained blocked, not integrated: TSQH run
+`2d4c167e-1bb1-49df-869d-d9d1525445a1` recorded tester completed then implementer agent-timeout
+at 900000 ms (controller exit 1), with no controller quick visit. Its candidate and logs are retained
+under `tmp/codex-mvp008-01/attempt-01/`. Tester final log: 24 failed/1 passed; implementer distribution
+log: 23 passed/2 failed; agent-invoked quick: 806 passed/5 failed, lifecycle exit 1. Those are not
+implementation acceptance passes. Ignored task inputs were clarified for dependency exports,
+independent npm/pnpm fixtures and actual installed-engine resolution.
+
+Necessary integration-branch harness fixes changed only:
+- `test/adapters/git-inspector.test.ts`: bare parent isolates the plain non-worktree fixture.
+- `test/quality/package-scripts.test.ts`: explicit CommonJS isolates the fake pnpm executable.
+- `stryker.config.mjs`: dependency-store exclusion for sandbox copying and owned temp location.
+
+No assertions, production mutation targets, checker, non-incremental setting, thresholds or gate
+order were weakened. Reproduction: targeted tests exit 1, 20 passed/3 failed. Corrected targeted
+command `pnpm exec vitest run test/adapters/git-inspector.test.ts test/quality/package-scripts.test.ts`
+exited 0, 23 tests/2 files passed. `pnpm quality:quick` exited 0, 786 tests/29 files passed.
+First full attempt failed on dangling dependency-store links. After sandbox correction, full passed
+mutation but failed because its environment omitted SONAR_TOKEN. A separate approved Sonar invocation
+with environment-only values from ignored `.env` passed; neither failed full was relabeled.
+
+Fresh final `pnpm quality:full` exited 0 in exact order
+`quick -> coverage -> crap -> knip -> mutation -> sonar`. Quick and coverage each ran 786 tests in
+29 files. Coverage: 100% statements/functions/lines, 99.64% branches, with existing domain policy
+validated. Mutation: 3249 Killed and 1239 CompileError, no other status; fresh non-incremental report
+SHA-256 `9f9d390f7bff2a645d192a3658c684bedf5af01297b306468728bfb7a8c602e1`.
+Approved Sonar analysis `ad05050e-1188-48ec-8b0f-dd2159463698` computed gate OK with the approved
+remote policy. Tracked integration diff was unchanged across full. No candidate implementation
+acceptance or real Codex smoke pass is claimed by this harness verification.
+
+Exact command records, logs and copied validated reports are retained under
+`tmp/codex-mvp008-harness-isolation/`, including `verified-harness-summary.json` and
+`full-authenticated-evidence/`. The task-owned directories and failed candidate are explicitly
+retained as evidence; they are not maintained test inputs. A new affected worktree must start from
+the harness integration commit; do not resume or manually repair the old candidate.

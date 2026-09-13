@@ -45,7 +45,10 @@ describe.sequential("local Git inspection", () => {
   });
 
   it("rejects non-repositories and dirty repositories", async () => {
-    const plain = await mkdtemp(join(tmpdir(), "tsqh-git-plain-"));
+    const plainParent = await mkdtemp(join(tmpdir(), "tsqh-git-plain-parent-"));
+    await git(plainParent, ["init", "--bare", "--quiet"]);
+    const plain = join(plainParent, "workspace");
+    await mkdir(plain);
     const inspector = new LocalGitInspector();
     await expect(inspector.openCleanWorkspace(plain, [])).rejects.toThrow(
       /Workspace is not a Git worktree:/u,

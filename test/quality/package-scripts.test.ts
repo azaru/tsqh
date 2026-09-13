@@ -69,6 +69,7 @@ async function createFakePnpm(failStage = "", exitCode = 1): Promise<FakePnpmFix
   const bin = join(directory, "pnpm");
   const log = join(directory, "calls.log");
   const environmentLog = join(directory, "environment.log");
+  await writeFile(join(directory, "package.json"), '{"type":"commonjs"}\n', "utf8");
   const source = [
     `#!${process.execPath}`,
     'const { appendFileSync } = require("node:fs");',

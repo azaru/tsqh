@@ -1,14 +1,20 @@
 {
   "schemaVersion": 1,
   "workflow": {
-    "id": "swarm-forge",
+    "id": "tdd-pipeline",
     "entryStepId": "specifier",
     "steps": {
       "specifier": {
         "type": "agent",
         "role": "specifier",
-        "model": "gpt-5.6-sol",
-        "effort": "xhigh",
+        "model": "gpt-5.6-luna",
+        "effort": "max",
+        "maxVisits": 1,
+        "onCompleted": "tester"
+      },
+      "tester": {
+        "type": "agent",
+        "role": "tester",
         "maxVisits": 1,
         "onCompleted": "implementer"
       },
@@ -16,72 +22,59 @@
         "type": "agent",
         "role": "implementer",
         "maxVisits": 1,
-        "onCompleted": "cleaner"
+        "onCompleted": "quick-implementer"
+      },
+      "quick-implementer": {
+        "type": "gate",
+        "profile": "quick",
+        "maxVisits": 3,
+        "onPassed": "cleaner",
+        "onFailed": "implementation-rework"
       },
       "cleaner": {
         "type": "agent",
         "role": "cleaner",
         "maxVisits": 1,
-        "onCompleted": "architect"
+        "onCompleted": "quick-cleaner"
+      },
+      "quick-cleaner": {
+        "type": "gate",
+        "profile": "quick",
+        "maxVisits": 3,
+        "onPassed": "architect",
+        "onFailed": "cleanup-rework"
       },
       "architect": {
         "type": "agent",
         "role": "architect",
-        "model": "gpt-5.6-sol",
-        "effort": "xhigh",
+        "model": "gpt-5.6-luna",
+        "effort": "max",
         "maxVisits": 1,
-        "onCompleted": "hardener"
+        "onCompleted": "quick-architect"
+      },
+      "quick-architect": {
+        "type": "gate",
+        "profile": "quick",
+        "maxVisits": 3,
+        "onPassed": "hardener",
+        "onFailed": "hardening-rework"
       },
       "hardener": {
         "type": "agent",
         "role": "hardener",
         "maxVisits": 1,
-        "onCompleted": "qa"
+        "onCompleted": "quick-hardener"
       },
-      "qa": {
-        "type": "agent",
-        "role": "qa",
-        "maxVisits": 1,
-        "onCompleted": "quick"
-      },
-      "quick": {
+      "quick-hardener": {
         "type": "gate",
         "profile": "quick",
         "maxVisits": 3,
-        "onPassed": "coverage",
-        "onFailed": "implementation-rework"
-      },
-      "coverage": {
-        "type": "gate",
-        "profile": "coverage",
-        "maxVisits": 3,
-        "onPassed": "crap",
-        "onFailed": "cleanup-rework"
-      },
-      "crap": {
-        "type": "gate",
-        "profile": "crap",
-        "maxVisits": 3,
-        "onPassed": "knip",
-        "onFailed": "cleanup-rework"
-      },
-      "knip": {
-        "type": "gate",
-        "profile": "knip",
-        "maxVisits": 3,
-        "onPassed": "mutation",
-        "onFailed": "cleanup-rework"
-      },
-      "mutation": {
-        "type": "gate",
-        "profile": "mutation",
-        "maxVisits": 3,
-        "onPassed": "sonar",
+        "onPassed": "full",
         "onFailed": "hardening-rework"
       },
-      "sonar": {
+      "full": {
         "type": "gate",
-        "profile": "sonar",
+        "profile": "full",
         "maxVisits": 3,
         "onPassed": "passed",
         "onFailed": "hardening-rework"
@@ -90,19 +83,19 @@
         "type": "agent",
         "role": "implementer",
         "maxVisits": 2,
-        "onCompleted": "quick"
+        "onCompleted": "quick-implementer"
       },
       "cleanup-rework": {
         "type": "agent",
         "role": "cleaner",
         "maxVisits": 2,
-        "onCompleted": "quick"
+        "onCompleted": "quick-cleaner"
       },
       "hardening-rework": {
         "type": "agent",
         "role": "hardener",
         "maxVisits": 2,
-        "onCompleted": "quick"
+        "onCompleted": "quick-hardener"
       },
       "passed": {
         "type": "terminal",
@@ -116,30 +109,30 @@
       "promptPath": "prompts/specifier.md",
       "allowedPathPrefixes": []
     },
+    "tester": {
+      "provider": "codex",
+      "promptPath": "prompts/tester.md",
+      "allowedPathPrefixes": ["test/"]
+    },
     "implementer": {
       "provider": "codex",
       "promptPath": "prompts/implementer.md",
-      "allowedPathPrefixes": ["src/", "test/"]
+      "allowedPathPrefixes": ["src/"]
     },
     "cleaner": {
       "provider": "codex",
       "promptPath": "prompts/cleaner.md",
-      "allowedPathPrefixes": ["src/", "test/"]
+      "allowedPathPrefixes": ["src/"]
     },
     "architect": {
       "provider": "codex",
       "promptPath": "prompts/architect.md",
-      "allowedPathPrefixes": []
+      "allowedPathPrefixes": ["src/"]
     },
     "hardener": {
       "provider": "codex",
       "promptPath": "prompts/hardener.md",
-      "allowedPathPrefixes": ["src/", "test/"]
-    },
-    "qa": {
-      "provider": "codex",
-      "promptPath": "prompts/qa.md",
-      "allowedPathPrefixes": []
+      "allowedPathPrefixes": ["src/"]
     }
   },
   "providers": {
@@ -168,31 +161,11 @@
       "args": ["quality:quick"],
       "timeoutMs": 900000
     },
-    "coverage": {
+    "full": {
       "executable": "pnpm",
-      "args": ["quality:coverage"],
-      "timeoutMs": 900000
-    },
-    "crap": {
-      "executable": "pnpm",
-      "args": ["quality:crap"],
-      "timeoutMs": 900000
-    },
-    "knip": {
-      "executable": "pnpm",
-      "args": ["quality:knip"],
-      "timeoutMs": 900000
-    },
-    "mutation": {
-      "executable": "pnpm",
-      "args": ["quality:mutation"],
-      "timeoutMs": 3600000
-    },
-    "sonar": {
-      "executable": "pnpm",
-      "args": ["quality:sonar"],
+      "args": ["quality:full"],
       "environmentKeys": ["SONAR_HOST_URL", "SONAR_TOKEN", "SONAR_ORGANIZATION"],
-      "timeoutMs": 360000
+      "timeoutMs": 3600000
     }
   }
 }

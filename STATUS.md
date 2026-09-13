@@ -25,8 +25,8 @@
 - This hardening pass was verified with targeted checks only. The heavy mutation and Sonar stages
   were intentionally not launched during this review; their last recorded blockers remain below.
 
-- Product: small configurable sequential guardrail controller with simple and adapted Swarm Forge
-  workflow packs.
+- Product: small configurable sequential guardrail controller with simple and TDD Pipeline workflow
+  packs.
 - Active specification: `specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md` (`planned`).
   MVP-007 is the latest completed increment; the new gates are not implemented.
 - Completed specifications:
@@ -44,17 +44,18 @@
   `quality:crap`, `quality:knip`, `quality:mutation`, `quality:sonar`, and the exact sequential
   fail-fast `quality:full` chain are wired. Historical MVP-005–007 evidence and the latest
   fail-fast verification are recorded below; no successful new full-chain run is claimed.
-- The self-contained simple workflow exposes `quick -> coverage -> crap -> knip -> mutation ->
-  sonar`. Every ordinary failure reuses its one configured implementation owner, returns to `quick`,
-  and remains bounded by `maxVisits`.
-- The adapted Swarm Forge workflow, its six referenced prompts, immutable provenance, and digest
-  validation are colocated under `workflows/swarm-forge/`.
+- The self-contained simple workflow is now a tester-first TDD loop with
+  `tester -> implementer -> quick -> passed`; a quick failure returns directly to the bounded
+  implementer, with no generic repair step or tester redispatch. Its `full`, coverage, CRAP, Knip,
+  mutation, and Sonar checks are intentionally outside this pack.
+- The TDD Pipeline workflow, its six referenced prompts, and trusted local configuration are
+  colocated under `workflows/tdd-pipeline/`.
 - Runtime scope remains version 0: one foreground run, one action at a time, one caller-supplied
   clean Git worktree, and generic command providers. There is no concurrency or remote executor.
-- The approved Swarm Forge continuation is deliberately small: pass the prior completed
-  agent's bounded, sanitized stdout to the next configured agent as untrusted context; block gates
-  that mutate the candidate; and run a sequential `specifier -> implementer -> cleaner -> architect
-  -> hardener -> qa` workflow followed by the unchanged six-gate quality chain.
+- The approved TDD Pipeline continuation is deliberately small: pass the prior completed agent's
+  bounded, sanitized stdout to the next configured agent as untrusted context; block gates that
+  mutate the candidate; and run `specifier -> tester -> implementer -> cleaner -> architect ->
+  hardener`, with quick after each phase and full as the final native gate.
 - Bounded previous-role handoff is implemented without a trace migration: reduction derives the
   latest successful agent stdout, source step, visit, and truncation state from the existing bounded
   process artifact. Gates preserve it; blocked or nonzero agents do not create one; and prompt text
@@ -68,11 +69,10 @@
   `GateFailureContext` with an 8 KiB head/tail excerpt per stream and explicit capture/context
   truncation facts. Gate-driven assignments omit the previous successful-agent handoff. Passed and
   blocked gates retain their previous behavior.
-- The two packs under `workflows/` are self-contained. The simple pack owns one concise writer
-  prompt; the Swarm Forge pack owns only the six adapted prompts it dispatches. Both use one shared
-  command provider and all six native gates. Simple reuses implementer for bounded rework; Swarm
-  Forge routes quick to implementer, coverage/CRAP/Knip to cleaner, and mutation/Sonar to hardener,
-  with three separate finite owner-rework steps that restart at `quick`.
+- The two packs under `workflows/` are self-contained. The simple pack owns tester and implementer
+  TDD prompts plus one `quick` native gate; the TDD Pipeline pack owns six specialist prompts, quick
+  after each phase, and one final full gate. Simple returns gate failures to implementer; TDD
+  Pipeline returns phase quick failures to their owner and full failures to hardener.
 - A dedicated local Sonar target is now provisioned on the existing localhost service: project
   `azaru_tsqh_mvp`, gate `azaru-tsqh-mvp-strict`, TypeScript profile
   `azaru-tsqh-mvp-typescript`, `PREVIOUS_VERSION` new code, and no small-change exemption.
@@ -90,8 +90,7 @@
   while retaining explicit JSON compatibility and every existing validation boundary.
 - `TSQH-MVP-006` is complete. It adds provider, role, and agent-step model/effort selection with
   independent `step -> role -> provider` precedence and provider-owned argument templates. The
-  Swarm Forge pack uses Sol/xhigh only for specifier and architect and Luna/max for every other
-  agent dispatch.
+  TDD Pipeline pack uses the provider's Luna/max defaults.
 
 ## MVP-010 specification — 2026-09-08
 

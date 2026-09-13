@@ -94,44 +94,40 @@ replace the full graph. Explicit complete JSON configurations remain supported.
 `TSQH-MVP-006` is complete. Complete workflows can set provider defaults and refine model and
 effort independently at role or individual agent-step level. Resolution is
 `step -> role -> provider`; the selected provider owns exact argument placeholders and invalid or
-incomplete rendering contracts fail before execution. The Swarm Forge pack uses Sol/xhigh only for
-specifier and architect and Luna/max for every other agent dispatch.
+incomplete rendering contracts fail before execution. The TDD Pipeline pack uses the provider's
+Luna/max defaults for its agent dispatches.
 
 `TSQH-MVP-007` is complete. Failed native-gate output is reduced deterministically to a bounded
 `GateFailureContext`, while passed-gate output is not sent to the next model prompt. The simple
-policy reuses its implementation owner for rework; the Swarm Forge policy routes failures to the
-configured implementer, cleaner, or hardener according to concern ownership and does not adapt the
-squad Troubleshooter into a universal product repairer.
+policy reuses its implementation owner for rework; the TDD Pipeline policy routes quick failures to
+the phase owner and full failures to hardener. It does not adapt the upstream Troubleshooter into a
+universal product repairer.
 
 `TSQH-MVP-007` is the latest completed specification. `TSQH-MVP-008` is the active planned
 specification; it is not implemented. The completed increments and their historical evidence are
 summarized in [`STATUS.md`](STATUS.md).
 
-The completed controller includes the smallest useful Swarm Forge collaboration primitive:
+The completed controller includes the smallest useful specialist-pipeline collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
 configured agent. Native gates are also candidate-stable: the controller compares Git snapshots
 around each gate and blocks any Git-visible candidate-path mutation while permitting configured
 gates to regenerate ignored quality reports.
 
 Two self-contained packs live under [`workflows/`](workflows/). The
-[`simple`](workflows/simple/README.md) pack demonstrates one implementation owner, the complete
-six-gate chain, and bounded redispatch to that owner. The
-[`swarm-forge`](workflows/swarm-forge/README.md) pack uses the sequential
-`specifier -> implementer -> cleaner -> architect -> hardener -> qa` spine before the same native
-gates. Its configured rework edges route quick to implementer, coverage/CRAP/Knip to cleaner, and
-mutation/Sonar to hardener. Its original paraphrased prompts are informed by the `main`, `two-pack`,
-`four-pack`, `six-pack`, and `squad` branches. The planner remains
+[`simple`](workflows/simple/README.md) pack demonstrates a tester-first TDD flow, one `quick`
+quality gate, and bounded redispatch to the implementer after a gate failure. It intentionally
+excludes the `full` chain and its individual release gates. The
+[`tdd-pipeline`](workflows/tdd-pipeline/README.md) pack uses the sequential
+`specifier -> tester -> implementer -> cleaner -> architect -> hardener` spine, quick after each
+phase, and one final full gate. Its original paraphrased prompts are informed by the upstream
+`main`, `two-pack`, `four-pack`, `six-pack`, and `squad` branches. The planner remains
 the only transition authority; there is no peer messaging, persistent leader, dynamic spawning,
-daemon, or per-role worktree. The immutable source map and missing-upstream-license notice are in
-the pack's [`PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md).
+daemon, or per-role worktree.
 
 ## Design provenance
 
-The local specifications are authoritative for this repository. The immutable Swarm Forge source
-map, commit identities, and adaptation boundaries are recorded in
-[`workflows/swarm-forge/PROVENANCE.md`](workflows/swarm-forge/PROVENANCE.md). The implementation
-keeps those ideas as original paraphrased adaptations and does not depend on a sibling checkout
-or import another project's runtime.
+The local specifications are authoritative for this repository. The implementation keeps its own
+workflow behavior and does not depend on a sibling checkout or import another project's runtime.
 
 ## Requirements and setup
 
@@ -342,24 +338,21 @@ Quality profiles may also name explicit `environmentKeys`. Only those configured
 receive the additional values; agent-provider processes retain the fixed minimal environment.
 
 The repository ships exactly two self-contained complete workflow packs. The
-[`simple`](workflows/simple/workflow.json) pack has one implementation role, six native pnpm quality
-profiles, and explicit bounded rework edges. Its repair step reuses the same `implementer` role and
-prompt under [`workflows/simple/prompts/`](workflows/simple/prompts/).
+[`simple`](workflows/simple/workflow.json) pack has tester and implementer roles, one native pnpm
+`quick` profile, and explicit bounded rework edges. Gate failures return to the implementer; there
+is no generic repair step. The full release chain is not part of this pack.
 
-The [`swarm-forge`](workflows/swarm-forge/workflow.json) pack runs
-`specifier -> implementer -> cleaner -> architect -> hardener -> qa` before the same six profiles.
-Specifier, architect, and QA have empty write authority; implementer, cleaner, and hardener are
-scoped to `src/` and `test/`. Quick failure selects implementation rework, coverage/CRAP/Knip
-select cleanup rework, and mutation/Sonar select hardening rework; each returns to `quick` within
-fixed visit limits. Only prompts referenced by this workflow remain in its owned
-[`prompts/`](workflows/swarm-forge/prompts/) directory. Its manifest validates their immutable
-digests and upstream source mapping.
+The [`tdd-pipeline`](workflows/tdd-pipeline/workflow.json) pack runs
+`specifier -> tester -> implementer -> cleaner -> architect -> hardener`, with `quick` after
+each phase and `full` as the final gate. Tester writes only `test/`; implementer, cleaner,
+architect, and hardener write only `src/`; specifier is read-only. Architect owns structure and
+justified design-pattern corrections. Only prompts referenced by this
+workflow remain in its owned [`prompts/`](workflows/tdd-pipeline/prompts/) directory.
 
 Both packs use one generic Codex command provider. The provider arguments match the locally
 inspected Codex CLI interface; they remain ordinary configuration and may need adjustment for
-another Codex release. The Swarm Forge pack defaults to Luna/max and overrides only its specifier
-and architect steps to Sol/xhigh. The simple pack leaves model and effort absent, so Codex retains
-its externally configured defaults.
+another Codex release. The TDD Pipeline pack uses Luna/max defaults. The simple pack leaves model
+and effort absent, so Codex retains its externally configured defaults.
 
 The controller now supplies the latest successfully completed agent's bounded, sanitized stdout to
 the next configured agent with source identity and truncation state. Gates preserve that handoff,

@@ -1,18 +1,21 @@
 # Simple workflow pack
 
-This self-contained pack demonstrates the smallest complete TSQH hardening workflow. One
-implementation agent is followed by the six configured native quality gates. Any ordinary gate
-failure re-dispatches the same bounded implementation owner with compact failure context and
-restarts the chain from `quick`.
+This self-contained pack demonstrates a small TDD workflow. A `tester` first writes the complete
+behavioral test suite, including relevant edge cases, an `implementer` makes it pass, and one native
+`quick` quality gate validates the candidate. A failed gate returns directly to `implementer`; there
+is no generic repair step and the tester is not re-dispatched.
 
 ```text
-implement -> quick -> coverage -> crap -> knip -> mutation -> sonar -> passed
-             \-> repair --------------------------------------------/
+tester -> implementer -> quick -> passed
+                           ^        |
+                           └────────┘
 ```
 
-The writing role is limited to `src/` and `test/`. The controller validates its Git-visible changes
-after every agent step. Gates must not mutate the candidate. Gate-driven assignments omit the prior
-agent handoff and include at most 8 KiB from each failed native output stream.
+The tester may write only under `test/`; the implementer may write only under `src/`. The tester's
+behavioral suite is the implementer's acceptance contract and is not rewritten during
+implementation or rework. The controller validates Git-visible changes after every agent step.
+Gates must not mutate the candidate. Gate-driven assignments omit the prior agent handoff and
+include at most 8 KiB from each failed native output stream.
 
 Run this pack from a built TSQH checkout with a separate clean candidate worktree:
 
@@ -23,5 +26,6 @@ pnpm tsqh run \
   --task workflows/simple/task.md
 ```
 
-The provider command and quality profiles are ordinary configuration. They may require local
-credentials or tool availability, especially the Sonar profile.
+The provider command and quick quality profile are ordinary configuration. This pack deliberately
+does not run `quality:full`, coverage, CRAP, Knip, mutation, or Sonar. Those checks remain outside
+this short TDD loop.

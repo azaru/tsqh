@@ -1,5 +1,20 @@
 # Development Status
 
+## Public-readiness scope — 2026-09-13
+
+- The release baseline is the completed MVP-001 through MVP-007 controller with its existing
+  six-stage local quality chain.
+- Public repository preparation is limited to the contribution and security guidance, pinned CI
+  actions, and the Node/pnpm editor and engine markers added in this working tree.
+- MVP-008 remains planned and has no runtime implementation.
+- `CI=true pnpm test` and `CI=true pnpm quality:quick` each exited 1 with 792 passed and 3
+  failed tests across 30 files. The failures are the known temporary Git-worktree and CommonJS
+  fixture issues; `quality:full` stopped in `quick`, so coverage, CRAP, Knip, mutation, and Sonar
+  did not run. No new real Codex smoke result is claimed by this preparation pass.
+- The current repair pass later reached mutation with 4,522 mutants under `concurrency: 8` and
+  `vitest.related: true`; trusted local configuration is intentionally outside the mutation
+  evidence contract for this MVP. The post-change quick/full verification remains incomplete.
+
 ## Current state
 
 - Repository presentation hardening is implemented: built-in project defaults now live in the
@@ -133,35 +148,22 @@
 - Validation processes completed and task-owned temporary paths were removed. Pre-existing
   temporary paths, quality reports, and the earlier MVP-008 documentation changes were preserved.
 
-## MVP-008 specification — 2026-09-08
+## MVP-008 specification — 2026-09-13
 
-- The next increment specifies typed ESLint, dependency-cruiser inside quick, redacted Gitleaks
-  candidate/history scanning, and complete pnpm-lockfile OSV scanning.
-- Planned repository delivery order:
-  `secrets -> lint -> quick -> sca -> coverage -> crap -> knip -> mutation -> sonar`.
+- The next increment is deliberately limited to one optional typed ESLint/typescript-eslint gate.
+- Planned opted-in repository delivery order:
+  `lint -> quick -> coverage -> crap -> knip -> mutation -> sonar`.
   The current executable chain still contains the original six stages.
-- Absent and legacy partial configuration retain their six-stage defaults. New partial switches
-  are opt-in; both bundled complete packs will adopt the new chain during implementation.
-- Secrets and SCA failures select a configured blocked terminal because remediation can require
-  authority outside bundled writer paths. Other failures retain finite owner-routed repair.
-- Independent SAST requires a CodeQL feasibility decision, not a mandatory licensed gate in this
-  increment. Package publication checks remain deferred for this private package.
-- Specification delivery changes only this status, README, and the new specification. No tools
-  have been installed, no runtime behavior has changed, and no new real Codex smoke is claimed.
-- Documentation validation: metadata, delivery order, and active-spec references passed six
-  checks (exit 0); `git diff --check` exited 0.
-- Verification ran in a task-owned copy under `tmp/codex-spec-008-validation/`, with temporary
-  test data redirected beneath the same task directory. `pnpm quality:quick` and
-  `pnpm quality:full` each exited 1: 789 tests passed and 3 failed across 30 files (28 passed,
-  2 failed). Full stopped in quick; no later gate ran. Typecheck and build passed.
-- The isolated-copy failures concern fixture environment: the plain-directory Git test discovers
-  the parent repository, and two package-script tests run a CommonJS fake executable beneath the
-  parent ESM package. These are not evidence of a new runtime regression or a passing release.
-  No source, tests, thresholds, or harness configuration were changed to obtain green.
-- Task-owned validation files were removed after processes completed. Existing quality reports
-  and pre-existing temporary files were preserved.
-- Next action: implement MVP-008 in its specified sequence, preserving the release blockers below
-  until fresh evidence resolves them.
+- Absent and legacy partial configurations retain the six-stage defaults. Complete custom
+  workflows remain unchanged unless they explicitly add lint.
+- Architecture replacement, secrets scanning, dependency vulnerability scanning, and independent
+  SAST are deferred to later increments.
+- No runtime behavior, dependency, or workflow-pack implementation has been delivered for MVP-008;
+  no new real Codex smoke result is claimed.
+- Documentation validation for the rewritten specification is pending; `git diff --check` remains
+  required before delivery.
+- Next action: implement the typed lint gate and its real failing/corrected fixtures only after the
+  existing release blockers are understood.
 
 ## Latest Sonar/full-chain verification — 2026-09-03
 

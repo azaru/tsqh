@@ -45,6 +45,7 @@ upstream commit identities.
 | Typed lint | ESLint flat configuration with typescript-eslint | Zero warnings, errors, or parser failures |
 | Lightweight SAST | `eslint-plugin-security` in the same ESLint invocation | Selected security rules fail closed; no claim of complete vulnerability coverage |
 | Architecture | dependency-cruiser inside `quick` | Zero forbidden edges, cycles, unresolved imports, or unclassified production modules |
+| Analysis scope | Consumer-configured production, test, script, and exclusion globs | Defaults cover `src/`, `test/`, and `scripts/`; adapters use the resolved scope rather than repository paths |
 | Dependency vulnerability scanning | Out of scope | No SCA or advisory service in this increment |
 | Independent SAST service | Out of scope | No CodeQL, Semgrep service, or second security analyzer |
 | Package distribution | Included | `npm pack`, npm install, pnpm install, the `tsqh` bin, and the demo work in a clean consumer fixture |
@@ -77,6 +78,16 @@ across all four measures, CRAP at most 6, zero Knip findings and hints, every ru
 `Killed`, and the approved server-computed Sonar gate `OK`. Checker `CompileError` mutations
 remain separately reported non-runnable mutants.
 
+TSQH resolves one strict consumer analysis scope before the first code-quality stage. Its default
+patterns are production `src/**/*.ts`, tests `test/**/*.ts`, and scripts `scripts/**/*.mjs`, with
+the standard generated/dependency/report exclusions. A consumer may replace those patterns in its
+configuration for layouts such as `lib/`, `__tests__/`, or `tools/`; no adapter assumes that the
+repository's directory names exist. Tests remain executable inputs for the runner. Production
+patterns feed coverage, CRAP, mutation, Sonar, and the production architecture graph; test patterns
+feed test execution and typed lint; script patterns feed typed/generic lint and Knip. Configuration,
+workflow examples, prompts, reports, and dependencies are policy inputs or excluded artifacts, not
+production code targets.
+
 `quality:quick` remains usable offline and runs package-owned typecheck, build, dependency-cruiser
 architecture, then the complete deterministic test suite against the consumer workspace.
 `quality:architecture` remains independently callable. Full must not invoke architecture as a
@@ -102,6 +113,9 @@ failure statuses and evidence-validation failures remain failures.
   candidate directory, finite timeouts, and explicit environment allowlists.
 - Resolve package-owned executables from the installed TSQH package root, never from the consumer's
   `node_modules/.bin` and never by invoking a consumer package script.
+- Resolve production, test, script, and exclusion globs from the validated consumer scope. Reject
+  absolute paths, parent escapes, empty patterns, unknown scope properties, and exclusions that
+  cannot be normalized beneath the candidate workspace.
 - Tool configuration is trusted local policy for this MVP. The evidence binds invocation, tool
   versions, analyzed scope, source inputs, reports, and process facts; it does not require tests or
   separate digests for configuration files.
@@ -116,10 +130,28 @@ The package must be usable as a host project's `devDependency`; its runtime depe
 larger than the current repository graph because it owns the quality toolchain.
 
 The consumer workspace remains the candidate under analysis. Before a gate starts, TSQH inspects
-its package manifest, Git root, TypeScript project, test configuration and supported module format.
+its package manifest, Git root, TypeScript project, test configuration, supported module format, and
+optional quality scope. If the scope is absent, it uses the defaults above; if it is present, its
+include and exclusion patterns are applied consistently by the relevant adapters.
 Missing or unsupported project configuration produces a bounded warning in `doctor` and the run
 summary. If the required command or evidence cannot be constructed, the gate blocks; a warning
 never converts missing or contradictory evidence into success.
+
+A consumer with a different layout can provide the scope in its project configuration:
+
+```ts
+export default {
+  quality: {
+    lint: true,
+    scope: {
+      production: ["lib/**/*.ts"],
+      tests: ["__tests__/**/*.ts"],
+      scripts: ["tools/**/*.mjs"],
+      exclude: ["generated/**", "fixtures/**"],
+    },
+  },
+};
+```
 
 TSQH owns tool versions and command arguments. The consumer owns source files and project settings
 that the adapters explicitly read. No peer quality tool is required, and no install hook modifies
@@ -153,7 +185,9 @@ One `quality:secrets` wrapper runs two sequential Gitleaks scans:
    tags. The wrapper records the inspected ref/object inventory and rejects shallow or incomplete
    history. It does not fetch remote history, inspect reflogs, or rewrite commits.
 
-Both scans must complete successfully with zero unapproved findings. Reports, errors, traces and
+Both scans must complete successfully with zero unapproved findings. The configured code-analysis
+scope does not narrow either scan: candidate files and reachable history remain the complete
+declared secret-scanning scope. Reports, errors, traces and
 provider prompts contain only redacted metadata. Inline allow directives and global ignore files
 that weaken the checked-in policy are rejected. Synthetic fixtures may use a narrow documented
 exception; real credentials may never be baselined.
@@ -183,9 +217,11 @@ fixed only after synthetic safe and unsafe fixtures demonstrate that the selecte
 this TypeScript/ESM codebase. A finding or parser failure is an error; there is no autofix or
 warning-only mode.
 
-The lint scope is the complete recursive set of `src/**/*.ts` and `test/**/*.ts`. Generated output,
-dependencies, scanner output, reports, and task-owned `tmp/codex-*` paths are excluded explicitly.
-Invalid fixture snippets are represented as data or narrowly scoped fixtures.
+The lint scope is the resolved union of the consumer's production, test, and script patterns.
+Typed TypeScript rules apply to supported TypeScript files; generic JavaScript/security rules apply
+to supported script files. Generated output, dependencies, scanner output, reports, workflow packs,
+prompt assets, and task-owned `tmp/codex-*` paths are excluded explicitly unless a future policy
+extension opts them in. Invalid fixture snippets are represented as data or narrowly scoped fixtures.
 
 Require a JSON report with an entry for every expected file, including files with zero findings.
 Disable inline configuration so a suppression comment cannot weaken enforcement. Validate the
@@ -196,7 +232,9 @@ vulnerability analysis.
 ## Architecture contract
 
 Replace `scripts/check-architecture.mjs` with dependency-cruiser's resolved module graph. Keep the
-check inside `quality:quick`; do not create a second top-level architecture stage.
+check inside `quality:quick`; do not create a second top-level architecture stage. The graph starts
+from the resolved production patterns; scripts are checked by lint and Knip, while test files and
+workflow/configuration assets do not become production architecture modules.
 
 Start with one JSON rule file and these fail-closed rules:
 
@@ -231,10 +269,12 @@ is a maintained test or production input. Durable sanitized evidence may remain 
 
 ## Configuration compatibility and rework
 
-Extend the strict partial quality schema with boolean `secrets` and `lint` properties. Both default
-to `false` for absent and legacy partial configurations. The two bundled complete packs enable both
-stages when implementation begins; complete custom workflows remain unchanged unless they explicitly
-add them.
+Extend the strict partial quality schema with boolean `secrets` and `lint` properties plus an
+optional `scope` object containing `production`, `tests`, `scripts`, and `exclude` string arrays.
+The booleans default to `false` for absent and legacy partial configurations. Scope arrays default
+to `src/**/*.ts`, `test/**/*.ts`, `scripts/**/*.mjs`, and the standard generated/dependency/report
+exclusions. The two bundled complete packs enable both stages when implementation begins; complete
+custom workflows remain unchanged unless they explicitly add the stages or scope.
 
 Disabled stages and unused profiles are removed. Pass edges reconnect to the next enabled stage;
 repair returns to the first enabled stage. With all optional stages disabled, implementation still
@@ -262,10 +302,11 @@ responses. They do not depend on live credentials, model calls, or network servi
 | --- | --- |
 | Full opted-in path | Secrets, lint, quick, coverage, CRAP, Knip, mutation and Sonar execute once in order |
 | Legacy compatibility | Absent and old partial configurations retain the six-stage chain |
-| Strict options | `secrets` and `lint` accept only booleans and reject unknown keys |
+| Strict options | `secrets` and `lint` accept only booleans; scope arrays accept only valid relative patterns and reject unknown keys |
+| Consumer scope | Default production/test/script patterns work; a consumer override changes adapter scope consistently; malformed, escaping, or empty patterns block |
 | Secret scopes | Tracked, unstaged, untracked, deleted historical secrets, tags, shallow history and missing objects are exercised |
 | Secret redaction | Synthetic secret bytes appear nowhere in reports, traces, errors or provider prompts |
-| Typed lint/SAST | Unsafe promise, unsafe-value, unsafe-regex, dynamic-process and bidi fixtures fail; corrected fixtures pass |
+| Typed lint/SAST | Unsafe promise, unsafe-value, unsafe-regex, dynamic-process and bidi fixtures fail in configured production/test/script paths; corrected fixtures pass |
 | Architecture | Nested imports, aliases, re-exports, type-only imports, cycles, unresolved edges and layer violations are exercised |
 | Evidence failures | Missing, stale, wrong-workspace, partial, oversize and contradictory reports reject a pass |
 | Tool failures | Missing/wrong-version binaries, spawn errors, timeouts, signals and malformed output block |
@@ -287,8 +328,9 @@ scan is never release evidence.
    move every consumer-facing quality tool to exact runtime dependencies, select the npm Gitleaks
    wrapper, and prove `npm pack` plus clean npm and pnpm installs.
 2. Add package-root tool resolution and consumer preflight. Remove the repository-name and
-   consumer-script assumptions, implement bounded compatibility warnings and blocking conditions,
-   and prove the installed `tsqh` binary works without the source checkout.
+   consumer-script assumptions, implement the default/overridden production-test-script scope,
+   bounded compatibility warnings and blocking conditions, and prove the installed `tsqh` binary
+   works without the source checkout.
 3. Replace the regex architecture script with a dependency-cruiser adapter and its small JSON rule
    file. Validate the real repository graph before adding fixtures.
 4. Implement typed ESLint plus the selected security rules as one lint invocation and one validated
@@ -302,9 +344,10 @@ scan is never release evidence.
    exact evidence and blockers.
 
 Expected changes include package.json and pnpm-lock.yaml with the package-owned quality toolchain,
-its files/exports boundary, package-root resolution and consumer preflight, quality adapters and
-tests, protected lint/dependency-cruiser policy, the Gitleaks wrapper integration, the demo command,
-partial schema and expansion, both workflow packs, README, and STATUS.md. Do not introduce a new
+its files/exports boundary, package-root resolution and consumer preflight, configurable analysis
+scope, quality adapters and tests, protected lint/dependency-cruiser policy, the Gitleaks wrapper
+integration, the demo command, partial schema and expansion, both workflow packs, README, and
+STATUS.md. Do not introduce a new
 runtime action, trace protocol, role, generic tool plugin framework, SCA, advisory service, or
 independent SAST service.
 

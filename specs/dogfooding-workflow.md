@@ -28,6 +28,10 @@ task must state its objective, scope, non-goals, dependencies, allowed and prote
 acceptance criteria, tests/gates, failure and repair cases, required evidence, cleanup, and
 integration condition. A task may not depend on uncommitted changes from another task.
 
+Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
+task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
+pack's example task and must not replace the campaign task.
+
 `STATUS.md` is not a second task registry. Consult or update it only when the repository rules
 require it; the campaign plan and evidence belong to the campaign/task artifacts.
 

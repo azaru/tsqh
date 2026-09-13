@@ -23,9 +23,14 @@ Updated: 2026-09-14
   and reports. Detailed attempts and evidence are in [STATUS-HISTORY.md](STATUS-HISTORY.md).
 - This is harness verification, not an MVP-008 package acceptance or real Codex smoke pass.
 
-## Next action
+## Current blocker and next action
 
-Recreate Task 01 from the verified harness integration state and run the corrected task through
-`workflows/simple/workflow.json`. Do not reuse the timed-out candidate or manually edit candidate
-implementation. Require controller success, installed-consumer acceptance and all gates before
-integrating any campaign task.
+Task 01 attempt 02 from `1f3048f` ended with TSQH exit 1, `visit-limit-exceeded` after three
+implementer and three quick visits. Each quick failed with 829 passed/2 failed tests and no
+candidate-path changes. Repairs 2 and 3 made no changes. No campaign task is integrated.
+
+The two tests called the raw dependency CLI, so TSQH resolver changes could not affect their
+ancestor-engine fallback result. Task 01 now explicitly tests TSQH's own guarded installed-engine
+resolution/launch, preserving real identity, missing-engine, no-fallback and no-download checks.
+Create a fresh tester-first attempt from the verified harness commit; never edit or reuse the
+exhausted candidate's implementation. Evidence is retained under `tmp/codex-mvp008-01/attempt-02/`.

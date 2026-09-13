@@ -48,7 +48,10 @@ local design provenance referenced by `README.md`.
 - The approved Sonar target is the dedicated `azaru_tsqh_mvp` project on the localhost service
   defined by `infra/sonar/compose.yaml`. Never persist its credentials or mutate the sibling
   `azaru_tsqh` project, gate, or profile.
-- Update `STATUS.md` when the implementation state or blocker changes.
+- Update `STATUS.md` when the implementation state or blocker changes. Keep it concise: current
+  position, verification, blockers, and next action belong there; detailed completed-increment
+  evidence and superseded snapshots belong in `STATUS-HISTORY.md` and must not be treated as
+  current evidence.
 
 ## Delivery report
 

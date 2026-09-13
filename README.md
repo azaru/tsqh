@@ -26,19 +26,20 @@ final QA with identical required quality policy. It is not implemented.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
-3. [`specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md`](specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
+3. [`STATUS-HISTORY.md`](STATUS-HISTORY.md) — archived verification and completed-increment evidence.
+4. [`specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md`](specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
    — the completed compact gate-context and owner-routed rework specification.
-4. [`specs/TSQH-MVP-006-provider-aware-agent-selection.md`](specs/TSQH-MVP-006-provider-aware-agent-selection.md)
+5. [`specs/TSQH-MVP-006-provider-aware-agent-selection.md`](specs/TSQH-MVP-006-provider-aware-agent-selection.md)
    — the completed provider-aware model and effort selection specification.
-5. [`specs/TSQH-MVP-005-self-contained-workflow-packs.md`](specs/TSQH-MVP-005-self-contained-workflow-packs.md)
+6. [`specs/TSQH-MVP-005-self-contained-workflow-packs.md`](specs/TSQH-MVP-005-self-contained-workflow-packs.md)
    — the completed self-contained workflow-pack specification.
-6. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
+7. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
    — the completed unified TypeScript configuration specification.
-7. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
+8. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
    — the completed discovered partial configuration specification.
-8. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
+9. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
    — the completed quality and bounded Swarm Forge Lite specification.
-9. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
+10. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
    — the completed version 0 controller contract.
 
 ## Product slice
@@ -82,7 +83,7 @@ non-incremental Stryker report with 3,187 killed runnable mutants and 1,211 sepa
 checker `CompileError` mutations, with no other status. The dedicated Sonar target reported computed
 gate `OK` with zero open issues after all 19 initial findings were fixed. The historical
 `quality:full` chain exited zero; see
-[`STATUS.md`](STATUS.md) for the complete evidence.
+[`STATUS-HISTORY.md`](STATUS-HISTORY.md) for the complete historical evidence.
 
 `TSQH-MVP-003` made `--config` optional and added repository-root `tsqh.config.ts` discovery.
 `TSQH-MVP-004` is complete and unifies that TypeScript surface: its strict default export may be
@@ -104,8 +105,8 @@ the phase owner and full failures to hardener. It does not adapt the upstream Tr
 universal product repairer.
 
 `TSQH-MVP-007` is the latest completed specification. `TSQH-MVP-008` is the active planned
-specification; it is not implemented. The completed increments and their historical evidence are
-summarized in [`STATUS.md`](STATUS.md).
+specification; it is not implemented. The current position is summarized in [`STATUS.md`](STATUS.md);
+completed increments and historical evidence are archived in [`STATUS-HISTORY.md`](STATUS-HISTORY.md).
 
 The completed controller includes the smallest useful specialist-pipeline collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next

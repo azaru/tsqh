@@ -45,7 +45,9 @@ weaken a threshold or rewrite evidence to make a check pass.
 - Keep repository content in English and follow [`.editorconfig`](.editorconfig).
 - Use pnpm exclusively and preserve the single lockfile.
 - Keep workflow policy and quality configuration outside writing-role paths.
-- Update [`STATUS.md`](STATUS.md) when implementation state or a blocker changes.
+- Keep [`STATUS.md`](STATUS.md) concise and current. When implementation state or a blocker
+  changes, update it; move detailed completed-increment evidence and superseded snapshots to
+  [`STATUS-HISTORY.md`](STATUS-HISTORY.md), which is not current release evidence.
 - Never commit credentials or raw secret findings.
 
 See [`README.md`](README.md) for the product and local Sonar setup, and [`SECURITY.md`](SECURITY.md)

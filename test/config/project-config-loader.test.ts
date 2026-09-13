@@ -1,4 +1,4 @@
-import { chmod, cp, mkdtemp, mkdir, readFile, realpath, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, realpath, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -139,28 +139,6 @@ describe("project configuration discovery", () => {
     expect(loaded.configuration.workflow.id).toBe("typescript-complete");
     expect(loaded.configRoot).toBe(await realpath(configurationRoot));
     expect(loaded.prompts.worker).toBe("Complete TypeScript worker prompt.\n");
-  });
-
-  it("loads a default-exported Swarm Forge workflow object equivalently", async () => {
-    const jsonPath = resolve("workflows/swarm-forge/workflow.json");
-    const jsonSource = await readFile(jsonPath, "utf8");
-    const configurationRoot = await temporaryWorkspace();
-    await cp(resolve("workflows/swarm-forge/prompts"), join(configurationRoot, "prompts"), {
-      recursive: true,
-    });
-    const typescriptPath = await writeProjectConfiguration(
-      configurationRoot,
-      `export default ${jsonSource.trim()};\n`,
-    );
-
-    const [json, typescript] = await Promise.all([
-      loadRunConfiguration({ workspacePath: configurationRoot, explicitConfigPath: jsonPath }),
-      loadRunConfiguration({ workspacePath: configurationRoot, explicitConfigPath: typescriptPath }),
-    ]);
-
-    expect(typescript.configuration).toEqual(json.configuration);
-    expect(typescript.prompts).toEqual(json.prompts);
-    expect(typescript.configuration.workflow.id).toBe("swarm-forge");
   });
 
   it("does not forward a configured Sonar credential to TypeScript policy", async () => {

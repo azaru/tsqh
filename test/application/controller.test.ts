@@ -1,5 +1,5 @@
 import { access, readFile, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { runController, type ControllerInput } from "../../src/application/controller.js";
 import { runCli } from "../../src/cli/main.js";
@@ -1142,16 +1142,9 @@ function hardeningProfiles(
 async function createSwarmForgeScenario(
   overrides: Partial<Record<(typeof hardeningGateIds)[number], string>> = {},
 ): Promise<Awaited<ReturnType<typeof createScenario>>> {
-  const example = await loadConfiguration(resolve("workflows/swarm-forge/workflow.json"));
-  const roles = Object.fromEntries(
-    Object.entries(example.configuration.roles).map(([roleId, role]) => [
-      roleId,
-      { ...role, provider: "shared" },
-    ]),
-  ) as Configuration["roles"];
   const scenario = await createScenario({
-    steps: example.configuration.workflow.steps,
-    entryStepId: example.configuration.workflow.entryStepId,
+    steps: swarmForgeSteps(),
+    entryStepId: "specifier",
     providerMode: "agent-workflow",
     providerSelection: {
       model: "provider-model",
@@ -1159,13 +1152,45 @@ async function createSwarmForgeScenario(
       argumentTemplates: ["--model={model}", "--effort={effort}"],
     },
     profiles: hardeningProfiles("gate-pass", "pending"),
-    roles,
+    roles: swarmForgeRoles(),
   });
   await rewriteProfilesForState(
     scenario,
     hardeningProfiles("gate-pass", scenario.stateDirectory, overrides),
   );
   return scenario;
+}
+
+function swarmForgeSteps(): Readonly<Record<string, WorkflowStep>> {
+  return {
+    specifier: { type: "agent", role: "specifier", maxVisits: 1, onCompleted: "implementer" },
+    implementer: { type: "agent", role: "implementer", maxVisits: 1, onCompleted: "cleaner" },
+    cleaner: { type: "agent", role: "cleaner", maxVisits: 1, onCompleted: "architect" },
+    architect: { type: "agent", role: "architect", maxVisits: 1, onCompleted: "hardener" },
+    hardener: { type: "agent", role: "hardener", maxVisits: 1, onCompleted: "qa" },
+    qa: { type: "agent", role: "qa", maxVisits: 1, onCompleted: "quick" },
+    quick: { type: "gate", profile: "quick", maxVisits: 3, onPassed: "coverage", onFailed: "implementation-rework" },
+    coverage: { type: "gate", profile: "coverage", maxVisits: 3, onPassed: "crap", onFailed: "cleanup-rework" },
+    crap: { type: "gate", profile: "crap", maxVisits: 3, onPassed: "knip", onFailed: "cleanup-rework" },
+    knip: { type: "gate", profile: "knip", maxVisits: 3, onPassed: "mutation", onFailed: "cleanup-rework" },
+    mutation: { type: "gate", profile: "mutation", maxVisits: 3, onPassed: "sonar", onFailed: "hardening-rework" },
+    sonar: { type: "gate", profile: "sonar", maxVisits: 3, onPassed: "passed", onFailed: "hardening-rework" },
+    "implementation-rework": { type: "agent", role: "implementer", maxVisits: 2, onCompleted: "quick" },
+    "cleanup-rework": { type: "agent", role: "cleaner", maxVisits: 2, onCompleted: "quick" },
+    "hardening-rework": { type: "agent", role: "hardener", maxVisits: 2, onCompleted: "quick" },
+    passed: { type: "terminal", outcome: "passed" },
+  };
+}
+
+function swarmForgeRoles(): Configuration["roles"] {
+  return {
+    specifier: { provider: "shared", promptPath: "prompts/specifier.md", allowedPathPrefixes: [] },
+    implementer: { provider: "shared", promptPath: "prompts/implementer.md", allowedPathPrefixes: ["src/", "test/"] },
+    cleaner: { provider: "shared", promptPath: "prompts/cleaner.md", allowedPathPrefixes: ["src/", "test/"] },
+    architect: { provider: "shared", promptPath: "prompts/architect.md", allowedPathPrefixes: [] },
+    hardener: { provider: "shared", promptPath: "prompts/hardener.md", allowedPathPrefixes: ["src/", "test/"] },
+    qa: { provider: "shared", promptPath: "prompts/qa.md", allowedPathPrefixes: [] },
+  };
 }
 
 function profile(mode: string, stateDirectory: string, label: string): Configuration["profiles"][string] {

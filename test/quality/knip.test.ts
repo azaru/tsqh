@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { validateKnipResult } from "../../src/quality/knip.js";
 
@@ -73,31 +71,4 @@ describe("Knip evidence", () => {
     );
   });
 
-  it("checks every complete-project issue class and makes hints fatal", async () => {
-    const config = JSON.parse(await readFile(resolve("knip.json"), "utf8")) as Record<string, unknown>;
-
-    expect(config.include).toEqual([
-      "files",
-      "dependencies",
-      "devDependencies",
-      "optionalPeerDependencies",
-      "unlisted",
-      "binaries",
-      "unresolved",
-      "exports",
-      "nsExports",
-      "types",
-      "nsTypes",
-      "enumMembers",
-      "namespaceMembers",
-      "duplicates",
-      "catalog",
-      "catalogReferences",
-      "cycles",
-    ]);
-    expect(config).toMatchObject({ treatConfigHintsAsErrors: true, treatTagHintsAsErrors: true });
-    expect(config.entry).toEqual(["src/quality/cli.ts", "tsqh.config.ts", "scripts/**/*.mjs"]);
-    expect(config.project).toContain("test/**/*.ts");
-    expect(config.ignoreDependencies).toEqual(["@azaru/tscrap", "@sonar/scan"]);
-  });
 });

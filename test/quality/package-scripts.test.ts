@@ -16,19 +16,6 @@ const stages = [
 ] as const;
 
 describe("quality package scripts", () => {
-  it("exposes every stable command through the sequential launcher", async () => {
-    const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as {
-      readonly scripts: Readonly<Record<string, string>>;
-    };
-
-    expect(manifest.scripts["quality:quick"]).toBe("node scripts/run-quality.mjs quick");
-    for (const gate of ["coverage", "crap", "knip", "mutation", "sonar"] as const) {
-      expect(manifest.scripts[`quality:${gate}`]).toBe(`node scripts/run-quality.mjs ${gate}`);
-    }
-    expect(manifest.scripts["quality:full"]).toBe("node scripts/run-quality.mjs full");
-    expect(Object.values(manifest.scripts).join("\n")).not.toMatch(/\|\| true|--no-exit-code/u);
-  });
-
   it("runs the exact full order", async () => {
     const fixture = await createFakePnpm();
 

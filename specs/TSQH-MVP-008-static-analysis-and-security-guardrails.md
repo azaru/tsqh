@@ -32,6 +32,11 @@ the candidate workspace and its project configuration. Absent and legacy partial
 retain the existing six-stage chain. Complete version 1 JSON and TypeScript workflows remain valid
 without migration.
 
+The bundled workflow packs, prompts, and provenance manifest are examples and distribution assets,
+not test-owned policy. Behavioral tests use synthetic configurations and native responses; they do
+not assert the example packs' exact model selections, role lists, prompt wording, hashes, or
+upstream commit identities.
+
 ## Scope and decisions
 
 | Concern | Decision | Required outcome |

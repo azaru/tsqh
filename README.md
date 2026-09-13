@@ -11,7 +11,8 @@ provisional APIs from external projects.
 
 Active planned increment: [`TSQH-MVP-008`](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md)
 defines optional secret scanning, typed lint with lightweight security rules, and a dependency-graph
-architecture check inside `quick`. Dependency-vulnerability scanning remains out of scope.
+architecture check inside `quick`. It also plans a self-contained package distribution and a
+no-credentials `tsqh demo` command. Dependency-vulnerability scanning remains out of scope.
 Read it after `STATUS.md` before implementing new work. The runtime described below still reflects
 the completed MVP-001 through MVP-007 implementation.
 
@@ -145,9 +146,21 @@ pnpm quality:quick
 pnpm quality:full
 ```
 
-Ajv remains the only runtime dependency. The human-approved hardening tools are installed as exact
-development dependency versions through the repository's single pnpm lockfile, and the declared
-Node.js floor is 22.12.0.
+The current repository implementation has Ajv as its only runtime dependency. MVP-008 plans to ship
+the consumer-facing quality toolchain as exact package runtime dependencies so a host project can
+install TSQH as a `devDependency` and run its quality stages without installing a second toolchain.
+The repository itself continues to use the single pnpm lockfile, and the declared Node.js floor is
+22.12.0.
+
+Once MVP-008 is implemented, the fastest package trial will be:
+
+```sh
+pnpm dlx tsqh-mvp demo
+```
+
+The equivalent npm forms will be `npx tsqh-mvp demo` and `npm exec tsqh-mvp -- demo`. Once the
+package is available, the demo execution will create and remove its own tiny consumer fixture, use
+no credentials or network requests, and report the package-owned tool versions and stage trace.
 
 ## Local SonarQube
 

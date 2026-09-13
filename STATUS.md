@@ -157,6 +157,9 @@
   The current executable chain still contains the original six stages.
 - Absent and legacy partial configurations retain the six-stage defaults. Complete custom
   workflows remain unchanged unless they explicitly add `secrets` and `lint`.
+- The package distribution is part of this increment: the quality toolchain will be shipped as
+  exact runtime dependencies, `npm pack` plus clean npm/pnpm consumer installs will be verified,
+  and `tsqh demo` will provide a no-credentials quick trial.
 - Dependency-vulnerability scanning is out of scope. A separate SAST service such as CodeQL or
   Semgrep is also out of scope; the selected ESLint security rules provide lightweight coverage
   with an explicit limitation on vulnerability completeness.
@@ -164,8 +167,9 @@
   no new real Codex smoke result is claimed.
 - Documentation validation for the rewritten specification and cross-spec gate order passed;
   `git diff --check` exited 0.
-- Next action: implement the three small adapters and their real failing/corrected fixtures only
-  after the existing release blockers are understood.
+- Next action: implement package distribution and package-root tool resolution first, then the
+  consumer preflight, dependency-cruiser, typed lint/security, Gitleaks wrapper, and demo in that
+  order; finish with packed-install and real failing/corrected fixture evidence.
 
 ## Latest Sonar/full-chain verification — 2026-09-03
 

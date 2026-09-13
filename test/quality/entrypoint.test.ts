@@ -12,11 +12,22 @@ it("passes only user arguments from the quality executable entrypoint", async ()
   process.exitCode = undefined;
 
   try {
-    await import("../../src/quality/cli.js");
+    const { selectQualityEnvironment } = await import("../../src/quality/cli.js");
 
     expect(runQualityCli).toHaveBeenCalledOnce();
     expect(runQualityCli.mock.calls[0]![0]).toEqual(["knip"]);
     expect(process.exitCode).toBe(7);
+    expect(selectQualityEnvironment({ OTHER: "ignored" })).toStrictEqual({});
+    expect(selectQualityEnvironment({
+      SONAR_HOST_URL: "http://localhost:9000",
+      SONAR_TOKEN: "token",
+      SONAR_ORGANIZATION: "organization",
+      OTHER: "ignored",
+    })).toStrictEqual({
+      SONAR_HOST_URL: "http://localhost:9000",
+      SONAR_TOKEN: "token",
+      SONAR_ORGANIZATION: "organization",
+    });
   } finally {
     process.argv = originalArgv;
     process.exitCode = originalExitCode;

@@ -63,6 +63,53 @@ describe("CLI acceptance", () => {
     ].join("\n"));
   });
 
+  it("renders an incomplete status without inventing a latest outcome", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tsqh-cli-incomplete-"));
+    const runDirectory = join(root, "run");
+    await mkdir(runDirectory);
+    const events = [
+      {
+        schemaVersion: 1,
+        sequence: 1,
+        runId: "incomplete-run",
+        occurredAt: "2026-01-01T00:00:00.000Z",
+        type: "run-created",
+        workflowId: "workflow",
+        entryStepId: "implement",
+        workspace: "/workspace",
+      },
+      {
+        schemaVersion: 1,
+        sequence: 2,
+        runId: "incomplete-run",
+        occurredAt: "2026-01-01T00:00:01.000Z",
+        type: "step-started",
+        stepId: "implement",
+        stepType: "agent",
+        visit: 1,
+      },
+    ];
+    await writeFile(join(runDirectory, "events.jsonl"), `${events.map((event) => JSON.stringify(event)).join("\n")}\n`, "utf8");
+    const output: string[] = [];
+
+    const exitCode = await runCli(["status", "--run", runDirectory], {
+      stdout: { write: (value) => { output.push(String(value)); return true; } },
+      stderr: { write: () => true },
+    });
+
+    expect(exitCode).toBe(0);
+    expect(output.join("")).toBe([
+      "Run: incomplete-run",
+      "State: running",
+      "Current step: implement",
+      "Visits: {\"implement\":1}",
+      "Latest outcome: none",
+      "Blocker: none",
+      `Run directory: ${runDirectory}`,
+      "",
+    ].join("\n"));
+  });
+
   it("discovers a partial tsqh.config.ts when --config is omitted", async () => {
     const scenario = await createScenario({
       steps: { passed: { type: "terminal", outcome: "passed" } },

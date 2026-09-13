@@ -5,7 +5,7 @@ import type {
 } from "./types.js";
 
 export const GATE_FAILURE_STREAM_CONTEXT_BYTES = 8_192;
-export const GATE_FAILURE_OMISSION_MARKER = "\n...[middle of gate output omitted]...\n";
+export const GATE_FAILURE_OMISSION_MARKER = omissionMarker();
 
 export function createGateFailureContext(
   stepId: string,
@@ -35,11 +35,12 @@ function compactStream(text: string, processTruncated: boolean): GateFailureStre
     };
   }
 
-  const markerBytes = utf8ByteLength(GATE_FAILURE_OMISSION_MARKER);
+  const marker = omissionMarker();
+  const markerBytes = utf8ByteLength(marker);
   const excerptBytes = GATE_FAILURE_STREAM_CONTEXT_BYTES - markerBytes;
   const head = utf8Prefix(text, Math.floor(excerptBytes / 2));
   const tail = utf8Suffix(text, Math.ceil(excerptBytes / 2));
-  const compacted = `${head}${GATE_FAILURE_OMISSION_MARKER}${tail}`;
+  const compacted = `${head}${marker}${tail}`;
   return {
     text: compacted,
     capturedBytes,
@@ -64,17 +65,21 @@ function utf8Prefix(value: string, maximumBytes: number): string {
 function utf8Suffix(value: string, maximumBytes: number): string {
   let bytes = 0;
   let start = value.length;
-  while (start > 0) {
+  let nextStart = 0;
+  for (; start !== 0; start = nextStart) {
     let characterStart = start - 1;
-    const trailingCodeUnit = value.charCodeAt(characterStart);
-    if (trailingCodeUnit >= 0xdc00 && trailingCodeUnit <= 0xdfff && characterStart > 0) {
-      characterStart -= 1;
+    const trailingCodeUnit = value.charCodeAt(characterStart); // NOSONAR: inspect UTF-16 code units for surrogate boundaries.
+    if (isLowSurrogate(trailingCodeUnit)) {
+      const precedingCodeUnit = value.charCodeAt(characterStart - 1); // NOSONAR: inspect the preceding UTF-16 code unit.
+      if (isHighSurrogate(precedingCodeUnit)) {
+        characterStart -= 1;
+      }
     }
     const character = value.slice(characterStart, start);
     const characterBytes = utf8CharacterBytes(character);
     if (bytes + characterBytes > maximumBytes) break;
     bytes += characterBytes;
-    start = characterStart;
+    nextStart = characterStart;
   }
   return value.slice(start);
 }
@@ -91,4 +96,16 @@ function utf8CharacterBytes(character: string): number {
   if (codePoint <= 0x7ff) return 2;
   if (codePoint <= 0xffff) return 3;
   return 4;
+}
+
+function omissionMarker(): string {
+  return "\n...[middle of gate output omitted]...\n";
+}
+
+function isHighSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xd800 && codeUnit <= 0xdbff;
+}
+
+function isLowSurrogate(codeUnit: number): boolean {
+  return codeUnit >= 0xdc00 && codeUnit <= 0xdfff;
 }

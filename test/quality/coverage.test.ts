@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, stat, symlink, unlink, utimes, writeFile } fr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { validateCoverage } from "../../src/quality/coverage.js";
+import { assertCurrentCoverageSummary, validateCoverage } from "../../src/quality/coverage.js";
 
 describe("coverage evidence", () => {
   it("accepts fresh complete reports at both thresholds", async () => {
@@ -13,6 +13,46 @@ describe("coverage evidence", () => {
     expect(result.productionFiles).toEqual(["src/domain/rule.ts", "src/value.ts"]);
     expect(result.global).toEqual({ lines: 100, statements: 100, functions: 100, branches: 100 });
     expect(result.domain).toEqual({ lines: 100, statements: 100, functions: 100, branches: 100 });
+  });
+
+  it("compares coverage summary digests by canonical keys and values", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tsqh-coverage-summary-"));
+    const coverage = {
+      coverageDigest: "coverage-digest",
+      lcovDigest: "lcov-digest",
+      sourceDigests: { "src/b.ts": "b", "src/a.ts": "a" },
+    } as const;
+    const valid = {
+      gateId: "coverage",
+      status: "passed",
+      process: { kind: "exited", exitCode: 0 },
+      inputDigests: { "src/b.ts": "b", "src/a.ts": "a" },
+      outputDigests: {
+        "coverage/coverage-final.json": coverage.coverageDigest,
+        "coverage/lcov.info": coverage.lcovDigest,
+      },
+    };
+
+    await writeCoverageSummary(root, valid);
+    await expect(assertCurrentCoverageSummary(root, coverage)).resolves.toBeUndefined();
+
+    await writeCoverageSummary(root, {
+      ...valid,
+      inputDigests: { "src/a.ts": "a", "src/b.ts": "b", "src/c.ts": "c" },
+    });
+    await expect(assertCurrentCoverageSummary(root, coverage)).rejects.toThrow(/different production sources/u);
+
+    await writeCoverageSummary(root, {
+      ...valid,
+      inputDigests: { "src/a.ts": "a", "src/c.ts": "c" },
+    });
+    await expect(assertCurrentCoverageSummary(root, coverage)).rejects.toThrow(/different production sources/u);
+
+    await writeCoverageSummary(root, {
+      ...valid,
+      inputDigests: { "src/a.ts": "different", "src/b.ts": "b" },
+    });
+    await expect(assertCurrentCoverageSummary(root, coverage)).rejects.toThrow(/different production sources/u);
   });
 
   it("rejects missing evidence", async () => {
@@ -335,6 +375,12 @@ describe("coverage evidence", () => {
     );
   });
 });
+
+async function writeCoverageSummary(root: string, value: unknown): Promise<void> {
+  const path = join(root, "reports/quality/coverage-summary.json");
+  await mkdir(join(root, "reports/quality"), { recursive: true });
+  await writeFile(path, `${JSON.stringify(value)}\n`, "utf8");
+}
 
 type CoverageReport = Record<string, unknown>;
 

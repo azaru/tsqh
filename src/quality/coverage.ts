@@ -104,18 +104,66 @@ export async function assertCurrentCoverageSummary(
     0,
   );
   const summary = parseJsonObject(evidence.content, "Coverage quality summary");
-  if (summary.gateId !== "coverage" || summary.status !== "passed") {
+  assertPassedCoverageGate(summary);
+  assertSuccessfulCoverageProcess(summary.process);
+  assertCoverageSourceDigests(summary.inputDigests, coverage.sourceDigests);
+  assertCoverageReportDigests(summary.outputDigests, coverage);
+}
+
+function assertPassedCoverageGate(summary: Record<string, unknown>): void {
+  if (summary.gateId !== "coverage") {
     throw new EvidenceError("Coverage quality summary is not a passed coverage gate.");
   }
-  if (!isRecord(summary.process) || summary.process.kind !== "exited" || summary.process.exitCode !== 0) {
+  if (summary.status !== "passed") {
+    throw new EvidenceError("Coverage quality summary is not a passed coverage gate.");
+  }
+}
+
+function assertSuccessfulCoverageProcess(process: unknown): void {
+  if (!isRecord(process)) {
     throw new EvidenceError("Coverage quality summary does not describe a successful process.");
   }
-  if (!isRecord(summary.inputDigests) || !sameDigests(summary.inputDigests, coverage.sourceDigests)) {
+  if (process.kind !== "exited") {
+    throw new EvidenceError("Coverage quality summary does not describe a successful process.");
+  }
+  if (process.exitCode !== 0) {
+    throw new EvidenceError("Coverage quality summary does not describe a successful process.");
+  }
+}
+
+function assertCoverageSourceDigests(
+  inputDigests: unknown,
+  sourceDigests: Readonly<Record<string, string>>,
+): void {
+  if (!isRecord(inputDigests)) {
     throw new EvidenceError("Coverage quality summary is bound to different production sources.");
   }
-  if (!isRecord(summary.outputDigests)
-    || summary.outputDigests["coverage/coverage-final.json"] !== coverage.coverageDigest
-    || summary.outputDigests["coverage/lcov.info"] !== coverage.lcovDigest) {
+  if (!sameDigests(inputDigests, sourceDigests)) {
+    throw new EvidenceError("Coverage quality summary is bound to different production sources.");
+  }
+}
+
+function assertCoverageReportDigests(
+  outputDigests: unknown,
+  coverage: Pick<CoverageValidation, "coverageDigest" | "lcovDigest">,
+): void {
+  if (!isRecord(outputDigests)) {
+    throw new EvidenceError("Coverage quality summary is bound to different coverage reports.");
+  }
+  assertCoverageReportDigest(
+    outputDigests,
+    "coverage/coverage-final.json",
+    coverage.coverageDigest,
+  );
+  assertCoverageReportDigest(outputDigests, "coverage/lcov.info", coverage.lcovDigest);
+}
+
+function assertCoverageReportDigest(
+  outputDigests: Record<string, unknown>,
+  report: string,
+  expected: string,
+): void {
+  if (outputDigests[report] !== expected) {
     throw new EvidenceError("Coverage quality summary is bound to different coverage reports.");
   }
 }
@@ -168,10 +216,9 @@ function sameDigests(
 ): boolean {
   const actualKeys = Object.keys(actual).sort(compareStrings);
   const expectedKeys = Object.keys(expected).sort(compareStrings);
-  if (actualKeys.length !== expectedKeys.length || actualKeys.some((key, index) => key !== expectedKeys[index])) {
-    return false;
-  }
-  return expectedKeys.every((key) => actual[key] === expected[key]);
+  const actualEntries = actualKeys.map((key) => [key, actual[key]]);
+  const expectedEntries = expectedKeys.map((key) => [key, expected[key]]);
+  return JSON.stringify(actualEntries) === JSON.stringify(expectedEntries);
 }
 
 async function walkTypeScript(directory: string): Promise<string[]> {

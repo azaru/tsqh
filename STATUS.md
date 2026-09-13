@@ -150,20 +150,22 @@
 
 ## MVP-008 specification — 2026-09-13
 
-- The next increment is deliberately limited to one optional typed ESLint/typescript-eslint gate.
+- The next increment adds Gitleaks secret scanning, typed ESLint with selected security rules, and
+  dependency-cruiser architecture validation inside `quick`.
 - Planned opted-in repository delivery order:
-  `lint -> quick -> coverage -> crap -> knip -> mutation -> sonar`.
+  `secrets -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar`.
   The current executable chain still contains the original six stages.
 - Absent and legacy partial configurations retain the six-stage defaults. Complete custom
-  workflows remain unchanged unless they explicitly add lint.
-- Architecture replacement, secrets scanning, dependency vulnerability scanning, and independent
-  SAST are deferred to later increments.
+  workflows remain unchanged unless they explicitly add `secrets` and `lint`.
+- Dependency-vulnerability scanning is out of scope. A separate SAST service such as CodeQL or
+  Semgrep is also out of scope; the selected ESLint security rules provide lightweight coverage
+  with an explicit limitation on vulnerability completeness.
 - No runtime behavior, dependency, or workflow-pack implementation has been delivered for MVP-008;
   no new real Codex smoke result is claimed.
-- Documentation validation for the rewritten specification is pending; `git diff --check` remains
-  required before delivery.
-- Next action: implement the typed lint gate and its real failing/corrected fixtures only after the
-  existing release blockers are understood.
+- Documentation validation for the rewritten specification and cross-spec gate order passed;
+  `git diff --check` exited 0.
+- Next action: implement the three small adapters and their real failing/corrected fixtures only
+  after the existing release blockers are understood.
 
 ## Latest Sonar/full-chain verification — 2026-09-03
 

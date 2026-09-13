@@ -92,7 +92,7 @@ branches are available in compact even though they do not run on its happy path.
 Every profile runs the same mandatory native chain:
 
 ```text
-lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
+secrets -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
 ```
 
 Preserve MVP-008's exact order, coverage targets, CRAP limit, zero Knip findings, all-runnable-mutants
@@ -182,6 +182,7 @@ All targets exist and validate before the run. Bundled profiles use this routing
 | quick: typecheck/build/tests or valid unmapped class | implementation-rework | implementation-rework |
 | lint, coverage, crap, knip | implementation-rework | cleanup-rework |
 | mutation, sonar | hardening-rework | hardening-rework |
+| secrets | blocked | blocked |
 | technical-review or architect: changes-requested | implementation-rework | implementation-rework |
 | qa: changes-requested | implementation-rework | implementation-rework |
 
@@ -320,7 +321,7 @@ identical even when a measured profile uses fewer handoffs.
 | AC-EP-007 | 004, 005 | Missing/stale/oversize/contradictory reports and process/candidate failures block without a repair dispatch |
 | AC-EP-008 | 005 | Quick reports the actual first failed subcheck, retains order and stops without a second architecture invocation |
 | AC-EP-009 | 006 | Compact architecture failure dispatches read-only diagnosis, then writer, full gates and QA |
-| AC-EP-010 | 006 | Mutation activates hardener in compact; lint follows its configured repair edge |
+| AC-EP-010 | 006 | Mutation activates hardener in compact; secrets block without activating a writer |
 | AC-EP-011 | 006 | Repair receives its exact triggering failure and associated diagnosis, excluding unrelated old handoffs |
 | AC-EP-012 | 006 | Mixed repair concerns respect five/seven stage visits; exhausted writer blocks before extra diagnosis |
 | AC-EP-013 | 006 | Classified/review/budget dependency graph errors reject, including paths bypassing gates or final QA |
@@ -342,7 +343,7 @@ specialized: planner -> implementer -> cleaner -> architect(accepted) -> hardene
   -> all native gates -> qa(accepted) -> passed
 
 compact: quick(failed:architecture) -> architecture-diagnosis -> implementation-rework
-  -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
+  -> secrets -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
   -> qa(accepted) -> passed
 
 qa(changes-requested) -> implementation-rework -> all native gates -> qa(accepted) -> passed

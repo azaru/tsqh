@@ -201,11 +201,11 @@ boundaries, authorize dependency changes, add suppression exceptions, or widen a
 An incompatible obligation blocks preparation or preflight when mechanically detectable; a semantic
 conflict discovered during execution is an explicit blocker requiring a new approved assignment.
 
-Bundled work-order policy must require the opted-in MVP-008 lint gate followed by the existing
-quality chain in its exact order:
+Bundled work-order policy must require the opted-in MVP-008 secret and lint gates followed by the
+existing quality chain in their exact order:
 
 ```text
-lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
+secrets -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
 ```
 
 Preserve all thresholds, report validation, native exit semantics, and owner-routed repair. A
@@ -440,7 +440,7 @@ Required demonstration traces:
 ```text
 export -> validate -> explicit approval -> preflight -> immutable input snapshot
   -> implementer -> cleaner -> architect -> hardener -> qa
-  -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
+  -> secrets -> lint -> quick -> coverage -> crap -> knip -> mutation -> sonar
   -> completion validation -> passed result (integration not performed)
 
 native failure with valid failed evidence -> configured owner rework

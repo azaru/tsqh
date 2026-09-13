@@ -10,9 +10,8 @@ provisional APIs from external projects.
 ## Read first
 
 Active planned increment: [`TSQH-MVP-008`](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md)
-defines one optional typed-lint gate before the existing six-stage quality chain. Architecture
-replacement, secret scanning, dependency-vulnerability scanning, and independent SAST remain
-future increments.
+defines optional secret scanning, typed lint with lightweight security rules, and a dependency-graph
+architecture check inside `quick`. Dependency-vulnerability scanning remains out of scope.
 Read it after `STATUS.md` before implementing new work. The runtime described below still reflects
 the completed MVP-001 through MVP-007 implementation.
 

@@ -38,8 +38,15 @@ local design provenance referenced by `README.md`.
   prefixes. Never let an agent edit workflow policy to unblock its own run.
 - Add behavioral tests for happy paths, configuration failures, transition order, agent failure,
   gate failure, repair success, repair exhaustion, unauthorized changes, and command-spawn errors.
-- Run targeted tests while iterating and `pnpm quality:quick` after each coherent change. Run
-  `pnpm quality:full` before delivery.
+- Match verification to the change surface. For implementation, test, configuration, workflow,
+  prompt, schema, package, executable-policy, or generated-behavior changes, run targeted tests
+  while iterating, `pnpm quality:quick` after each coherent change, and `pnpm quality:full` before
+  delivery. For documentation-only changes—human-facing Markdown or prose that does not affect
+  runtime inputs or executable policy—run relevant documentation checks such as `git diff --check`
+  and local-link, metadata, or example validation when available; do not run `quality:quick` or
+  `quality:full` solely because documentation changed. A mixed change follows the stricter
+  implementation/executable-policy rule. Markdown prompts, task inputs, workflow instructions,
+  and other files consumed by tools are executable inputs, not documentation-only changes.
 - Do not remove, skip, weaken, or relabel coverage, CRAP, Knip, mutation, Sonar, their evidence
   validation, or the `quality:full` order to obtain green. For mutation evidence, keep
   TypeScript-checker `CompileError` results visible as checker-rejected, non-runnable mutants and

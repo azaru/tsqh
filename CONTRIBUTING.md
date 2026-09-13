@@ -23,14 +23,16 @@ template for the optional local Sonar service.
 
 ## Checks
 
-Run the smallest relevant command while iterating, then the fast repository check:
+For implementation or executable-policy changes, run the smallest relevant command while
+iterating, then the fast repository check:
 
 ```sh
 pnpm typecheck
 pnpm quality:quick
 ```
 
-Before delivery, run the complete local chain when its Sonar prerequisite is available:
+Before delivery of those changes, run the complete local chain when its Sonar prerequisite is
+available:
 
 ```sh
 pnpm quality:full
@@ -39,6 +41,14 @@ pnpm quality:full
 The chain is fail-fast and runs `quick`, coverage, CRAP, Knip, mutation, and Sonar in that order.
 A missing tool, incomplete evidence, or unavailable approved Sonar service is a blocker; do not
 weaken a threshold or rewrite evidence to make a check pass.
+
+For documentation-only changes, such as human-facing Markdown or prose that does not affect
+runtime inputs or executable policy, use documentation checks such as `git diff --check` and
+relevant local-link, metadata, or example validation. Do not run the application quality chain
+solely because documentation changed. Markdown prompts, task inputs, workflow instructions,
+schemas, configuration, package metadata, and other tool-consumed files are executable or policy
+inputs; changes to them require the implementation/executable-policy checks above. A mixed change
+follows the stricter rule.
 
 ## Change hygiene
 

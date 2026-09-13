@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "workflow": {
+    "id": "dogfood-008-03",
+    "entryStepId": "tester",
+    "steps": {
+      "tester": { "type": "agent", "role": "tester", "maxVisits": 1, "onCompleted": "implementer" },
+      "implementer": { "type": "agent", "role": "implementer", "maxVisits": 3, "onCompleted": "quick" },
+      "quick": { "type": "gate", "profile": "quick", "maxVisits": 3, "onPassed": "passed", "onFailed": "implementer" },
+      "passed": { "type": "terminal", "outcome": "passed" }
+    }
+  },
+  "roles": {
+    "tester": { "provider": "codex", "promptPath": "prompts/tester.md", "allowedPathPrefixes": ["test/"] },
+    "implementer": {
+      "provider": "codex",
+      "promptPath": "prompts/implementer.md",
+      "allowedPathPrefixes": ["src/quality/", "scripts/check-architecture.mjs", "scripts/run-quality.mjs", "dependency-cruiser.json"]
+    }
+  },
+  "providers": {
+    "codex": { "type": "command", "executable": "codex", "args": ["exec", "--sandbox", "workspace-write", "-"], "promptTransport": "stdin", "timeoutMs": 900000 }
+  },
+  "profiles": {
+    "quick": { "executable": "pnpm", "args": ["quality:quick"], "timeoutMs": 900000 }
+  }
+}

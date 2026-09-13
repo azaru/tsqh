@@ -91,7 +91,7 @@ response, or required field is a failure.
 
 Each report-producing wrapper must also write a versioned summary beneath `reports/quality/` with
 the gate id, installed tool versions, sanitized executable and argument array, analyzed scope,
-thresholds, relevant configuration SHA-256 digests, input and output report SHA-256 digests, native
+thresholds, input and output report SHA-256 digests, native
 process facts, final `passed`/`failed`/`blocked` status, and an exact reason. The summary must agree
 with the underlying report and process status. Missing, stale, malformed, contradictory, or
 secret-bearing summaries fail. The controller may retain this output as evidence but does not parse

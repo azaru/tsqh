@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, rm, unlink, utimes, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, unlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -25,7 +25,6 @@ interface ExpectedGate {
   readonly args: readonly string[];
   readonly timeoutMs: number;
   readonly toolVersions: Readonly<Record<string, string>>;
-  readonly configFiles: readonly string[];
   readonly scope: readonly string[];
   readonly thresholds: Readonly<Record<string, number | string>>;
   readonly cleanPaths: readonly string[];
@@ -38,7 +37,6 @@ const EXPECTED_GATES: Readonly<Record<LocalQualityGateId, ExpectedGate>> = {
     args: ["run", "--coverage"],
     timeoutMs: 900_000,
     toolVersions: { vitest: "4.1.11", "@vitest/coverage-v8": "4.1.11" },
-    configFiles: ["package.json", "vitest.config.ts", "tsconfig.json", "tsconfig.test.json"],
     scope: ["src/**/*.ts", "test/**/*.ts"],
     thresholds: { global: 90, domain: 100 },
     cleanPaths: ["coverage"],
@@ -60,7 +58,6 @@ const EXPECTED_GATES: Readonly<Record<LocalQualityGateId, ExpectedGate>> = {
     ],
     timeoutMs: 900_000,
     toolVersions: { "@azaru/tscrap": "0.1.2" },
-    configFiles: ["package.json", "vitest.config.ts"],
     scope: ["src/**/*.ts"],
     thresholds: { crap: 6 },
     cleanPaths: ["reports/quality/crap.json"],
@@ -71,7 +68,6 @@ const EXPECTED_GATES: Readonly<Record<LocalQualityGateId, ExpectedGate>> = {
     args: ["--config", "knip.json", "--reporter", "json"],
     timeoutMs: 900_000,
     toolVersions: { knip: "6.32.2" },
-    configFiles: ["package.json", "knip.json"],
     scope: ["complete project"],
     thresholds: { findings: 0, configurationHints: 0, tagHints: 0 },
     cleanPaths: ["reports/quality/knip.json"],
@@ -86,7 +82,6 @@ const EXPECTED_GATES: Readonly<Record<LocalQualityGateId, ExpectedGate>> = {
       "@stryker-mutator/vitest-runner": "10.0.0",
       "@stryker-mutator/typescript-checker": "10.0.0",
     },
-    configFiles: ["package.json", "stryker.config.mjs", "tsconfig.json", "vitest.config.ts"],
     scope: ["src/**/*.ts", "!src/**/*.d.ts"],
     thresholds: {
       runnableMutationScore: 100,
@@ -133,7 +128,6 @@ describe("local quality gate wrappers", () => {
           reason: `${gateId} evidence is current, complete, and satisfies policy.`,
         },
       });
-      expect(Object.keys(result.summary.configDigests).sort()).toEqual([...expected.configFiles].sort());
       expect(Object.keys(result.summary.inputDigests).sort()).toEqual(
         gateId === "coverage"
           ? ["src/domain/value.ts"]
@@ -184,6 +178,63 @@ describe("local quality gate wrappers", () => {
         status: "blocked",
         reason: "Coverage quality summary is bound to different production sources.",
       },
+    });
+    expect(runner.requests).toEqual([]);
+  });
+
+  it.each([
+    ["gate id", (summary: Record<string, unknown>) => { summary.gateId = "other"; }, /not a passed coverage gate/u],
+    ["gate status", (summary: Record<string, unknown>) => { summary.status = "failed"; }, /not a passed coverage gate/u],
+    ["missing process", (summary: Record<string, unknown>) => { summary.process = null; }, /successful process/u],
+    ["process kind", (summary: Record<string, unknown>) => { summary.process = { kind: "spawn-error", exitCode: 0 }; }, /successful process/u],
+    ["process exit", (summary: Record<string, unknown>) => { summary.process = { kind: "exited", exitCode: 1 }; }, /successful process/u],
+    ["missing source digests", (summary: Record<string, unknown>) => { summary.inputDigests = null; }, /different production sources/u],
+    ["different source keys", (summary: Record<string, unknown>) => { summary.inputDigests = { "src/other.ts": "digest" }; }, /different production sources/u],
+    ["different source digest", (summary: Record<string, unknown>) => { summary.inputDigests = { "src/domain/value.ts": "different" }; }, /different production sources/u],
+    ["missing report digests", (summary: Record<string, unknown>) => { summary.outputDigests = null; }, /different coverage reports/u],
+    ["different coverage digest", (summary: Record<string, unknown>) => {
+      const outputDigests = summary.outputDigests as Record<string, unknown>;
+      summary.outputDigests = { ...outputDigests, "coverage/coverage-final.json": "different" };
+    }, /different coverage reports/u],
+    ["different LCOV digest", (summary: Record<string, unknown>) => {
+      const outputDigests = summary.outputDigests as Record<string, unknown>;
+      summary.outputDigests = { ...outputDigests, "coverage/lcov.info": "different" };
+    }, /different coverage reports/u],
+  ] as const)("blocks CRAP for invalid coverage summary: %s", async (_label, mutate, message) => {
+    const root = await createFixture();
+    await writeCoverage(root);
+    const summaryPath = join(root, "reports/quality/coverage-summary.json");
+    const summary = JSON.parse(await readFile(summaryPath, "utf8")) as Record<string, unknown>;
+    mutate(summary);
+    await writeJson(summaryPath, summary);
+    const runner = new FakeRunner(async () => exited());
+
+    const result = await runLocalQualityGate("crap", root, { commandRunner: runner, now: () => 0 });
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      process: null,
+      summary: { status: "blocked", reason: expect.stringMatching(message) },
+    });
+    expect(runner.requests).toEqual([]);
+  });
+
+  it.each([
+    ["missing", async (path: string) => unlink(path), /Coverage quality summary is missing/u],
+    ["malformed", async (path: string) => writeFile(path, "{\n", "utf8"), /Coverage quality summary is malformed JSON/u],
+  ] as const)("labels %s coverage summary evidence", async (_label, mutate, message) => {
+    const root = await createFixture();
+    await writeCoverage(root);
+    const summaryPath = join(root, "reports/quality/coverage-summary.json");
+    await mutate(summaryPath);
+    const runner = new FakeRunner(async () => exited());
+
+    const result = await runLocalQualityGate("crap", root, { commandRunner: runner, now: () => 0 });
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      process: null,
+      summary: { status: "blocked", reason: expect.stringMatching(message) },
     });
     expect(runner.requests).toEqual([]);
   });
@@ -424,25 +475,6 @@ async function writeMutationReport(root: string): Promise<void> {
     projectRoot: root,
     thresholds,
     framework: { name: "StrykerJS", version: "10.0.0" },
-    config: {
-      checkers: ["typescript"],
-      cleanTempDir: "always",
-      concurrency: 2,
-      coverageAnalysis: "all",
-      dryRunTimeoutMinutes: 5,
-      ignoreStatic: false,
-      incremental: false,
-      jsonReporter: { fileName: "reports/mutation/mutation.json" },
-      mutate: ["src/**/*.ts", "!src/**/*.d.ts"],
-      plugins: ["@stryker-mutator/vitest-runner", "@stryker-mutator/typescript-checker"],
-      reporters: ["clear-text", "progress", "json"],
-      tempDirName: ".stryker-tmp",
-      testRunner: "vitest",
-      thresholds,
-      timeoutMS: 10_000,
-      tsconfigFile: "tsconfig.json",
-      vitest: { related: false },
-    },
     files: {
       "src/domain/value.ts": {
         language: "typescript",

@@ -8,7 +8,6 @@ import {
   assertQualityWorkspace,
   classifyQualityFailure,
   cleanQualityPaths,
-  digestQualityFiles,
   digestText,
   loadPinnedToolVersions,
   summarizeQualityProcess,
@@ -50,18 +49,6 @@ describe("quality gate support", () => {
     await writeFile(manifest, "{", "utf8");
     await expect(loadPinnedToolVersions(root, { tool: "1.2.3" })).rejects.toThrow(
       "tool package manifest is malformed JSON.",
-    );
-  });
-
-  it("digests required configuration files with precise diagnostics", async () => {
-    const root = await fixture();
-    await writeFile(join(root, "config.json"), "value\n", "utf8");
-
-    await expect(digestQualityFiles(root, ["config.json"])).resolves.toEqual({
-      "config.json": "1e1f2c881ae0608ec77ebf88a75c66d3099113a7343238f2f7a0ebb91a4ed335",
-    });
-    await expect(digestQualityFiles(root, ["missing.json"])).rejects.toThrow(
-      `Configuration missing.json is missing: ${join(root, "missing.json")}`,
     );
   });
 

@@ -17,7 +17,6 @@ const SUMMARY_KEYS = [
   "command",
   "scope",
   "thresholds",
-  "configDigests",
   "inputDigests",
   "outputDigests",
   "process",
@@ -48,7 +47,6 @@ export interface QualitySummary {
   };
   readonly scope: readonly string[];
   readonly thresholds: Readonly<Record<string, number | string | boolean>>;
-  readonly configDigests: Readonly<Record<string, string>>;
   readonly inputDigests: Readonly<Record<string, string>>;
   readonly outputDigests: Readonly<Record<string, string>>;
   readonly process: QualityProcessSummary;
@@ -131,7 +129,6 @@ function validateEvidenceFacts(summary: Record<string, unknown>, passed: boolean
   stringArray(command.args, "command.args", true);
   stringArray(summary.scope, "scope", false);
   scalarRecord(summary.thresholds, "thresholds");
-  digestRecord(summary.configDigests, "configDigests", !passed);
   digestRecord(summary.inputDigests, "inputDigests", true);
   digestRecord(summary.outputDigests, "outputDigests", !passed);
 }

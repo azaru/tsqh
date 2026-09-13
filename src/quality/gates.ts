@@ -10,7 +10,6 @@ import {
   classifyQualityFailure,
   cleanQualityPaths,
   digestText,
-  digestQualityFiles,
   loadPinnedToolVersions,
   summarizeQualityProcess,
 } from "./gate-support.js";
@@ -30,7 +29,6 @@ interface GateSpec {
   readonly args: readonly string[];
   readonly timeoutMs: number;
   readonly packages: Readonly<Record<string, string>>;
-  readonly configFiles: readonly string[];
   readonly scope: readonly string[];
   readonly thresholds: Readonly<Record<string, number | string | boolean>>;
   readonly cleanPaths: readonly string[];
@@ -43,7 +41,6 @@ function gateSpec(gateId: LocalQualityGateId): GateSpec {
       args: ["run", "--coverage"],
       timeoutMs: 900_000,
       packages: { vitest: "4.1.11", "@vitest/coverage-v8": "4.1.11" },
-      configFiles: ["package.json", "vitest.config.ts", "tsconfig.json", "tsconfig.test.json"],
       scope: ["src/**/*.ts", "test/**/*.ts"],
       thresholds: { global: 90, domain: 100 },
       cleanPaths: ["coverage"],
@@ -64,7 +61,6 @@ function gateSpec(gateId: LocalQualityGateId): GateSpec {
       ],
       timeoutMs: 900_000,
       packages: { "@azaru/tscrap": "0.1.2" },
-      configFiles: ["package.json", "vitest.config.ts"],
       scope: ["src/**/*.ts"],
       thresholds: { crap: 6 },
       cleanPaths: ["reports/quality/crap.json"],
@@ -74,7 +70,6 @@ function gateSpec(gateId: LocalQualityGateId): GateSpec {
       args: ["--config", "knip.json", "--reporter", "json"],
       timeoutMs: 900_000,
       packages: { knip: "6.32.2" },
-      configFiles: ["package.json", "knip.json"],
       scope: ["complete project"],
       thresholds: { findings: 0, configurationHints: 0, tagHints: 0 },
       cleanPaths: ["reports/quality/knip.json"],
@@ -88,7 +83,6 @@ function gateSpec(gateId: LocalQualityGateId): GateSpec {
         "@stryker-mutator/vitest-runner": "10.0.0",
         "@stryker-mutator/typescript-checker": "10.0.0",
       },
-      configFiles: ["package.json", "stryker.config.mjs", "tsconfig.json", "vitest.config.ts"],
       scope: ["src/**/*.ts", "!src/**/*.d.ts"],
       thresholds: {
         runnableMutationScore: 100,
@@ -124,7 +118,6 @@ export async function runLocalQualityGate(
   const invocationStartedAtMs = runtime.now();
   let process: ProcessArtifact | null = null;
   let toolVersions: Readonly<Record<string, string>> = {};
-  let configDigests: Readonly<Record<string, string>> = {};
   let inputDigests: Readonly<Record<string, string>> = {};
   let outputDigests: Readonly<Record<string, string>> = {};
   let status: QualityStatus;
@@ -134,7 +127,6 @@ export async function runLocalQualityGate(
   try {
     await assertQualityWorkspace(workspace);
     await cleanQualityPaths(workspace, gateId, spec.cleanPaths);
-    configDigests = await digestQualityFiles(workspace, spec.configFiles);
     toolVersions = await loadPinnedToolVersions(workspace, spec.packages);
     if (gateId === "crap") {
       const coverage = await validateCoverage({ workspace, invocationStartedAtMs: 0 });
@@ -175,7 +167,6 @@ export async function runLocalQualityGate(
     command: { executable: spec.executable, args: spec.args },
     scope: spec.scope,
     thresholds: spec.thresholds,
-    configDigests,
     inputDigests,
     outputDigests,
     process: summarizeQualityProcess(process),

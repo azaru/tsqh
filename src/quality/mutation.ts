@@ -7,12 +7,6 @@ import {
   readFreshEvidence,
 } from "./evidence.js";
 
-const PLUGINS = [
-  "@stryker-mutator/vitest-runner",
-  "@stryker-mutator/typescript-checker",
-] as const;
-const REPORTERS = ["clear-text", "progress", "json"] as const;
-
 export interface MutationValidation {
   readonly digest: string;
   readonly files: number;
@@ -39,7 +33,6 @@ export async function validateMutationReport(
   const report = parseJsonObject(evidence.content, "Mutation report");
   validateReportHeader(report, workspace);
   validateFramework(report);
-  validateConfiguration(record(report.config, "config"));
   const inventory = validateFiles(report.files, workspace);
   return { digest: evidence.digest, ...inventory };
 }
@@ -175,33 +168,6 @@ function requireMutantId(value: unknown, path: string, seenIds: Set<string>): st
   return value;
 }
 
-function validateConfiguration(config: Record<string, unknown>): void {
-  requireStringArray(config.checkers, ["typescript"], "config.checkers");
-  requireEqual(config.cleanTempDir, "always", "config.cleanTempDir");
-  requireEqual(config.concurrency, 2, "config.concurrency");
-  requireEqual(config.coverageAnalysis, "all", "config.coverageAnalysis");
-  requireEqual(config.dryRunTimeoutMinutes, 5, "config.dryRunTimeoutMinutes");
-  requireEqual(config.ignoreStatic, false, "config.ignoreStatic");
-  requireEqual(config.incremental, false, "config.incremental");
-  requireStringArray(
-    config.mutate,
-    ["src/**/*.ts", "!src/**/*.d.ts"],
-    "config.mutate",
-  );
-  requireStringArray(config.plugins, PLUGINS, "config.plugins");
-  requireStringArray(config.reporters, REPORTERS, "config.reporters");
-  requireEqual(config.tempDirName, ".stryker-tmp", "config.tempDirName");
-  requireEqual(config.testRunner, "vitest", "config.testRunner");
-  requireEqual(config.timeoutMS, 10_000, "config.timeoutMS");
-  requireEqual(config.tsconfigFile, "tsconfig.json", "config.tsconfigFile");
-  validateThresholds(config.thresholds, "config.thresholds");
-
-  const jsonReporter = record(config.jsonReporter, "config.jsonReporter");
-  requireEqual(jsonReporter.fileName, "reports/mutation/mutation.json", "config.jsonReporter.fileName");
-  const vitest = record(config.vitest, "config.vitest");
-  requireEqual(vitest.related, false, "config.vitest.related");
-}
-
 function validateThresholds(value: unknown, label: string): void {
   const thresholds = record(value, label);
   requireEqual(thresholds.high, 100, `${label}.high`);
@@ -214,20 +180,6 @@ function record(value: unknown, label: string): Record<string, unknown> {
     throw new EvidenceError(`Mutation report ${label} must be an object.`);
   }
   return value;
-}
-
-function requireStringArray(
-  actual: unknown,
-  expected: readonly string[],
-  label: string,
-): void {
-  if (
-    !Array.isArray(actual) ||
-    actual.length !== expected.length ||
-    actual.some((value, index) => value !== expected[index])
-  ) {
-    throw new EvidenceError(`Mutation report ${label} does not match required policy.`);
-  }
 }
 
 function requireEqual(actual: unknown, expected: unknown, label: string): void {

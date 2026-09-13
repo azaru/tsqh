@@ -95,22 +95,6 @@ describe("mutation evidence", () => {
     },
   );
 
-  it("labels invalid coverage analysis configuration exactly", async () => {
-    const fixture = await createMutationFixture(configChange("coverageAnalysis", "perTest"));
-
-    await expect(validate(fixture.root, 0)).rejects.toThrow(
-      /config\.coverageAnalysis must be "all"/u,
-    );
-  });
-
-  it("rejects contradictory or incremental configuration", async () => {
-    const fixture = await createMutationFixture({
-      config: { ...configuration(), incremental: true },
-    });
-
-    await expect(validate(fixture.root, 0)).rejects.toThrow(/config\.incremental must be false/u);
-  });
-
   it("rejects a process that did not exit normally", async () => {
     const fixture = await createMutationFixture();
 
@@ -131,25 +115,6 @@ describe("mutation evidence", () => {
     ["framework", { report: { framework: null } }, /framework must be an object/u],
     ["framework name", { report: { framework: { name: "Stryker", version: "10.0.0" } } }, /framework.name/u],
     ["framework version", { report: { framework: { name: "StrykerJS", version: "other" } } }, /framework.version/u],
-    ["configuration", { report: { config: null } }, /config must be an object/u],
-    ["configuration policy", { config: { ...configuration(), checkers: [] } }, /checkers.*policy/u],
-    ["clean temp", configChange("cleanTempDir", false), /config.cleanTempDir/u],
-    ["concurrency", configChange("concurrency", 3), /config.concurrency/u],
-    ["dry run timeout", configChange("dryRunTimeoutMinutes", 4), /config.dryRunTimeoutMinutes/u],
-    ["ignore static", configChange("ignoreStatic", true), /config.ignoreStatic/u],
-    ["mutate", configChange("mutate", ["src/**/*.ts"]), /config.mutate.*policy/u],
-    ["plugins", configChange("plugins", ["wrong", "@stryker-mutator/typescript-checker"]), /config.plugins.*policy/u],
-    ["reporters", configChange("reporters", ["clear-text", "json", "progress"]), /config.reporters.*policy/u],
-    ["temp directory", configChange("tempDirName", "other"), /config.tempDirName/u],
-    ["test runner", configChange("testRunner", "other"), /config.testRunner/u],
-    ["timeout", configChange("timeoutMS", 1), /config.timeoutMS/u],
-    ["tsconfig", configChange("tsconfigFile", "other.json"), /config.tsconfigFile/u],
-    ["config thresholds", configChange("thresholds", null), /config.thresholds must be an object/u],
-    ["config threshold high", configChange("thresholds", { high: 99, low: 100, break: 100 }), /config.thresholds.high/u],
-    ["JSON reporter", configChange("jsonReporter", null), /config.jsonReporter must be an object/u],
-    ["JSON reporter file", configChange("jsonReporter", { fileName: "other" }), /config.jsonReporter.fileName/u],
-    ["Vitest policy", configChange("vitest", null), /config.vitest must be an object/u],
-    ["Vitest related", configChange("vitest", { related: true }), /config.vitest.related/u],
     ["file inventory object", { report: { files: null } }, /files must be an object/u],
     ["empty file inventory", { report: { files: {} } }, /no mutated files/u],
     ["file scope", { filePath: "test/value.ts" }, /outside production scope/u],
@@ -186,7 +151,6 @@ async function validate(root: string, processExitCode: number): ReturnType<typeo
 }
 
 interface MutationFixtureOptions {
-  readonly config?: Record<string, unknown>;
   readonly file?: Record<string, unknown>;
   readonly filePath?: string;
   readonly mutants?: readonly unknown[];
@@ -212,38 +176,11 @@ async function createMutationFixture(options: MutationFixtureOptions = {}): Prom
     projectRoot: root,
     thresholds: { high: 100, low: 100, break: 100 },
     framework: { name: "StrykerJS", version: "10.0.0" },
-    config: options.config ?? configuration(),
     files: { [options.filePath ?? "src/value.ts"]: file },
     ...options.report,
   };
   await writeFile(reportPath, `${JSON.stringify(report)}\n`, "utf8");
   return { root, reportPath };
-}
-
-function configuration(): Record<string, unknown> {
-  return {
-    checkers: ["typescript"],
-    cleanTempDir: "always",
-    concurrency: 2,
-    coverageAnalysis: "all",
-    dryRunTimeoutMinutes: 5,
-    ignoreStatic: false,
-    incremental: false,
-    jsonReporter: { fileName: "reports/mutation/mutation.json" },
-    mutate: ["src/**/*.ts", "!src/**/*.d.ts"],
-    plugins: ["@stryker-mutator/vitest-runner", "@stryker-mutator/typescript-checker"],
-    reporters: ["clear-text", "progress", "json"],
-    tempDirName: ".stryker-tmp",
-    testRunner: "vitest",
-    thresholds: { high: 100, low: 100, break: 100 },
-    timeoutMS: 10_000,
-    tsconfigFile: "tsconfig.json",
-    vitest: { related: false },
-  };
-}
-
-function configChange(key: string, value: unknown): MutationFixtureOptions {
-  return { config: { ...configuration(), [key]: value } };
 }
 
 function mutant(

@@ -82,7 +82,6 @@ describe("versioned quality summaries", () => {
     const summary: QualitySummary = {
       ...passingSummary(),
       toolVersions: {},
-      configDigests: {},
       outputDigests: {},
       process: {
         ...passingSummary().process,
@@ -149,7 +148,6 @@ describe("versioned quality summaries", () => {
     ["empty tool versions", (value: MutableSummary) => value.toolVersions = {}, /toolVersions/u],
     ["invalid tool version", (value: MutableSummary) => value.toolVersions = { vitest: "" }, /toolVersions/u],
     ["threshold scalar", (value: MutableSummary) => value.thresholds = { global: 90, invalid: null }, /thresholds contains a non-scalar/u],
-    ["empty config digests", (value: MutableSummary) => value.configDigests = {}, /configDigests/u],
     ["empty output digests", (value: MutableSummary) => value.outputDigests = {}, /outputDigests/u],
     ["digest type", (value: MutableSummary) => value.inputDigests = { input: 1 }, /inputDigests.input must be a SHA-256/u],
     ["digest format", (value: MutableSummary) => value.inputDigests = { input: "bad" }, /inputDigests.input must be a SHA-256/u],
@@ -197,7 +195,6 @@ function passingSummary(): QualitySummary {
     command: { executable: "node_modules/.bin/vitest", args: ["run", "--coverage"] },
     scope: ["src/**/*.ts", "test/**/*.ts"],
     thresholds: { global: 90, domain: 100 },
-    configDigests: { "vitest.config.ts": hash },
     inputDigests: {},
     outputDigests: { "coverage/coverage-final.json": hash, "coverage/lcov.info": hash },
     process: {

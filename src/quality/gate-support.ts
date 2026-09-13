@@ -61,21 +61,6 @@ export async function loadPinnedToolVersions(
   return versions;
 }
 
-export async function digestQualityFiles(
-  workspace: string,
-  paths: readonly string[],
-): Promise<Readonly<Record<string, string>>> {
-  const digests: Record<string, string> = {};
-  for (const path of paths) {
-    digests[path] = (await readFreshEvidence(
-      join(workspace, path),
-      `Configuration ${path}`,
-      0,
-    )).digest;
-  }
-  return digests;
-}
-
 export function assertNativeQualitySuccess(gateId: string, process: ProcessArtifact): void {
   if (process.kind !== "exited") {
     throw new NativeQualityFailure("blocked", 1, `${gateId} process ended with ${process.kind}.`);

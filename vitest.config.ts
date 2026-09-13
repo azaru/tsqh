@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    exclude: ["**/node_modules/**", "**/.git/**", ".stryker-tmp/**", "tmp/**"],
     coverage: {
       clean: true,
       include: ["src/**/*.ts"],

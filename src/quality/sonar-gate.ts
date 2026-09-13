@@ -5,7 +5,6 @@ import {
   assertQualityWorkspace,
   classifyQualityFailure,
   cleanQualityPaths,
-  digestQualityFiles,
   digestText,
   loadPinnedToolVersions,
   summarizeQualityProcess,
@@ -32,13 +31,6 @@ import {
 } from "./summary.js";
 
 const ENVIRONMENT_KEYS = ["SONAR_HOST_URL", "SONAR_TOKEN", "SONAR_ORGANIZATION"] as const;
-const CONFIG_FILES = [
-  "package.json",
-  "sonar-project.properties",
-  "sonar-policy.json",
-  "vitest.config.ts",
-] as const;
-
 export interface SonarGateRuntime extends QualityGateRuntime {
   readonly environment: SonarEnvironment;
   readonly sonarApi: SonarApi;
@@ -54,7 +46,6 @@ export async function runSonarQualityGate(
   const secrets = [token].filter((secret): secret is string => secret !== undefined);
   let process: ProcessArtifact | null = null;
   let toolVersions: Readonly<Record<string, string>> = {};
-  let configDigests: Readonly<Record<string, string>> = {};
   let inputDigests: Readonly<Record<string, string>> = {};
   let outputDigests: Readonly<Record<string, string>> = {};
   let status: QualityStatus;
@@ -72,7 +63,6 @@ export async function runSonarQualityGate(
       sourceDigests: preflight.sourceDigests,
     });
     const validatedToken = token!;
-    configDigests = await digestQualityFiles(workspace, CONFIG_FILES);
     toolVersions = await loadPinnedToolVersions(workspace, { "@sonar/scan": "5.0.0" });
     inputDigests = {
       ...preflight.sourceDigests,
@@ -158,7 +148,6 @@ export async function runSonarQualityGate(
       qualityGate: "OK",
       waitSeconds: 300,
     },
-    configDigests,
     inputDigests,
     outputDigests,
     process: summarizeQualityProcess(process),

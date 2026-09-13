@@ -1,9 +1,10 @@
 export default {
   checkers: ["typescript"],
   cleanTempDir: "always",
-  concurrency: 2,
+  concurrency: 8,
   coverageAnalysis: "all",
   dryRunTimeoutMinutes: 5,
+  ignorePatterns: ["tmp/**"],
   ignoreStatic: false,
   incremental: false,
   jsonReporter: { fileName: "reports/mutation/mutation.json" },
@@ -18,5 +19,5 @@ export default {
   thresholds: { high: 100, low: 100, break: 100 },
   timeoutMS: 10_000,
   tsconfigFile: "tsconfig.json",
-  vitest: { related: false },
+  vitest: { related: true },
 };

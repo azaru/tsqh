@@ -89,7 +89,8 @@ interface ControllerContext {
 type ExecutableAction = Exclude<PlannedAction, { readonly type: "finish" }>;
 
 async function runLoop(context: ControllerContext): Promise<ControllerResult> {
-  while (true) {
+  const maxIterations = workflowActionBound(context.input.configuration);
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
     const { input, events } = context;
     const state = reduceTrace(events);
     const action = planNextAction(input.configuration, state);
@@ -108,6 +109,23 @@ async function runLoop(context: ControllerContext): Promise<ControllerResult> {
     );
     await executeAction(context, state, action);
   }
+
+  return finishRun(context, {
+    type: "finish",
+    terminalState: "blocked",
+    blocker: createBlocker(
+      "workflow-action-bound-exceeded",
+      "The controller exceeded the configured workflow action bound.",
+      null,
+    ),
+  });
+}
+
+function workflowActionBound(configuration: Configuration): number {
+  return Object.values(configuration.workflow.steps).reduce(
+    (total, step) => total + (step.type === "terminal" ? 1 : step.maxVisits),
+    1,
+  );
 }
 
 async function finishRun(

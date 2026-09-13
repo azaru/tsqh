@@ -4,7 +4,7 @@ export default {
   concurrency: 8,
   coverageAnalysis: "all",
   dryRunTimeoutMinutes: 5,
-  ignorePatterns: ["tmp/**"],
+  ignorePatterns: ["tmp/**", "workflows/**"],
   ignoreStatic: false,
   incremental: false,
   jsonReporter: { fileName: "reports/mutation/mutation.json" },

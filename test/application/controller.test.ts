@@ -603,6 +603,32 @@ describe("foreground controller", () => {
     expect(finishedSteps(passed.events)[0]).toMatchObject({ outcome: "passed", blocker: null });
   });
 
+  it("blocks a corrupted workflow before it can spin forever", async () => {
+    const base = agentConfiguration();
+    const configuration = {
+      ...base,
+      workflow: {
+        ...base.workflow,
+        steps: {
+          work: { type: "agent", role: "worker", maxVisits: -1, onCompleted: "work" },
+          passed: { type: "terminal", outcome: "passed" },
+        },
+      },
+    } as unknown as Configuration;
+    const harness = directHarness({ configuration });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state).toMatchObject({
+      terminalState: "blocked",
+      blocker: {
+        code: "workflow-action-bound-exceeded",
+        message: "The controller exceeded the configured workflow action bound.",
+        stepId: null,
+      },
+    });
+  });
+
   it("uses exact default native and agent command requests", async () => {
     const gate = directHarness({ configuration: gateConfiguration() });
     const gateResult = await runController(gate.input, gate.services);

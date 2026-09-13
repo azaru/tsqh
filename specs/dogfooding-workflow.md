@@ -16,12 +16,8 @@ Before implementation:
    required order.
 2. Identify the clean integration baseline, existing quality policy, workflow pack, and known
    blockers. Do not treat historical evidence as current evidence.
-3. Record a campaign manifest containing the specification path and revision, integration base,
-   ordered tasks and dependencies, workflow revision, runtime versions, and the exact client
-   version/build used.
-4. Use the latest client version that this project has actually validated—not an upstream
+3. Use the latest client version that this project has actually validated—not an upstream
    `latest` value. Verify that exact version before every task; do not change it mid-campaign.
-5. Freeze the plan before creating implementation worktrees.
 
 Create one task specification under `specs/tasks/` for each independently verifiable slice. Each
 task must state its objective, scope, non-goals, dependencies, allowed and protected paths,
@@ -66,7 +62,7 @@ metadata, and scripts are executable or policy inputs, not documentation-only ch
 For each task, create a new worktree from the latest green integration state and run this loop:
 
 ```text
-frozen task
+task specification
   -> clean task worktree
   -> exact client/runtime preflight
   -> external-package consumer check
@@ -123,7 +119,7 @@ After all tasks are integrated:
 
 1. Run the final required quality chain for campaigns containing implementation or executable-policy
    changes; run documentation validation instead for documentation-only campaigns.
-2. Reconcile delivered files with the frozen task plan and acceptance evidence.
+2. Reconcile delivered files with the task plan and acceptance evidence.
 3. Confirm that task worktrees, consumer fixtures, temporary paths, reports, and package artifacts
    are either cleaned up or explicitly retained as evidence.
 4. Report exact changed files, commands and exit statuses, client/runtime/package versions,

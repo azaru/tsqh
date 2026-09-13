@@ -12,4 +12,5 @@ tmp/codex-quality-mutation/
 .env.*
 !.env.example
 .codex
+specs/tasks/
 tmp/codex-*/

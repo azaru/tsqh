@@ -46,7 +46,7 @@ local design provenance referenced by `README.md`.
   and local-link, metadata, or example validation when available; do not run `quality:quick` or
   `quality:full` solely because documentation changed. A mixed change follows the stricter
   implementation/executable-policy rule. Markdown prompts, task inputs, workflow instructions,
-  and other files consumed by tools are executable inputs, not documentation-only changes.
+  and other files consumed by tools are executable inputs, not documentation-only changes. (consider any .md as documentation also)
 - Do not remove, skip, weaken, or relabel coverage, CRAP, Knip, mutation, Sonar, their evidence
   validation, or the `quality:full` order to obtain green. For mutation evidence, keep
   TypeScript-checker `CompileError` results visible as checker-rejected, non-runnable mutants and

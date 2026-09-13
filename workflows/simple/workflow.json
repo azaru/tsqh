@@ -38,7 +38,23 @@
     "implementer": {
       "provider": "codex",
       "promptPath": "prompts/implementer.md",
-      "allowedPathPrefixes": ["src/"]
+      "allowedPathPrefixes": [
+        "src/",
+        "scripts/",
+        "schemas/",
+        "workflows/tdd-pipeline/",
+        "package.json",
+        "pnpm-lock.yaml",
+        "vitest.config.ts",
+        "tsconfig.json",
+        "tsconfig.test.json",
+        "eslint.config.mjs",
+        "dependency-cruiser.json",
+        "gitleaks.toml",
+        "README.md",
+        "STATUS.md",
+        "STATUS-HISTORY.md"
+      ]
     }
   },
   "providers": {

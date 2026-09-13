@@ -11,7 +11,10 @@ tester -> implementer -> quick -> passed
                            └────────┘
 ```
 
-The tester may write only under `test/`; the implementer may write only under `src/`. The tester's
+The tester may write only under `test/`; the implementer may write only within the path prefixes
+supplied by the current assignment. The normal example task grants `src/`; a campaign may grant
+additional package, schema, script, pack, or documentation paths while keeping workflow policy,
+task authority, prompts, credentials, reports, and temporary paths protected. The tester's
 behavioral suite is the implementer's acceptance contract and is not rewritten during
 implementation or rework. The controller validates Git-visible changes after every agent step.
 Gates must not mutate the candidate. Gate-driven assignments omit the prior agent handoff and

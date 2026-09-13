@@ -182,6 +182,9 @@ ignored. The CI workflow runs the fast static/build/test/architecture checks; th
 Sonar stages remain explicit local release checks because they need longer runtimes and private
 service credentials.
 
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup and change hygiene, and [`SECURITY.md`](SECURITY.md)
+for the trust boundary and reporting guidance.
+
 The fail-closed wrapper checks three distinct kinds of remote evidence: `project_status` proves the
 computed result is `OK` with ignored conditions disabled; the assigned gate and its definition
 prove the exact eight approved conditions; and the project `main` branch response proves its

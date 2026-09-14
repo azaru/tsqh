@@ -9,7 +9,7 @@ MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated
 `dogfooding` branch contains the harness realignment that restores the simple pack to
 `tester -> implementer -> quick -> acceptance -> passed`. MVP-008 is now decomposed into twelve
 product-only task slices under `specs/tasks/`; Task 01's first reduced candidate has passed the
-configured workflow and remains pending external package-boundary review before integration.
+configured workflow and the external package-boundary review and is ready for integration review.
 Task briefs stay opaque to acceptance verification. The tester owns a test acceptance manifest; the
 system validates that manifest and its one-or-more test markers without parsing the task's authoring
 format. The task-authoring guide now contains soft size/scope heuristics for the simple workflow.
@@ -44,6 +44,10 @@ beyond the configured acceptance gate execution.
 
 ## Verification
 
+- Task 01 adversarial review: candidate build exit 0; npm pack exit 0; npm install exit 0; pnpm
+  install exit 0; relocated npm/pnpm installed `tsqh run` exit 0; relocated public-export checks
+  exit 0; tarball forbidden-path scan empty. The review used isolated fixtures under attempt 19 and
+  did not modify candidate tracked paths.
 - Harness realignment: workflow load exit 0 with the configured tester re-entry edge.
 - Prompt re-entry behavior: targeted prompt/controller tests passed, 57 tests in 2 files.
 - Simple provider timeout: configured at 3,600,000 ms for the next candidate.
@@ -57,8 +61,9 @@ beyond the configured acceptance gate execution.
 - `CI=true pnpm quality:quick`: exit 0, 803 tests in 31 files; architecture inspected 7 entries.
 - Candidate 15 review remains negative: no changes under `src/` or `scripts/`; its distribution
   suite did not exercise installed quality tools or the Gitleaks engine.
-- No integrated Task 01 implementation, package acceptance, real Codex demo smoke, opted-in
-  eight-stage chain, or final MVP-008 acceptance has passed.
+- No Task 01 implementation has been integrated; the real Codex workflow, package-boundary review,
+  and acceptance evidence remain isolated. No real demo smoke, opted-in eight-stage chain, or final
+  MVP-008 acceptance has passed.
 
 ## Blockers
 
@@ -75,7 +80,7 @@ the first task-authoring/verification separation was corrected. Attempt 17 was s
 implementer visit 1 after the remaining coupling was identified; its candidate remains isolated.
 Attempt 18 was stopped during implementer visit 1 for a scope reset after the tester produced a
 six-requirement distribution suite; no quick, acceptance, or integration evidence exists. Attempt
-19 completed the reduced Task 01 workflow, but its candidate still requires the task-scoped external
-consumer check and independent review before integration. Do not resume attempts 16 through 18.
+19 completed the reduced Task 01 workflow and passed the task-scoped external consumer review, but
+its candidate is still not integrated. Do not resume attempts 16 through 18.
 Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

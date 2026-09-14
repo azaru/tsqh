@@ -766,3 +766,15 @@ package-boundary brief. Its trace completed `tester 1 -> implementer 1 -> quick 
 `STATUS.md`. Quick exited 0 with 807 tests in 32 files and 7 architecture entries. The system-owned
 acceptance report covered all four requirements with one test each. The candidate is not integrated:
 the task-scoped external consumer check and independent package review remain outstanding.
+
+## 2026-09-14 — Task 01 candidate 19 adversarial review
+
+The candidate was independently built and packed. The tarball contained the compiled CLI, required
+schemas, workflow/prompt assets, and current quality assets; a forbidden-path scan found no `src/`,
+`test/`, `scripts/`, `specs/`, `tmp/`, report, or credential paths. Independent npm and pnpm
+consumers installed the same tarball with exit 0, survived directory relocation, resolved public
+exports from consumer `node_modules`, and ran an installed `tsqh run` terminal smoke with exit 0.
+The candidate's own suite was rerun independently with 4/4 tests passing. Review found that the
+candidate suite itself does not install the package or execute the installed bin; that evidence was
+provided separately by this adversarial review. The package-boundary slice is acceptable on the
+recorded evidence, but remains unintegrated pending explicit integration.

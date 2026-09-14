@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "requirements": [
+    {
+      "id": "publishable-metadata",
+      "description": "The package declares publishable metadata, the supported Node.js engine, and the tsqh binary."
+    },
+    {
+      "id": "packed-public-assets",
+      "description": "npm pack produces an identified artifact containing the compiled CLI and required public assets."
+    },
+    {
+      "id": "bounded-package-content",
+      "description": "The packed artifact excludes source checkout files, task inputs, caches, reports, credentials, and temporary content."
+    },
+    {
+      "id": "resolvable-public-exports",
+      "description": "Declared public exports resolve required assets from within the package boundary."
+    }
+  ]
+}

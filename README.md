@@ -132,6 +132,19 @@ For local setup, install the repository dependencies with:
 pnpm install --frozen-lockfile
 ```
 
+### Installing TSQH in a consumer project
+
+Install TSQH as a development dependency with either package manager:
+
+```sh
+pnpm add --save-dev tsqh-mvp
+npm install --save-dev tsqh-mvp
+```
+
+The published package provides the `tsqh` executable and its compiled CLI, schemas, workflow
+packs, prompts, and quality configuration assets. After installation, invoke it with
+`pnpm exec tsqh`, `npx tsqh`, or `npm exec tsqh-mvp --` from the consumer workspace.
+
 For a TSQH dogfooding campaign, the selected workflow is the acceptance policy and owns its gate
 order. The `simple` pack intentionally uses only its configured quick gate; the `tdd-pipeline` pack
 includes the full release gate explicitly.

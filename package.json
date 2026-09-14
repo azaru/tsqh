@@ -1,15 +1,45 @@
 {
   "name": "tsqh-mvp",
   "version": "0.0.0",
-  "private": true,
   "license": "MIT",
   "type": "module",
   "description": "A deterministic sequential multi-agent guardrail controller.",
+  "main": "./dist/cli.js",
   "engines": {
     "node": ">=22.12.0"
   },
   "bin": {
     "tsqh": "dist/cli.js"
+  },
+  "files": [
+    "README.md",
+    "dist/",
+    "schemas/",
+    "workflows/simple/README.md",
+    "workflows/simple/workflow.json",
+    "workflows/simple/prompts/",
+    "workflows/tdd-pipeline/README.md",
+    "workflows/tdd-pipeline/workflow.json",
+    "workflows/tdd-pipeline/prompts/",
+    "knip.json",
+    "stryker.config.mjs",
+    "sonar-policy.json",
+    "sonar-project.properties"
+  ],
+  "exports": {
+    ".": "./dist/cli.js",
+    "./schemas/project-config.schema.json": "./schemas/project-config.schema.json",
+    "./schemas/workflow.schema.json": "./schemas/workflow.schema.json",
+    "./workflows/simple/README.md": "./workflows/simple/README.md",
+    "./workflows/simple/workflow.json": "./workflows/simple/workflow.json",
+    "./workflows/simple/prompts/*": "./workflows/simple/prompts/*",
+    "./workflows/tdd-pipeline/README.md": "./workflows/tdd-pipeline/README.md",
+    "./workflows/tdd-pipeline/workflow.json": "./workflows/tdd-pipeline/workflow.json",
+    "./workflows/tdd-pipeline/prompts/*": "./workflows/tdd-pipeline/prompts/*",
+    "./knip.json": "./knip.json",
+    "./stryker.config.mjs": "./stryker.config.mjs",
+    "./sonar-policy.json": "./sonar-policy.json",
+    "./sonar-project.properties": "./sonar-project.properties"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/mark-cli-executable.mjs",

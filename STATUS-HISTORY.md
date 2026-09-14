@@ -652,3 +652,10 @@ in visit 1 for roughly twelve minutes while inspecting the active candidate and 
 files. Unlike Attempt 12, no candidate changes were observed at the stop and no implementer step
 started. The run was stopped to avoid spending another long provider step before the startup
 instructions are reduced further. No Task 01 acceptance or integration is claimed.
+
+## 2026-09-14 — Previous Task 01 attempt artifacts cleaned
+
+At the user's request, the task-owned temporary artifacts for Attempts 12 and 13 were removed
+before starting the next candidate. The already-missing Attempts 07–11 worktree registrations were
+pruned. No candidate implementation or acceptance evidence was removed from the repository; the
+historical summaries above remain as the record of those stopped runs.

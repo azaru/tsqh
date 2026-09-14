@@ -11,11 +11,11 @@ MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated
 package-distribution slice, and its ignored task file is now an implementation brief only.
 
 No candidate implementation, successful TSQH campaign task, installed-consumer acceptance result,
-or Task 01 integration is retained. Attempts 11 through 13 were stopped before acceptance; their
-candidates and evidence remain under the task-owned temporary path. Attempt 12 was stopped during
-tester visit 1 after it modified baseline quality tests instead of adding only task tests. Attempt
-13 was stopped during tester visit 1 after prolonged startup exploration; its candidate was clean at
-the stop. The pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy commit.
+or Task 01 integration is retained. Attempts 11 through 13 were stopped before acceptance and their
+task-owned temporary artifacts have been cleaned. Attempt 12 was stopped during tester visit 1
+after it modified baseline quality tests instead of adding only task tests. Attempt 13 was stopped
+during tester visit 1 after prolonged startup exploration; its candidate was clean at the stop. The
+pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy commit.
 
 ## Harness diagnosis
 
@@ -35,8 +35,7 @@ required.
 ## Verification
 
 - Harness realignment: workflow load exit 0 with the configured tester re-entry edge.
-- Prompt re-entry behavior: targeted prompt/controller tests passed before the latest context-only
-  refinement; the refinement requires the same targeted checks before the next candidate.
+- Prompt re-entry behavior: targeted prompt/controller tests passed, 57 tests in 2 files.
 - `CI=true pnpm build`: exit 0.
 - `CI=true pnpm typecheck`: exit 0.
 - `CI=true pnpm quality:quick`: exit 0, 793 tests in 29 files; architecture inspected 7 entries.
@@ -51,5 +50,5 @@ stopped during tester visit 1 after changes to `test/quality/cli.test.ts`,
 `test/quality/gates.test.ts`, and new `test/package/` files. Attempt 13 was stopped during tester
 visit 1 with no candidate changes observed. The next action is a fresh candidate from the committed
 context-reduction and baseline-test-protection changes, with the simple pack returning quick
-failures to the tester. Detailed attempts and evidence remain under the ignored task-owned
-temporary paths and [STATUS-HISTORY.md](STATUS-HISTORY.md).
+failures to the tester. Detailed historical notes remain in [STATUS-HISTORY.md](STATUS-HISTORY.md);
+the old task-owned attempt artifacts have been removed.

@@ -8,9 +8,10 @@ Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-secu
 MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated. The current
 `dogfooding` branch contains the harness realignment that restores the simple pack to
 `tester -> implementer -> quick -> acceptance -> passed`. Task 01 remains the current unintegrated
-package-distribution slice. Task briefs stay product-only and opaque to acceptance verification. The
-tester now owns a test acceptance manifest; the system validates that manifest and its one-or-more
-test markers without parsing the task's authoring format.
+package-distribution slice, but it is too broad for one simple-pack implementation visit and must be
+split before another candidate is launched. Task briefs stay product-only and opaque to acceptance
+verification. The tester owns a test acceptance manifest; the system validates that manifest and its
+one-or-more test markers without parsing the task's authoring format.
 
 No candidate implementation or Task 01 integration is retained on the branch. Attempt 15 completed
 the simple dogfooding trace, but review found missing package-root tool resolution and Gitleaks
@@ -71,7 +72,9 @@ acceptance for package-root tool resolution, installed Gitleaks preflight, or ge
 provisioned runtime tools. It is not integrated. Attempt 16 was stopped before tester changes while
 the first task-authoring/verification separation was corrected. Attempt 17 was stopped during
 implementer visit 1 after the remaining coupling was identified; its candidate remains isolated.
-The next action is to commit and preflight this manifest-based harness correction, then create a
-fresh Task 01 candidate; do not resume attempts 16 or 17.
+Attempt 18 was stopped during implementer visit 1 for a scope reset after the tester produced a
+six-requirement distribution suite; no quick, acceptance, or integration evidence exists. Do not
+launch another candidate until Task 01 is divided into independently verifiable slices; do not
+resume attempts 16 through 18.
 Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

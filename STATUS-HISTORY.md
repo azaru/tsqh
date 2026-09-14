@@ -731,3 +731,15 @@ that free-form product prose was fully interpreted. The change passed `CI=true p
 with 803 tests in 31 files and 7 architecture entries. Attempt 17 was stopped during implementer
 visit 1 before quick because it had started under the superseded contract; its candidate remains
 isolated and is not accepted.
+
+## 2026-09-14 — Task 01 attempt 18 stopped for scope reset
+
+Attempt 18 was created from `eca41ef` after the acceptance-evidence decoupling. Its tester finished
+visit 1 with only `test/acceptance.json` and `test/package/distribution.test.ts`, covering six local
+requirements without modifying baseline tests. The implementer then began the package/toolchain
+changes and reached eight tracked candidate files plus a 1,138-line lockfile expansion before the
+first `quick` gate. The visit was stopped before its result because the task combines too many
+independently verifiable concerns: package publication, runtime dependency provisioning, Gitleaks
+preflight, package-root resolution, npm/pnpm relocation, and public APIs. No Task 01 acceptance or
+integration evidence is claimed. The campaign is paused to split the task into smaller product
+slices before another candidate is launched.

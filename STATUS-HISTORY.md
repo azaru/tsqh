@@ -681,3 +681,16 @@ five tests. The implementer changed package metadata, lockfile, README and STATU
 passing npm packed install, manual pnpm bin/export invocation, and Gitleaks engine `8.30.1`.
 Quick passed 798 tests in 30 files with no native candidate changes. The candidate remains
 isolated and no MVP-008 acceptance or integration is claimed.
+
+## 2026-09-14 — Task 01 attempt 15 review rejected integration
+
+The isolated Attempt 15 candidate was reviewed after its simple workflow passed. The package test
+passed five tests and the controller recorded `quick` exit 0, but the candidate made no changes in
+`src/` or `scripts/`. Existing quality code still requires a workspace named `tsqh-mvp`, resolves
+tools from `workspace/node_modules` and `workspace/node_modules/.bin`, and invokes the consumer
+working directory. This violates Task 01 acceptance 4 for package-root resolution independent of
+consumer name, PATH, npm hoisting, and pnpm layout. The candidate package test exercises only
+`status` and an in-process API from installed consumers; it does not execute installed quality
+tools or validate a Gitleaks wrapper/engine preflight, and the implementer reported five unused
+provisioned future-stage tool packages. The candidate is therefore not integrated; a bounded
+implementation repair is required.

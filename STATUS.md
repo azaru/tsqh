@@ -11,13 +11,13 @@ MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated
 package-distribution slice, and its ignored task file is now an implementation brief only.
 
 No candidate implementation or Task 01 integration is retained on the branch. Attempt 15 completed
-the simple dogfooding trace, but its candidate and run evidence remain isolated under the task-owned
-temporary path pending review. Attempts 11 through 14 were stopped before acceptance. Attempt 12
-was stopped during tester visit 1 after it modified baseline quality tests instead of adding only
-task tests. Attempt 13 was stopped during tester visit 1 after prolonged startup exploration; its
-candidate was clean at the stop. Attempt 14 timed out in implementer visit 1 at the 30-minute
-provider limit. The pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy
-commit.
+the simple dogfooding trace, but review found missing package-root tool resolution and Gitleaks
+preflight evidence; its candidate remains isolated under the task-owned temporary path. Attempts 11
+through 14 were stopped before acceptance. Attempt 12 was stopped during tester visit 1 after it
+modified baseline quality tests instead of adding only task tests. Attempt 13 was stopped during
+tester visit 1 after prolonged startup exploration; its candidate was clean at the stop. Attempt 14
+timed out in implementer visit 1 at the 30-minute provider limit. The pre-existing
+`CONTRIBUTING.md` deletion remains part of the harness-policy commit.
 
 ## Harness diagnosis
 
@@ -44,6 +44,8 @@ required.
 - `CI=true pnpm build`: exit 0.
 - `CI=true pnpm typecheck`: exit 0.
 - `CI=true pnpm quality:quick`: exit 0, 793 tests in 29 files; architecture inspected 7 entries.
+- Candidate review: no changes under `src/` or `scripts/`; quality resolution remains checkout-
+  dependent and the distribution suite does not exercise the installed Gitleaks engine.
 - No integrated Task 01 implementation, package acceptance, real Codex demo smoke, opted-in
   eight-stage chain, or final MVP-008 acceptance has passed.
 
@@ -55,6 +57,8 @@ stopped during tester visit 1 after changes to `test/quality/cli.test.ts`,
 `test/quality/gates.test.ts`, and new `test/package/` files. Attempt 13 was stopped during tester
 visit 1 with no candidate changes observed. Attempt 14 was stopped after the implementer exhausted
 its 1,800,000 ms timeout before `quick`. Attempt 15 completed the configured simple trace with
-tester re-entry and `quick` exit 0; its candidate is not integrated. The next action is review of
-the isolated candidate and its evidence. Detailed historical notes remain in
+tester re-entry and `quick` exit 0, but review found that the candidate does not satisfy Task 01
+acceptance for package-root tool resolution, installed Gitleaks preflight, or genuine use of all
+provisioned runtime tools. It is not integrated. The next action is a bounded implementation repair
+from the isolated candidate. Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

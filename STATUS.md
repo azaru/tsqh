@@ -5,16 +5,17 @@ Updated: 2026-09-14
 ## Current position
 
 Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md).
-MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated. The current
+MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not complete. The current
 `dogfooding` branch contains the harness realignment that restores the simple pack to
 `tester -> implementer -> quick -> acceptance -> passed`. MVP-008 is now decomposed into twelve
-product-only task slices under `specs/tasks/`; Task 01's first reduced candidate has passed the
-configured workflow and the external package-boundary review and is ready for integration review.
+product-only task slices under `specs/tasks/`; Task 01's public package-boundary slice is integrated
+at `c9f755a` with the deterministic-build correction at `1da88fc`; Task 02 is next.
 Task briefs stay opaque to acceptance verification. The tester owns a test acceptance manifest; the
 system validates that manifest and its one-or-more test markers without parsing the task's authoring
 format. The task-authoring guide now contains soft size/scope heuristics for the simple workflow.
 
-No candidate implementation or Task 01 integration is retained on the branch. Attempt 15 completed
+Task 01's implementation is integrated on the branch; its candidate and retained run evidence remain
+isolated under the task-owned temporary path. Attempt 15 completed
 the simple dogfooding trace, but review found missing package-root tool resolution and Gitleaks
 preflight evidence; its candidate remains isolated under the task-owned temporary path. Attempts 11
 through 14 were stopped before acceptance. Attempt 12 was stopped during tester visit 1 after it
@@ -48,6 +49,9 @@ beyond the configured acceptance gate execution.
   install exit 0; relocated npm/pnpm installed `tsqh run` exit 0; relocated public-export checks
   exit 0; tarball forbidden-path scan empty. The review used isolated fixtures under attempt 19 and
   did not modify candidate tracked paths.
+- Integrated Task 01 verification: `CI=true pnpm quality:quick` — exit 0; 807 tests in 32 files,
+  architecture inspected 7 entries. The build now removes stale generated `dist/` output before
+  compilation, and the package-boundary credential-name check no longer rejects legitimate modules.
 - Harness realignment: workflow load exit 0 with the configured tester re-entry edge.
 - Prompt re-entry behavior: targeted prompt/controller tests passed, 57 tests in 2 files.
 - Simple provider timeout: configured at 3,600,000 ms for the next candidate.
@@ -61,8 +65,8 @@ beyond the configured acceptance gate execution.
 - `CI=true pnpm quality:quick`: exit 0, 803 tests in 31 files; architecture inspected 7 entries.
 - Candidate 15 review remains negative: no changes under `src/` or `scripts/`; its distribution
   suite did not exercise installed quality tools or the Gitleaks engine.
-- No Task 01 implementation has been integrated; the real Codex workflow, package-boundary review,
-  and acceptance evidence remain isolated. No real demo smoke, opted-in eight-stage chain, or final
+- Task 01 implementation, workflow trace, package-boundary review, and acceptance evidence are
+  complete, but no Task 02 implementation, real demo smoke, opted-in eight-stage chain, or final
   MVP-008 acceptance has passed.
 
 ## Blockers
@@ -80,7 +84,9 @@ the first task-authoring/verification separation was corrected. Attempt 17 was s
 implementer visit 1 after the remaining coupling was identified; its candidate remains isolated.
 Attempt 18 was stopped during implementer visit 1 for a scope reset after the tester produced a
 six-requirement distribution suite; no quick, acceptance, or integration evidence exists. Attempt
-19 completed the reduced Task 01 workflow and passed the task-scoped external consumer review, but
-its candidate is still not integrated. Do not resume attempts 16 through 18.
+19 completed the reduced Task 01 workflow and passed the task-scoped external consumer review; its
+package-boundary changes are integrated, with the post-integration quick correction recorded in
+`1da88fc`. The next action is a fresh Task 02 candidate from this integration state. Do not resume
+attempts 16 through 18.
 Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

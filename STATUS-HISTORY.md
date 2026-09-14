@@ -778,3 +778,14 @@ The candidate's own suite was rerun independently with 4/4 tests passing. Review
 candidate suite itself does not install the package or execute the installed bin; that evidence was
 provided separately by this adversarial review. The package-boundary slice is acceptable on the
 recorded evidence, but remains unintegrated pending explicit integration.
+
+## 2026-09-14 — Task 01 integrated
+
+The reviewed Task 01 package-boundary changes were cherry-picked as `c9f755a`, including the public
+package metadata, explicit files/exports boundary, installation documentation, and the four-test
+package-boundary suite plus acceptance manifest. Post-integration `quality:quick` initially exposed
+stale ignored `dist/quality/secrets.*` artifacts and a test filename pattern that classified a
+legitimate `secrets.js` module as credential material. The integration correction `1da88fc` makes
+the build clean `dist/` before compilation and narrows that test pattern. The final integrated
+quick verification exited 0 with 807 tests in 32 files and 7 architecture entries. Task 01 is
+complete; no Task 02 implementation or full MVP-008 acceptance is claimed.

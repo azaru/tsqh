@@ -63,7 +63,7 @@
       "executable": "codex",
       "args": ["exec", "--sandbox", "workspace-write", "-"],
       "promptTransport": "stdin",
-      "timeoutMs": 900000
+      "timeoutMs": 1800000
     }
   },
   "profiles": {

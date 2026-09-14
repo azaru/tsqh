@@ -561,3 +561,29 @@ Exact command records, logs and copied validated reports are retained under
 `full-authenticated-evidence/`. The task-owned directories and failed candidate are explicitly
 retained as evidence; they are not maintained test inputs. A new affected worktree must start from
 the harness integration commit; do not resume or manually repair the old candidate.
+
+## 2026-09-14 — finite provider timeout correction verified
+
+Task 01 attempt 03 run `a20264dc-b99e-44b9-b6a3-631f5497f490` completed the real Codex-backed
+`tester -> implementer -> quick -> passed` trace (TSQH exit 0; quick 857 tests/30 files).
+Release `pnpm quality:full` exited 2 at CRAP: five installation functions had source coverage zero,
+with CRAP 42/20/132/20/110. Separate Knip diagnosis exited 1 with five unused tool dependencies.
+Native gate snapshots were unchanged; no implementation was integrated. Task 01 now explicitly
+requires meaningful in-process public API coverage and genuine tool usage alongside consumer tests.
+
+Attempt 04 run `b3d65a96-3715-4b45-9b91-ffdbaba16da8` timed out in tester at 900000 ms, TSQH
+exit 1, before implementer/gates. Five test/distribution files and outcome evidence are retained
+under `tmp/codex-mvp008-01/attempt-04/`, without manual candidate edits.
+
+Necessary harness correction: only `workflows/simple/workflow.json` providers.codex.timeoutMs
+increased from 900000 to 1800000. Model, sandbox, visits, transitions, native gate timeouts,
+thresholds and evidence requirements did not change. Configuration tests
+`pnpm exec vitest run test/config/config-loader.test.ts` exited 0 (30 tests/1 file).
+`pnpm quality:quick` exited 0 (786 tests/29 files). Fresh `pnpm quality:full` exited 0 in exact
+`quick -> coverage -> crap -> knip -> mutation -> sonar` order; quick and coverage each passed
+786 tests in 29 files. Mutation: 3249 Killed and 1239 CompileError, no other state. Report SHA-256
+`8b9d78218bdb1b57150b6f872b5b69115e43024d74aef39a576b78f3096096c6`.
+Approved Sonar analysis `255c63e4-ab3a-4d21-a2e5-db36b85d1cff` computed gate OK with the approved
+remote policy. The tracked integration diff remained unchanged during full. Exact commands,
+logs and copied evidence remain under `tmp/codex-mvp008-provider-timeout/`. This is harness
+verification, not candidate acceptance. A fresh affected worktree is required.

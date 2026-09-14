@@ -4,36 +4,35 @@ Updated: 2026-09-14
 
 ## Current position
 
-- Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md),
-  not implemented. MVP-001 through MVP-007 remain the completed baseline.
-- No MVP-008 campaign task is integrated. Task 01 attempt 01 ended with TSQH exit 1:
-  `tester:completed -> implementer:agent-timeout`; no controller quick visit occurred.
-- The blocked candidate remains unchanged by the coordinator and is retained as evidence.
-  New task inputs are local ignored files under `specs/tasks/`.
+Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md),
+not implemented. MVP-001 through MVP-007 remain the completed baseline. No campaign task is
+integrated. Fresh task inputs are ignored under `specs/tasks/`; previous candidates remain evidence.
+
+Task 01 attempt 03 passed the real Codex-backed TSQH trace `tester -> implementer -> quick -> passed`
+(exit 0; 857 tests), but release full failed at CRAP (exit 2); separate Knip diagnosis failed
+(exit 1). Attempt 04 timed out in tester at 900000 ms (TSQH exit 1), before implementer/gates.
+Neither candidate is approved for integration. Detailed evidence is in the ignored campaign plan.
 
 ## Current verification
 
-- Necessary harness fixture isolation and Stryker sandbox fixes are verified. No production code,
-  assertions, mutation scope, checker, gate threshold or gate order changed.
-- Targeted tests: exit 0, 23/23 tests in 2 files. `pnpm quality:quick`: exit 0, 786/786 in 29 files.
-- Fresh `pnpm quality:full`: exit 0, exact six-stage order. Mutation: 3249 Killed and 1239
-  CompileError, no other states. Approved Sonar analysis `ad05050e-1188-48ec-8b0f-dd2159463698`
-  computed gate OK. The tracked integration diff stayed unchanged during full.
-- Evidence: `tmp/codex-mvp008-harness-isolation/verified-harness-summary.json` and retained logs
-  and reports. Detailed attempts and evidence are in [STATUS-HISTORY.md](STATUS-HISTORY.md).
-- This is harness verification, not an MVP-008 package acceptance or real Codex smoke pass.
+The necessary simple-provider timeout correction from 900000 to 1800000 ms is verified.
+Model, sandbox, transitions, visits, native gate timeouts and quality policy are unchanged.
 
-## Current blocker and next action
+- Configuration tests: exit 0, 30 tests in 1 file.
+- `pnpm quality:quick`: exit 0, 786 tests in 29 files.
+- `pnpm quality:full`: exit 0, `quick -> coverage -> crap -> knip -> mutation -> sonar`.
+- Mutation: 3249 Killed, 1239 CompileError, no other status.
+- Approved Sonar analysis `255c63e4-ab3a-4d21-a2e5-db36b85d1cff`: computed gate OK.
+- Tracked integration diff remained unchanged throughout full.
 
-Task 01 attempt 03 passed TSQH: `tester -> implementer -> quick -> passed`, exit 0, with
-857/857 tests in 30 files and no gate candidate mutations. Tester files stayed unchanged.
-Release acceptance remains blocked: `pnpm quality:full` exited 2 at CRAP. Five installation
-functions have source coverage zero and CRAP 42/20/132/20/110; two have complexity 11 and 10.
-A separate Knip diagnosis exited 1 with five unused provisioned tool dependencies. Mutation and
-Sonar were not reached for this candidate. No campaign task is integrated.
+Exact commands, logs and copied reports: `tmp/codex-mvp008-provider-timeout/`, including
+`verified-harness-summary.json`. This verifies the harness, not MVP-008 candidate acceptance.
+Earlier evidence belongs in [STATUS-HISTORY.md](STATUS-HISTORY.md).
 
-Evidence is retained under `tmp/codex-mvp008-01/attempt-03/acceptance-full/` and
-`acceptance-outcome.json`. Task 01 now requires in-process public API behavior coverage in addition
-to installed-consumer tests, bounded function complexity and genuine recognized tool usage.
-Create a fresh tester-first TSQH attempt from integration; do not edit or copy the previous
-candidate, weaken the failed gates or advance Task 02 before release acceptance passes.
+## Next action
+
+Commit the verified harness correction and create Task 01 attempt 05 from that clean integration
+commit. Execute the exact freshly authored task through the checked-in simple workflow. Do not
+copy or manually repair previous candidates; require installed-consumer acceptance and full before
+integration. Task 01 must address meaningful source coverage, bounded complexity and genuine tool
+usage while preserving its installed-package acceptance requirements.

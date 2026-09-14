@@ -35,6 +35,10 @@ if (mode.startsWith("agent-")) {
   }
   await appendFile(join(stateDirectory, "execution.log"), `agent:${step}:${visit}\n`, "utf8");
   process.stdout.write('{"status":"completed","nextStep":"passed"}\n');
+  if (mode === "agent-noisy-exit") {
+    process.stderr.write("provider documentation prefix\n" + "x".repeat(40_000) + "\nfinal provider error\n");
+    process.exit(7);
+  }
   if (mode === "agent-exit") {
     process.exit(7);
   }

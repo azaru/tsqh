@@ -224,5 +224,5 @@ report its real result without fabricating success.
 ## Completion condition
 
 The increment is complete only when all required artifacts exist, automated happy/repair/exhaustion
-traces pass, `pnpm quality:full` exits zero, documentation describes actual behavior, and
-`STATUS.md` records the verified result or an exact external blocker.
+traces pass, the configured workflow's required gates exit zero, documentation describes actual
+behavior, and `STATUS.md` records the verified result or an exact external blocker.

@@ -40,8 +40,8 @@ package:
 3. Install the produced package artifact into the fixture with the repository-approved package
    manager. Use npm as an additional compatibility check only when the active specification
    requires it.
-4. Run the task's CLI, workflow, and relevant gates from the consumer fixture. The run must
-   resolve the installed package's bin, code, schemas, prompts, and tools—not the source checkout.
+4. Run the task's CLI through the workflow from the consumer fixture. The workflow must resolve the
+   installed package's bin, code, schemas, prompts, and tools—not the source checkout.
 5. Record the package version, artifact identity, install command, consumer trace, and result.
 6. Remove only paths owned by that invocation after evidence is captured.
 
@@ -94,8 +94,10 @@ workspace, or unauthorized change fails or blocks. It never passes by inference.
 Choose verification by behavioral surface, not file extension:
 
 - Implementation, tests, package distribution, configuration, workflow, prompts, schemas, or
-  other executable-policy changes require targeted checks, `pnpm quality:quick` after each
-  coherent change, and `pnpm quality:full` before delivery.
+  other executable-policy changes require targeted checks and the gates configured by the selected
+  workflow after each coherent change. The workflow is the user's quality policy: the coordinator
+  must not append an unconfigured command such as `pnpm quality:full` and treat it as an additional
+  dogfooding gate. If a full release chain is required, configure it as a workflow gate/profile.
 - Human-facing documentation-only changes require relevant documentation checks such as
   `git diff --check` and local link, metadata, or example validation. Do not run the application
   quality chain solely because documentation changed.
@@ -105,16 +107,18 @@ Do not skip, weaken, relabel, or reorder required gates. Preserve checker-reject
 `CompileError` mutation evidence and require every runnable mutant to be `Killed`.
 
 Integrate only when the controller reaches its success terminal, acceptance evidence exists, the
-external-consumer check has passed for implementation tasks, all required checks/gates pass, and
-all candidate changes are authorized. The next task starts from the resulting clean integration
-commit, never from an older integration state.
+external-consumer check has passed for implementation tasks, every gate configured by that
+workflow passes, and all candidate changes are authorized. A command not represented in the
+workflow cannot invalidate a passed dogfooding task. The next task starts from the resulting clean
+integration commit, never from an older integration state.
 
 ## 5. Finish the campaign
 
 After all tasks are integrated:
 
-1. Run the final required quality chain for campaigns containing implementation or executable-policy
-   changes; run documentation validation instead for documentation-only campaigns.
+1. The campaign workflow must complete its configured gates for campaigns containing implementation
+   or executable-policy changes; use documentation validation instead for documentation-only
+   campaigns. Do not add an unconfigured release command after the workflow has passed.
 2. Reconcile delivered files with the task plan and acceptance evidence.
 3. Confirm that task worktrees, consumer fixtures, temporary paths, reports, and package artifacts
    are either cleaned up or explicitly retained as evidence.

@@ -1,4 +1,5 @@
-import { join } from "node:path";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { describe, expect, it, type MockInstance, vi } from "vitest";
 import { SpawnCommandRunner } from "../../src/adapters/command-runner.js";
 
@@ -16,6 +17,46 @@ describe("shell-disabled command execution", () => {
     expect(artifact.stdoutTruncated).toBe(true);
     expect(Buffer.byteLength(artifact.stdout)).toBeLessThanOrEqual(65_536);
     expect(artifact.stdout).not.toContain("\u001b");
+  });
+
+  it("retains a complete provider log while exposing bounded output with a stderr tail", async () => {
+    const parent = resolve("tmp/codex-provider-log-test");
+    await mkdir(parent, { recursive: true });
+    const owned = await mkdtemp(join(parent, "run-"));
+    const logPath = join(owned, "provider", "tester-1.log");
+    const prefix = "provider documentation prefix\n" + "x".repeat(40_000);
+    const suffix = "\nprovider failure at the end\n";
+    try {
+      const artifact = await new SpawnCommandRunner().run({
+        executable: process.execPath,
+        args: ["-e", `process.stdout.write("summary\\n"); process.stderr.write(${JSON.stringify(prefix + suffix)}); process.exit(1)`],
+        cwd: process.cwd(),
+        stdin: null,
+        timeoutMs: 2_000,
+        outputMode: "provider",
+        outputLogPath: logPath,
+      });
+
+      expect(artifact).toMatchObject({
+        kind: "exited",
+        exitCode: 1,
+        signal: null,
+        stdout: "summary\n",
+        stdoutTruncated: false,
+        stderrTruncated: true,
+        logPath,
+      });
+      expect(artifact.stderr).toContain("provider failure at the end");
+      expect(artifact.stderr).not.toContain("provider documentation prefix");
+      expect(Buffer.byteLength(artifact.stderr)).toBeLessThanOrEqual(32_768);
+
+      const fullLog = await readFile(logPath, "utf8");
+      expect(fullLog).toContain("TSQH provider output log v1");
+      expect(fullLog).toContain(prefix);
+      expect(fullLog).toContain(suffix);
+    } finally {
+      await rm(owned, { recursive: true, force: true });
+    }
   });
 
   it("captures stderr and sanitizes control, ANSI, and astral text exactly", async () => {

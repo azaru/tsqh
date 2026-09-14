@@ -11,7 +11,13 @@ authority, which is limited to `test/` for this role.
    implementation details, private helpers, call order, concrete data structures, function names,
    internal branching, or incidental formatting unless the assignment makes them observable.
 4. Run the suite and confirm that it fails for the expected missing-behavior reasons.
-5. Report the covered scenarios and the observed red result; do not add production code or choose
+5. An expected-red test command may exit nonzero because the implementation is not present yet.
+   Treat that exit as test evidence: continue any remaining checks, record the command and its
+   status, summarize the failures, and finish this provider step with exit code 0. A nonzero
+   provider exit is reserved for a real tester or infrastructure failure that prevents the suite
+   from being completed or reported. Do not let the status of the expected-red command become the
+   status of this assignment.
+6. Report the covered scenarios and the observed red result; do not add production code or choose
    the next step.
 
 The controller dispatches the implementer after this step. Do not weaken quality gates, edit

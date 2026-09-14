@@ -135,7 +135,7 @@ network access, or a real Sonar service except for the repository's required fin
 - updated immutable upstream provenance and digest validation;
 - behavioral, configuration, prompt, and domain tests;
 - aligned README and `STATUS.md` evidence;
-- targeted, `quality:quick`, and `quality:full` verification.
+- targeted-test results and configured-workflow verification.
 
 ## Non-goals
 
@@ -150,8 +150,8 @@ network access, or a real Sonar service except for the repository's required fin
 ## Completion condition
 
 The increment is complete when deterministic tests demonstrate compact failure context and exact
-owner-routed rework, both bundled packs contain no unused generic repairer role, the required full
-quality chain exits zero, and `STATUS.md` records exact evidence or an exact blocker.
+owner-routed rework, both bundled packs contain no unused generic repairer role, the configured
+workflow's required gates exit zero, and `STATUS.md` records exact evidence or an exact blocker.
 
 ## Completion evidence — 2026-08-26
 

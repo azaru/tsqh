@@ -109,5 +109,5 @@ access, or a live external service.
 
 The increment is complete when both TypeScript forms validate and execute through the same secure
 boundaries, the Swarm Forge Lite migration case is demonstrated, all prior configuration behavior
-passes, `pnpm quality:full` exits zero, real dogfooding records the expected workflow trace, and
-`STATUS.md` records exact evidence or an exact blocker.
+passes, the configured workflow's required gates exit zero, real dogfooding records the expected
+workflow trace, and `STATUS.md` records exact evidence or an exact blocker.

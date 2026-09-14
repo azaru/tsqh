@@ -179,6 +179,18 @@ describe("JSONL trace validation", () => {
     }))).rejects.toThrow(/invalid step-finished/u);
   });
 
+  it("accepts an optional provider log path in a finished process", async () => {
+    await expect(readOne(finished({
+      process: { ...processArtifact("exited"), logPath: "/runs/run/provider/tester-1.log" },
+    }))).resolves.toHaveLength(1);
+  });
+
+  it.each(["", "x\u0000.log", "x".repeat(4_097)])("rejects an invalid provider log path %j", async (logPath) => {
+    await expect(readOne(finished({
+      process: { ...processArtifact("exited"), logPath },
+    }))).rejects.toThrow(/invalid step-finished/u);
+  });
+
   it.each([
     ["blocker keys", { ...blocker(), extra: true }, /unknown or missing properties/u],
     ["blocker code", { ...blocker(), code: "" }, /invalid step-finished/u],

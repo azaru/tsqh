@@ -317,10 +317,10 @@ responses. They do not depend on live credentials, model calls, or network servi
 | Consumer compatibility | Missing or unsupported consumer settings produce bounded warnings; an unconstructable command or invalid evidence blocks |
 | Cleanup | Success, failure and cancellation remove only invocation-owned temporary paths |
 
-Run real pinned-tool fixture checks for Gitleaks, ESLint/security rules, and dependency-cruiser,
-demonstrating failing and corrected fixtures. Run the actual repository gates, complete
-non-incremental mutation, and approved real Sonar before claiming implementation completion. A fake
-scan is never release evidence.
+Workflow evidence must cover real pinned-tool fixture checks for Gitleaks, ESLint/security rules,
+and dependency-cruiser, demonstrating failing and corrected fixtures. It must also cover the
+actual repository gates, complete non-incremental mutation, and approved real Sonar before claiming
+implementation completion. A fake scan is never release evidence.
 
 ## Implementation sequence and deliverables
 
@@ -339,9 +339,8 @@ scan is never release evidence.
    wrapper must use its installed engine and must not download one during a scan.
 6. Integrate the strict partial switches, both workflow packs, repair edges, reports, the `demo`
    command, and docs.
-7. Run real failing/corrected fixtures, the packed-install smoke, the three demo entry points,
-   `pnpm quality:quick`, the opted-in full chain, complete mutation, and approved Sonar. Record
-   exact evidence and blockers.
+7. Validate real failing/corrected fixtures, the packed-install smoke, and the three demo entry
+   points. Record exact workflow-generated stage evidence and blockers.
 
 Expected changes include package.json and pnpm-lock.yaml with the package-owned quality toolchain,
 its files/exports boundary, package-root resolution and consumer preflight, configurable analysis

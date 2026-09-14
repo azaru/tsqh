@@ -83,7 +83,7 @@ quality:full        quick -> coverage -> crap -> knip -> mutation -> sonar
 
 Commands are sequential and fail fast. `quality:full` must contain every listed stage and must not
 have a local mode that is reported as equivalent to the full gate. Individual scripts remain useful
-for diagnosis, but only a real exit-zero `pnpm quality:full` is full delivery evidence.
+for diagnosis, but only a real exit-zero configured full workflow gate is full delivery evidence.
 
 No script may use `|| true`, `--no-exit-code`, warning-only fallbacks, cached/baseline evidence for a
 delivery pass, or environment-dependent omission. A missing executable, report, credential, server
@@ -127,7 +127,8 @@ tscrap --src src \
 ```
 
 The threshold of 6 is the adopted Swarm Forge hardening bar, stricter than the package default of 8.
-The same `quality:full` invocation must have refreshed and validated coverage before CRAP runs.
+The same configured full workflow invocation must have refreshed and validated coverage before CRAP
+runs.
 
 Exit 0 is necessary but not sufficient. The generated report must be current, nonempty, parseable,
 have `schemaVersion: 1`, `status: "passed"`, `passed: true`, threshold 6, zero violations, at least
@@ -406,9 +407,9 @@ Automated tests must prove at least:
   prompt path resolution;
 - the existing 36 controller tests continue to pass unchanged in intent.
 
-Use deterministic fake executables, fixtures, and injected responses for failure-path tests. Run a
-real local Stryker scan during delivery. Run real Sonar only against the explicitly approved target;
-never fabricate or replace that result with a fake test.
+Use deterministic fake executables, fixtures, and injected responses for failure-path tests. The
+configured workflow must run a real local Stryker scan during delivery and real Sonar only against
+the explicitly approved target; never fabricate or replace that result with a fake test.
 
 ## Required deliverable
 
@@ -441,5 +442,5 @@ all required artifacts and deterministic tests exist, the adapted prompt catalog
 complete, both examples exercise their configured roles and ordered gates with bounded repair, the
 handoff and candidate-stability behaviors pass, a real non-incremental Stryker run has valid
 100-percent runnable-mutant evidence with checker rejections reported separately, a real Sonar
-scan reports the computed gate `OK`, and `pnpm quality:full` exits zero. A red gate is work to fix,
-not permission to skip it, soften policy, or invent evidence.
+scan reports the computed gate `OK`, and the configured full workflow gate exits zero. A red gate
+is work to fix, not permission to skip it, soften policy, or invent evidence.

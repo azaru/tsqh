@@ -78,6 +78,8 @@ export interface ProcessArtifact {
   readonly stderr: string;
   readonly stdoutTruncated: boolean;
   readonly stderrTruncated: boolean;
+  /** Absolute path to the complete provider output log, when one was requested. */
+  readonly logPath?: string;
 }
 
 interface BaseEvent {

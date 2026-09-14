@@ -7,6 +7,12 @@ export interface CommandRequest {
   readonly stdin: string | null;
   readonly timeoutMs: number;
   readonly environmentKeys?: readonly string[];
+  /**
+   * Provider output is retained in a run-owned file while the trace keeps only
+   * a small diagnostic summary. Native quality gates use the default capture.
+   */
+  readonly outputMode?: "provider";
+  readonly outputLogPath?: string;
 }
 
 export interface CommandRunner {

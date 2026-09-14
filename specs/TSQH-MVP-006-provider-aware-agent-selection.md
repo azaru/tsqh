@@ -96,7 +96,7 @@ or a real Codex invocation.
 - provider-, role-, and step-level precedence tests;
 - the configured Swarm Forge model and effort policy;
 - aligned pack and repository documentation;
-- targeted, `quality:quick`, and `quality:full` evidence recorded in `STATUS.md`.
+- targeted-test results and configured-workflow evidence recorded in `STATUS.md`.
 
 ## Non-goals
 
@@ -111,7 +111,8 @@ or a real Codex invocation.
 
 The increment is complete when strict configuration and execution tests demonstrate the complete
 precedence chain and exact argument rendering, the Swarm Forge pack implements the requested model
-policy, `pnpm quality:full` exits zero, and `STATUS.md` records exact evidence or an exact blocker.
+policy, the configured workflow's required gates exit zero, and `STATUS.md` records exact evidence
+or an exact blocker.
 
 ## Completion evidence — 2026-08-26
 

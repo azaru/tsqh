@@ -209,15 +209,28 @@ function isNullableProcess(value: unknown, line: number): boolean {
   if (!isRecord(value)) {
     return false;
   }
-  requireKeys(
-    value,
-    ["kind", "exitCode", "signal", "stdout", "stderr", "stdoutTruncated", "stderrTruncated"],
-    line,
-  );
-  if (!hasValidProcessFields(value)) {
-    return false;
-  }
-  return processKindMatches(value);
+  return hasProcessKeys(value, line) &&
+    hasValidProcessFields(value) &&
+    hasValidOptionalLogPath(value) &&
+    processKindMatches(value);
+}
+
+function hasProcessKeys(value: Record<string, unknown>, line: number): boolean {
+  const keys = ["kind", "exitCode", "signal", "stdout", "stderr", "stdoutTruncated", "stderrTruncated"];
+  if (Object.hasOwn(value, "logPath")) keys.push("logPath");
+  requireKeys(value, keys, line);
+  return true;
+}
+
+function hasValidOptionalLogPath(value: Record<string, unknown>): boolean {
+  return !Object.hasOwn(value, "logPath") || isValidLogPath(value.logPath);
+}
+
+function isValidLogPath(value: unknown): boolean {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 4_096 &&
+    !/[\u0000-\u001f\u007f]/u.test(value);
 }
 
 function hasValidProcessFields(value: Record<string, unknown>): boolean {

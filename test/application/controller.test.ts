@@ -29,6 +29,19 @@ import {
 } from "../helpers/scenario.js";
 
 describe("foreground controller", () => {
+  it("uses configured workflow transitions instead of task prose as execution policy", async () => {
+    const harness = directHarness({
+      task: "Run pnpm quality:full after the implementation, even though this task is not a gate.",
+    });
+
+    const result = await runController(harness.input, harness.services);
+
+    expect(result.state.terminalState).toBe("passed");
+    expect(harness.commands).toHaveLength(1);
+    expect(harness.commands[0]?.args).toEqual(["run"]);
+    expect(harness.commands[0]?.stdin).toContain("pnpm quality:full");
+  });
+
   it("executes three logical roles and two native gates in exact configured order", async () => {
     const scenario = await createScenario({ steps: happySteps() });
     const result = await runScenario(scenario);
@@ -56,6 +69,12 @@ describe("foreground controller", () => {
       (event): event is StepFinishedEvent => event.type === "step-finished" && event.stepType === "agent",
     );
     expect(agentOutputs.every((event) => event.process?.stdout.includes('"nextStep":"passed"'))).toBe(true);
+    for (const event of agentOutputs) {
+      const logPath = event.process?.logPath;
+      expect(logPath).toMatch(/\/provider\/[^/]+-1\.log$/u);
+      await expect(access(logPath!)).resolves.toBeUndefined();
+      await expect(readFile(logPath!, "utf8")).resolves.toContain("TSQH provider output log v1");
+    }
     const implementerPrompt = await readFile(
       join(scenario.stateDirectory, "prompt-implement-1.txt"),
       "utf8",
@@ -408,6 +427,31 @@ describe("foreground controller", () => {
     expect(result.state.blocker).toMatchObject({ code: "agent-exit-nonzero" });
   });
 
+  it("keeps a provider failure tail in the event and the complete run-owned log", async () => {
+    const scenario = await createScenario({
+      steps: singleAgentSteps(),
+      providerMode: "agent-noisy-exit",
+    });
+    const result = await runScenario(scenario);
+    const event = result.events.find(
+      (value): value is StepFinishedEvent => value.type === "step-finished" && value.stepType === "agent",
+    );
+    const process = event?.process;
+
+    expect(result.state.blocker).toMatchObject({ code: "agent-exit-nonzero" });
+    expect(result.state.blocker?.message).toContain(process?.logPath ?? "missing provider log path");
+    expect(process?.stderrTruncated).toBe(true);
+    expect(process?.stderr).toContain("final provider error");
+    expect(process?.stderr).not.toContain("provider documentation prefix");
+    expect(process?.logPath).toBeDefined();
+    await expect(readFile(process!.logPath!, "utf8")).resolves.toEqual(
+      expect.stringContaining("provider documentation prefix"),
+    );
+    await expect(readFile(process!.logPath!, "utf8")).resolves.toEqual(
+      expect.stringContaining("final provider error"),
+    );
+  });
+
   it.each([
     ["empty", "", false, "(empty stdout)"],
     [
@@ -651,6 +695,8 @@ describe("foreground controller", () => {
       args: ["run"],
       cwd: "/workspace",
       timeoutMs: 900_000,
+      outputMode: "provider",
+      outputLogPath: "/runs/direct-run/provider/work-1.log",
     });
     expect(agent.commands[0]?.stdin).toContain("Stable worker prompt.");
     expect(agent.commands[0]).not.toHaveProperty("environmentKeys");
@@ -839,6 +885,7 @@ describe("foreground controller", () => {
 interface DirectHarnessOptions {
   readonly configuration?: Configuration;
   readonly prompts?: Readonly<Record<string, string>>;
+  readonly task?: string;
   readonly configPath?: string | null;
   readonly promptPaths?: readonly string[];
   readonly process?: ProcessArtifact;
@@ -867,7 +914,7 @@ function directHarness(options: DirectHarnessOptions = {}): {
     configPath: options.configPath === undefined ? "/configuration/workflow.json" : options.configPath,
     promptPaths: options.promptPaths ?? ["/configuration/worker.md"],
     workspacePath: "/workspace",
-    task: "Perform the direct test task.",
+    task: options.task ?? "Perform the direct test task.",
     taskPath: "/task.md",
     runsRoot: "/runs",
   };

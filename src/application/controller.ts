@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { composeAssignmentPrompt } from "./prompt.js";
 import type { CleanWorkspace, GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
 import { renderAgentArguments, resolveAgentSelection } from "../domain/agent-selection.js";
@@ -377,6 +378,12 @@ async function runAgentProcess(
       mostRecentGateFailure: state.mostRecentGateFailure,
     }),
     timeoutMs: definition.provider.timeoutMs ?? DEFAULT_AGENT_TIMEOUT_MS,
+    outputMode: "provider",
+    outputLogPath: join(
+      context.trace.runDirectory,
+      "provider",
+      `${action.stepId}-${String(action.visit)}.log`,
+    ),
   });
 }
 
@@ -455,30 +462,42 @@ function validateAgentPaths(
 
 function agentProcessBlocker(stepId: string, process: ProcessArtifact): Blocker | null {
   if (process.kind === "spawn-error") {
-    return createBlocker("agent-spawn-error", `Agent step '${stepId}' could not be launched.`, stepId);
+    return createBlocker(
+      "agent-spawn-error",
+      `Agent step '${stepId}' could not be launched.${providerLogHint(process)}`,
+      stepId,
+    );
   }
   if (process.kind === "timeout") {
-    return createBlocker("agent-timeout", `Agent step '${stepId}' timed out.`, stepId);
+    return createBlocker(
+      "agent-timeout",
+      `Agent step '${stepId}' timed out.${providerLogHint(process)}`,
+      stepId,
+    );
   }
   if (process.kind === "signal") {
-    return agentSignalBlocker(stepId, process.signal);
+    return agentSignalBlocker(stepId, process.signal, process);
   }
   if (process.exitCode !== 0) {
     return createBlocker(
       "agent-exit-nonzero",
-      `Agent step '${stepId}' exited with status ${String(process.exitCode)}.`,
+      `Agent step '${stepId}' exited with status ${String(process.exitCode)}.${providerLogHint(process)}`,
       stepId,
     );
   }
   return null;
 }
 
-function agentSignalBlocker(stepId: string, signal: string | null): Blocker {
+function agentSignalBlocker(stepId: string, signal: string | null, process: ProcessArtifact): Blocker {
   return createBlocker(
     "agent-signal",
-    `Agent step '${stepId}' ended from signal '${signal ?? "unknown"}'.`,
+    `Agent step '${stepId}' ended from signal '${signal ?? "unknown"}'.${providerLogHint(process)}`,
     stepId,
   );
+}
+
+function providerLogHint(process: ProcessArtifact): string {
+  return process.logPath === undefined ? "" : ` Provider log: ${process.logPath}.`;
 }
 
 function gateBlocker(stepId: string, process: ProcessArtifact): Blocker | null {

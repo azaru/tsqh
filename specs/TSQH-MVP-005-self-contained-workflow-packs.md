@@ -95,8 +95,7 @@ Automated tests must prove:
 - `examples/` and top-level `prompts/` do not exist;
 - the fake-provider happy and repair-exhaustion traces use the new Swarm Forge workflow.
 
-Run targeted tests while migrating, `pnpm quality:quick` after the coherent change, and
-`pnpm quality:full` before delivery.
+Record targeted-test results and evidence from the configured workflow before delivery.
 
 ## Completion evidence — 2026-08-26
 

@@ -115,9 +115,10 @@ around each gate and blocks any Git-visible candidate-path mutation while permit
 gates to regenerate ignored quality reports.
 
 Two self-contained packs live under [`workflows/`](workflows/). The
-[`simple`](workflows/simple/README.md) pack demonstrates a tester-first TDD flow, one `quick`
-quality gate, and bounded redispatch to the implementer after a gate failure. It intentionally
-excludes the `full` chain and its individual release gates. The
+[`simple`](workflows/simple/README.md) pack demonstrates a tester-first TDD flow, a
+tester-validation gate, one `quick` quality gate, and bounded redispatch to the implementer after a
+quick failure. Tester-validation blocks before implementation when the tester's suite or evidence
+is invalid. It intentionally excludes the `full` chain and its individual release gates. The
 [`tdd-pipeline`](workflows/tdd-pipeline/README.md) pack uses the sequential
 `specifier -> tester -> implementer -> cleaner -> architect -> hardener` spine, quick after each
 phase, and one final full gate. Its original paraphrased prompts are informed by the upstream
@@ -133,15 +134,15 @@ workflow behavior and does not depend on a sibling checkout or import another pr
 ## Requirements and setup
 
 TSQH requires Node.js 22.12.0 or newer, pnpm, Git, and the configured local command executables.
-Install and verify the controller with:
+For local setup, install the repository dependencies with:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm build
-pnpm test
-pnpm quality:quick
-pnpm quality:full
 ```
+
+For a TSQH dogfooding campaign, the selected workflow is the acceptance policy and owns its gate
+order. The `simple` pack intentionally uses only its configured quick gate; the `tdd-pipeline` pack
+includes the full release gate explicitly.
 
 The current repository implementation has Ajv as its only runtime dependency. MVP-008 plans to ship
 the consumer-facing quality toolchain as exact package runtime dependencies so a host project can
@@ -174,13 +175,8 @@ curl --fail --silent http://127.0.0.1:9000/api/system/status
 [`sonar-project.properties`](sonar-project.properties) selects project `azaru_tsqh_mvp`, while
 [`sonar-policy.json`](sonar-policy.json) pins the approved host, dedicated strict gate, TypeScript
 profile, and `PREVIOUS_VERSION` new-code identity. The existing local service is already
-provisioned with those identities. For a scan, expose `SONAR_HOST_URL` and `SONAR_TOKEN` only to the
-process, regenerate coverage, and run the real gate:
-
-```sh
-pnpm quality:coverage
-pnpm quality:sonar
-```
+provisioned with those identities. Workflows that configure the Sonar gate provide its scanner
+invocation.
 
 Do not commit an environment file or token. A fresh server must reproduce the exact identities in
 the completed specification and must not modify the sibling `azaru_tsqh` project.
@@ -189,12 +185,9 @@ the completed specification and must not modify the sibling `azaru_tsqh` project
 
 The repository includes an MIT license, a dependency-frozen GitHub Actions workflow, a safe
 `.env.example`, and no required path outside this checkout. Quality reports and credentials remain
-ignored. The CI workflow runs the fast static/build/test/architecture checks; the mutation and
-Sonar stages remain explicit local release checks because they need longer runtimes and private
-service credentials.
+ignored. The CI workflow runs the fast static/build/test/architecture checks.
 
-Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup and change hygiene, and [`SECURITY.md`](SECURITY.md)
-for the trust boundary and reporting guidance.
+Read [`SECURITY.md`](SECURITY.md) for the trust boundary and reporting guidance.
 
 The fail-closed wrapper checks three distinct kinds of remote evidence: `project_status` proves the
 computed result is `OK` with ignored conditions disabled; the assigned gate and its definition
@@ -325,8 +318,10 @@ export default {
 
 Agent and gate commands are always spawned as one executable plus an exact argument array with
 `shell: false`. Agent prompts travel only over standard input. Provider and profile `timeoutMs`
-values are optional and may be between 1 ms and 24 hours; both default to 15 minutes. Each output
-stream is sanitized and limited to 64 KiB before it is persisted.
+values are optional and may be between 1 ms and 24 hours; both default to 15 minutes. Native
+command streams are sanitized and limited to 64 KiB before they are persisted. Provider events
+keep a smaller diagnostic summary, including the stderr tail, while the complete provider
+transcript is retained only in the run-owned provider log for post-run diagnosis.
 
 An ordinary failed gate is additionally reduced to a `GateFailureContext` before another agent is
 dispatched. Each stream excerpt is limited to 8 KiB and retains a UTF-8-safe beginning and end plus
@@ -339,9 +334,10 @@ Quality profiles may also name explicit `environmentKeys`. Only those configured
 receive the additional values; agent-provider processes retain the fixed minimal environment.
 
 The repository ships exactly two self-contained complete workflow packs. The
-[`simple`](workflows/simple/workflow.json) pack has tester and implementer roles, one native pnpm
-`quick` profile, and explicit bounded rework edges. Gate failures return to the implementer; there
-is no generic repair step. The full release chain is not part of this pack.
+[`simple`](workflows/simple/workflow.json) pack has tester and implementer roles, a native
+tester-validation profile, one native pnpm `quick` profile, and explicit bounded rework edges.
+Tester-validation failures block before implementation; quick failures return to the implementer.
+There is no generic repair step. The full release chain is not part of this pack.
 
 The [`tdd-pipeline`](workflows/tdd-pipeline/workflow.json) pack runs
 `specifier -> tester -> implementer -> cleaner -> architect -> hardener`, with `quick` after
@@ -410,7 +406,6 @@ The simple workflow task deliberately writes only under `src/` and `test/`. Run 
 clean Git copy of this repository so the example agents cannot touch the development checkout:
 
 ```sh
-pnpm build
 pnpm tsqh run \
   --config workflows/simple/workflow.json \
   --workspace /absolute/path/to/disposable-clean-tsqh-copy \

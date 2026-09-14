@@ -196,4 +196,5 @@ Sonar, network access, or a live external service.
 The increment is complete when discovery, absence fallback, strict partial overrides, deterministic
 gate omission, protected configuration paths, evaluator failures, explicit JSON compatibility, and
 all existing workflow behaviors pass; documentation describes the actual public command surface;
-`pnpm quality:full` exits zero; and `STATUS.md` records exact evidence or an exact blocker.
+the configured workflow's required gates exit zero; and `STATUS.md` records exact evidence or an
+exact blocker.

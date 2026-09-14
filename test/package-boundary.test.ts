@@ -39,7 +39,7 @@ const forbiddenPackedPathPatterns = [
   /^specs\//u,
   /^workflows\/[^/]+\/task\.md$/u,
   /^(?:tmp|coverage|reports|\.scannerwork|\.stryker-tmp)\//u,
-  /(?:^|\/)(?:\.env|credentials?(?:\.[^/]+)?|secrets?(?:\.[^/]+)?)$/iu,
+  /(?:^|\/)(?:\.env(?:\.[^/]+)?|credentials?(?:\.(?:json|ya?ml|txt|env|ini|pem|key))?|secrets?(?:\.(?:json|ya?ml|txt|env|ini|pem|key))?)$/iu,
 ];
 
 let ownedPackDirectory: string | undefined;

@@ -42,7 +42,7 @@
     "./sonar-project.properties": "./sonar-project.properties"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/mark-cli-executable.mjs",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/mark-cli-executable.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "pnpm build && vitest run",
     "test:unit": "vitest run test/domain test/config",

@@ -7,21 +7,21 @@
       "tester": {
         "type": "agent",
         "role": "tester",
-        "maxVisits": 1,
+        "maxVisits": 2,
         "onCompleted": "implementer"
       },
       "implementer": {
         "type": "agent",
         "role": "implementer",
-        "maxVisits": 3,
+        "maxVisits": 2,
         "onCompleted": "quick"
       },
       "quick": {
         "type": "gate",
         "profile": "quick",
-        "maxVisits": 3,
+        "maxVisits": 2,
         "onPassed": "passed",
-        "onFailed": "implementer"
+        "onFailed": "tester"
       },
       "passed": {
         "type": "terminal",

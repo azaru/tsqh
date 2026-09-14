@@ -117,7 +117,7 @@ gates to regenerate ignored quality reports.
 Two self-contained packs live under [`workflows/`](workflows/). The
 [`simple`](workflows/simple/README.md) pack demonstrates a tester-first TDD flow: the tester creates
 a suite, the implementer makes it pass, and one `quick` quality gate validates the candidate. A
-quick failure redispatches the implementer. It intentionally excludes the `full` chain and its
+quick failure returns to the tester for a bounded review before implementation rework. It intentionally excludes the `full` chain and its
 individual release gates. The
 [`tdd-pipeline`](workflows/tdd-pipeline/README.md) pack uses the sequential
 `specifier -> tester -> implementer -> cleaner -> architect -> hardener` spine, quick after each
@@ -335,8 +335,9 @@ receive the additional values; agent-provider processes retain the fixed minimal
 
 The repository ships exactly two self-contained complete workflow packs. The
 [`simple`](workflows/simple/workflow.json) pack has tester and implementer roles, a native
-pnpm `quick` profile, and explicit bounded rework edges. Quick failures return to the implementer.
-There is no generic repair step. The full release chain is not part of this pack.
+pnpm `quick` profile, and explicit bounded rework edges. Quick failures return to the tester for a
+bounded suite review before returning to the implementer. There is no generic repair step. The full
+release chain is not part of this pack.
 
 The [`tdd-pipeline`](workflows/tdd-pipeline/workflow.json) pack runs
 `specifier -> tester -> implementer -> cleaner -> architect -> hardener`, with `quick` after

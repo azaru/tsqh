@@ -38,6 +38,9 @@ export function composeAssignmentPrompt(input: AssignmentPromptInput): string {
     `Logical role: ${input.roleId}`,
     `Provider: ${input.providerId}`,
     "",
+    "## Invocation mode",
+    ...renderInvocationMode(input),
+    "",
     "## Allowed path prefixes",
     renderAllowedPaths(input.allowedPathPrefixes),
     "",
@@ -52,6 +55,22 @@ export function composeAssignmentPrompt(input: AssignmentPromptInput): string {
     "The TSQH controller alone selects the next workflow step; do not request or choose a transition.",
     "",
   ].join("\n");
+}
+
+function renderInvocationMode(input: AssignmentPromptInput): readonly string[] {
+  if (input.mostRecentGateFailure !== null) {
+    return [
+      "Re-entry after a native gate failure.",
+      "Review the existing assignment work and the failure evidence before changing anything.",
+    ];
+  }
+  if (input.visit > 1) {
+    return [
+      `Subsequent configured visit (${String(input.visit)}).`,
+      "Review the existing assignment work before changing anything.",
+    ];
+  }
+  return ["Initial assignment execution."];
 }
 
 function renderAllowedPaths(prefixes: readonly string[]): string {

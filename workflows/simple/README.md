@@ -2,21 +2,22 @@
 
 This self-contained pack demonstrates a small TDD workflow. A `tester` first writes the complete
 behavioral test suite, including relevant edge cases, an `implementer` makes it pass, and one native
-`quick` quality gate validates the candidate. A failed gate returns directly to `implementer`; there
-is no generic repair step and the tester is not re-dispatched.
+`quick` quality gate validates the candidate. A failed gate returns to the tester for a bounded
+review of the existing suite before implementation rework; there is no generic repair step.
 
 ```text
 tester -> implementer -> quick -> passed
-                           ^        |
-                           └────────┘
+      ^                    |
+      |                    |
+      └────────────────────┘
 ```
 
 The tester may write only under `test/`; the implementer may write only within the path prefixes
 supplied by the current assignment. The normal example task grants `src/`; a campaign may grant
 additional package, schema, script, pack, or documentation paths while keeping workflow policy,
-task authority, prompts, credentials, reports, and temporary paths protected. The tester's
-behavioral suite is the implementer's acceptance contract and is not rewritten during
-implementation or rework. The controller validates Git-visible changes after every agent step.
+task authority, prompts, credentials, reports, and temporary paths protected. On re-entry, the
+tester preserves valid tests and changes only tests proven invalid, contradictory, or outside the
+assignment. The controller validates Git-visible changes after every agent step.
 Gates must not mutate the candidate. Gate-driven assignments omit the prior agent handoff and
 include at most 8 KiB from each failed native output stream. The JSON workflow is the controller's
 execution policy; task and README prose does not add steps or gates.

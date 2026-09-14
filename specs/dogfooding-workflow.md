@@ -87,11 +87,13 @@ report outcomes. A bounded, sanitized handoff may reach the next configured agen
 context, but it cannot select a transition, widen write authority, change the task, or alter the
 visit budget.
 
-The simple pack's tester step writes the task's behavioral tests and then hands directly to the
-implementer. A tester's expected-red test result is agent evidence, not a second workflow gate. The
-simple pack does not validate its own example configuration as part of a task run; configuration
-and workflow semantics are tested separately with synthetic policy where the active specification
-requires them.
+The simple pack's initial tester step writes the task's behavioral tests and then hands directly to
+the implementer. A failed `quick` gate returns to the tester for a bounded re-entry: the tester
+reviews the existing suite and the failure evidence, preserves valid tests, and changes only tests
+that are demonstrably outside the assignment, contradictory, or unsatisfiable. A tester's
+expected-red result is agent evidence, not a second workflow gate. The simple pack does not validate
+its own example configuration as part of a task run; configuration and workflow semantics are tested
+separately with synthetic policy where the active specification requires them.
 
 Agents may write only within their configured role and task paths. After every writing step,
 compare Git state with the pre-step snapshot and block tracked, untracked, deleted, or renamed

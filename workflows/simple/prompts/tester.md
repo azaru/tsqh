@@ -15,6 +15,12 @@ Prefer focused, deterministic tests and the smallest setup that proves each requ
 duplicate cases and broad repository or quality-chain checks. Write only under the configured test
 paths. Do not modify production code, task/spec files, workflow policy, or unrelated fixtures.
 
+If re-entered after a gate failure, review the existing tests and the failure evidence before
+changing anything. Preserve tests supported by the assignment. Modify tests only when they are
+demonstrably out of scope, contradictory, or unsatisfiable. Never weaken a valid test merely to
+make production code pass. If no test correction is justified, leave the suite unchanged and
+report that.
+
 Run the smallest relevant test command once after writing the tests. A failing or expected-red result
 is valid before implementation; report the exact command and status. Do not fix the implementation,
 run unrelated gates, repeat broad investigations, or choose the next workflow transition.

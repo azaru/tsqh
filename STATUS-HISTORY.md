@@ -617,3 +617,17 @@ role prompt owns the expected-red run and stops after minimal verification. Atte
 cancelled before tester completion, and Attempts 09 and 10 were also cancelled before a complete
 transition; none produced implementation or acceptance evidence. The current harness realignment
 passed workflow loading, build, typecheck, and quick verification with 793 tests in 29 files.
+
+## 2026-09-14 — Task 01 attempt 11 stopped on invalid tester assertions
+
+Attempt 11 run `15625791-a9dc-4616-baad-f8fb88447717` completed the tester and implementer visit 1,
+then reached `quick`. The tester created one 1,060-line distribution suite with 12 tests. The
+implementer changed package metadata, lockfile, public exports, package resolution, Gitleaks
+preflight and documentation. Quick passed 803 tests and failed 2 distribution tests at lines 412
+and 448: both asserted that relocated consumer reports must not contain the candidate root, while
+the test fixtures were created below that root. The assertion is unsatisfiable by construction.
+The controller dispatched implementer visit 2; the run was then explicitly stopped before further
+repair or integration. No candidate files were manually edited and no Task 01 acceptance is
+claimed. The next simple-pack policy returns quick failures to the tester for bounded generic
+test-suite review. Prompt composition now exposes initial versus gate-failure re-entry mode; this
+policy is committed in `3ec470b` plus the subsequent workflow/docs change.

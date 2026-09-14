@@ -694,6 +694,16 @@ select a transition. Targeted acceptance/controller/configuration checks passed 
 files. Full `CI=true pnpm quality:quick` passed 803 tests in 31 files and the architecture check
 inspected 7 entries.
 
+## 2026-09-14 — separate task authoring from acceptance verification
+
+Task briefs no longer carry verification-specific `AC-*` labels. The separate task-authoring
+contract keeps product-only numbered criteria under `## Acceptance`; the simple workflow's generic
+tester uses internal `[criterion-N]` markers, and its system-owned acceptance gate checks only the
+test paths changed by agents. Attempt 16 was stopped before tester writes after this separation was
+identified; its evidence remains isolated. The new implementation was verified with
+`CI=true pnpm build` (exit 0), 40 targeted tests in three files (exit 0), and
+`CI=true pnpm quality:quick` (exit 0, 803 tests in 31 files; architecture inspected 7 entries).
+
 ## 2026-09-14 — Task 01 attempt 15 review rejected integration
 
 The isolated Attempt 15 candidate was reviewed after its simple workflow passed. The package test

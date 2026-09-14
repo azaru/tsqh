@@ -17,47 +17,47 @@ describe("task acceptance criteria", () => {
   it("parses unique product criteria without interpreting their prose", () => {
     expect(parseAcceptanceCriteria([
       "## Acceptance",
-      "- AC-package: Publish the package.",
-      "2. AC-install: Install it in a consumer.",
-    ].join("\n"))).toEqual(["AC-package", "AC-install"]);
+      "1. Publish the package.",
+      "2. Install it in a consumer.",
+    ].join("\n"))).toEqual(["criterion-1", "criterion-2"]);
   });
 
   it("rejects duplicate criterion identifiers", () => {
     expect(() => parseAcceptanceCriteria([
       "## Acceptance",
-      "- AC-1: First behavior.",
-      "- AC-1: Duplicate behavior.",
-    ].join("\n"))).toThrow("acceptance criterion 'AC-1' more than once");
+      "1. First behavior.",
+      "1. Duplicate behavior.",
+    ].join("\n"))).toThrow("acceptance criterion '1' more than once");
   });
 
   it("reports missing and unknown test markers deterministically", () => {
     expect(inspectAcceptanceCoverage(
-      ["AC-1", "AC-2"],
+      ["criterion-1", "criterion-2"],
       [
         {
           path: "test/first.test.ts",
-          content: 'it("[AC-1] first", () => {});\nit("[AC-1] second", () => {});',
+          content: 'it("[criterion-1] first", () => {});\nit("[criterion-1] second", () => {});',
         },
-        { path: "test/unknown.test.ts", content: 'it("[AC-9] unknown", () => {});' },
+        { path: "test/unknown.test.ts", content: 'it("[criterion-9] unknown", () => {});' },
       ],
     )).toEqual({
       criteria: [
-        { id: "AC-1", testCount: 2, testFiles: ["test/first.test.ts"] },
-        { id: "AC-2", testCount: 0, testFiles: [] },
+        { id: "criterion-1", testCount: 2, testFiles: ["test/first.test.ts"] },
+        { id: "criterion-2", testCount: 0, testFiles: [] },
       ],
-      missingIds: ["AC-2"],
-      unknownIds: ["AC-9"],
+      missingIds: ["criterion-2"],
+      unknownIds: ["criterion-9"],
     });
   });
 
   it("writes a passing acceptance report when every criterion is tagged", async () => {
     const fixture = await createFixture([
-      'it("[AC-1] behavior", () => {});',
-      'it("[AC-2] second behavior", () => {});',
+      'it("[criterion-1] behavior", () => {});',
+      'it("[criterion-2] second behavior", () => {});',
     ].join("\n"), [
       "## Acceptance",
-      "- AC-1: First behavior.",
-      "- AC-2: Second behavior.",
+      "1. First behavior.",
+      "2. Second behavior.",
     ].join("\n"));
 
     const result = await runTaskAcceptanceGate({
@@ -76,8 +76,8 @@ describe("task acceptance criteria", () => {
 
   it("fails when a task criterion has no tester-owned marker", async () => {
     const fixture = await createFixture(
-      'it("[AC-1] behavior", () => {});',
-      "## Acceptance\n\n- AC-1: First behavior.\n- AC-2: Missing behavior.",
+      'it("[criterion-1] behavior", () => {});',
+      "## Acceptance\n\n1. First behavior.\n2. Missing behavior.",
     );
 
     const result = await runTaskAcceptanceGate({
@@ -90,7 +90,7 @@ describe("task acceptance criteria", () => {
 
     expect(result.blocker).toBeNull();
     expect(result.process).toMatchObject({ kind: "exited", exitCode: 1 });
-    expect(result.process?.stderr).toContain("missing tests for AC-2");
+    expect(result.process?.stderr).toContain("missing tests for criterion-2");
   });
 
   it("blocks a task without acceptance criteria", async () => {

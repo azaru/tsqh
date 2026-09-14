@@ -3,7 +3,7 @@
 This self-contained pack demonstrates a small TDD workflow. A `tester` first writes the complete
 behavioral test suite, including relevant edge cases, an `implementer` makes it pass, and the
 configured `quick` quality gate validates and executes the candidate. The task-acceptance gate then
-verifies that every `AC-*` criterion in the task has a tagged test. A failed gate returns to the
+verifies that every numbered acceptance item in the task has a tagged test. A failed gate returns to the
 tester for a bounded review of the existing suite before implementation rework; there is no generic
 repair step.
 

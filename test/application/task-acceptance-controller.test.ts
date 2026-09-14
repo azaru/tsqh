@@ -33,7 +33,7 @@ describe("task acceptance controller gate", () => {
         },
       },
     });
-    await writeFile(scenario.taskPath, "## Acceptance\n\n- AC-1: The tagged behavior passes.\n", "utf8");
+    await writeFile(scenario.taskPath, "## Acceptance\n\n1. The tagged behavior passes.\n", "utf8");
     const configuration = JSON.parse(await readFile(scenario.configPath, "utf8")) as {
       profiles: Record<string, unknown>;
     };
@@ -96,7 +96,7 @@ describe("task acceptance controller gate", () => {
         },
       },
     });
-    await writeFile(scenario.taskPath, "## Acceptance\n\n- AC-1: Missing tagged behavior.\n", "utf8");
+    await writeFile(scenario.taskPath, "## Acceptance\n\n1. Missing tagged behavior.\n", "utf8");
     const configuration = JSON.parse(await readFile(scenario.configPath, "utf8")) as {
       profiles: Record<string, unknown>;
     };

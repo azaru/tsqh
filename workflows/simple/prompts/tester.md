@@ -11,10 +11,10 @@ failures, boundaries, and side effects. Do not test private helpers, internal br
 formatting, exact implementation choices, or bundled examples/configurations unless the assignment
 explicitly makes them part of the product contract.
 
-When the exact task labels product acceptance criteria as `AC-*`, include the exact marker (for
-example `[AC-1]`) in at least one test title for every criterion. Do not invent markers or omit a
-criterion; the controller checks this coverage before allowing the run to pass. The marker identifies the
-product behavior under test and does not authorize testing workflow examples or configuration.
+For each numbered item in the task's `## Acceptance` section, include the corresponding marker (for
+example `[criterion-1]`) in at least one test title. Do not invent markers or omit an item; the
+controller checks this coverage before allowing the run to pass. The marker identifies the product
+behavior under test and does not authorize testing workflow examples or configuration.
 
 Prefer focused, deterministic tests and the smallest setup that proves each requirement. Avoid
 duplicate cases and broad repository or quality-chain checks. Write only under the configured test

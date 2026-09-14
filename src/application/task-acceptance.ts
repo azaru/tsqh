@@ -6,14 +6,10 @@ const MAX_TASK_BYTES = 1_048_576;
 const MAX_TEST_FILE_BYTES = 1_048_576;
 const MAX_TEST_FILES = 4_096;
 const MAX_TEST_BYTES = 16_777_216;
-const ACCEPTANCE_ID = "AC-[A-Za-z0-9][A-Za-z0-9_-]{0,63}";
-const CRITERION_LINE = new RegExp(
-  `^\\s*(?:[-*]\\s+|\\d+[.)]\\s+)?(${ACCEPTANCE_ID})\\s*:\\s+\\S.*$`,
-  "gmu",
-);
+const CRITERION_LINE = /^\s*(\d+)[.)]\s+\S.*$/gmu;
 const ACCEPTANCE_HEADING = /^##\s+Acceptance\b.*$/imu;
 const NEXT_SECTION_HEADING = /^##\s+/gmu;
-const TEST_TITLE_MARKER = new RegExp("\\[(" + ACCEPTANCE_ID + ")\\]", "gu");
+const TEST_TITLE_MARKER = /\[(criterion-[1-9][0-9]*)\]/gu;
 const TEST_FILE_EXTENSIONS = new Set([".cjs", ".cts", ".js", ".mjs", ".mts", ".ts", ".tsx"]);
 
 export interface AcceptanceTestSource {
@@ -61,7 +57,7 @@ export async function runTaskAcceptanceGate(
     const task = await readBoundedText(input.taskPath, MAX_TASK_BYTES, "task");
     const criteria = parseAcceptanceCriteria(task);
     if (criteria.length === 0) {
-      return invalidTaskBlocker(input.stepId, "The task declares no AC-* acceptance criteria.");
+      return invalidTaskBlocker(input.stepId, "The task declares no numbered acceptance criteria.");
     }
 
     const sources = await readTestSources(input.workspacePath, input.testPaths);
@@ -95,22 +91,32 @@ export async function runTaskAcceptanceGate(
 }
 
 export function parseAcceptanceCriteria(task: string): readonly string[] {
-  const criteria: string[] = [];
-  const seen = new Set<string>();
+  const numbers: number[] = [];
+  const seen = new Set<number>();
   const section = acceptanceSection(task);
   CRITERION_LINE.lastIndex = 0;
   for (const match of section.matchAll(CRITERION_LINE)) {
-    const id = match[1];
-    if (id === undefined) {
+    const numberText = match[1];
+    if (numberText === undefined) {
       continue;
     }
-    if (seen.has(id)) {
-      throw new Error(`The task declares acceptance criterion '${id}' more than once.`);
+    const number = Number(numberText);
+    if (!Number.isSafeInteger(number) || number < 1) {
+      throw new Error("The task acceptance criterion number '" + numberText + "' is invalid.");
     }
-    seen.add(id);
-    criteria.push(id);
+    if (seen.has(number)) {
+      throw new Error("The task declares acceptance criterion '" + numberText + "' more than once.");
+    }
+    seen.add(number);
+    numbers.push(number);
   }
-  return criteria;
+  numbers.sort((left, right) => left - right);
+  numbers.forEach((number, index) => {
+    if (number !== index + 1) {
+      throw new Error("The task acceptance criteria must be numbered consecutively from 1.");
+    }
+  });
+  return numbers.map((number) => "criterion-" + String(number));
 }
 
 function acceptanceSection(task: string): string {

@@ -16,15 +16,10 @@ Before implementation:
    required order.
 2. Identify the existing quality policy and workflow pack.
 
-Create one task specification under `specs/tasks/` for each independently verifiable slice. A task
-file is an implementation brief, not an agent prompt or a runbook. It contains only the objective,
-product scope, product non-goals, dependencies, and externally observable acceptance criteria. Label
-each criterion with a unique-in-task `AC-*` identifier so the system can require tester coverage
-without interpreting its prose; use the form `- AC-1: observable behavior`. Its acceptance criteria
-may name required artifacts or behavior, but
-must not prescribe how an agent, provider, controller, gate, worktree, temporary directory, evidence
-record, or integration step is managed. Those mechanics are defined here, in `AGENTS.md`, and by the
-selected workflow pack. A task may not depend on uncommitted changes from another task.
+Create one task specification under `specs/tasks/` for each independently verifiable slice. Task
+brief authoring is defined separately in [`specs/task-authoring.md`](task-authoring.md); this
+workflow consumes the resulting product brief and does not add implementation or orchestration
+instructions to it. A task may not depend on uncommitted changes from another task.
 
 Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
 task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
@@ -91,10 +86,10 @@ context, but it cannot select a transition, widen write authority, change the ta
 visit budget.
 
 The simple pack's initial tester step writes the task's behavioral tests and then hands to the
-implementer. Each acceptance test title includes the exact `[AC-*]` marker from the task. The
-system-owned task-acceptance gate checks that every criterion has a tagged test after `quick` has
-executed the suite successfully; the tester's expected-red result remains agent evidence, not
-acceptance. A failed `quick` or
+implementer. Each acceptance test title includes the system's `[criterion-N]` marker for its
+numbered task item. The system-owned task-acceptance gate checks that every item has a tagged test
+after `quick` has executed the suite successfully; the tester's expected-red result remains agent
+evidence, not acceptance. A failed `quick` or
 task-acceptance gate returns to the tester for bounded re-entry: the tester reviews the existing
 suite and failure evidence, preserves valid tests, and changes only tests that are demonstrably
 outside the assignment, contradictory, or unsatisfiable. The task-acceptance gate does not validate
@@ -133,7 +128,7 @@ Do not skip, weaken, relabel, or reorder required gates. Preserve checker-reject
 `CompileError` mutation evidence and require every runnable mutant to be `Killed`.
 
 Integrate only when the controller reaches its success terminal, the system-owned task-acceptance
-gate reports coverage for every `AC-*` criterion, the external-consumer check has passed for
+gate reports coverage for every numbered acceptance item, the external-consumer check has passed for
 implementation tasks, every gate configured by that workflow passes, and all candidate changes are
 authorized. A command not represented in the workflow cannot invalidate a passed dogfooding task.
 The next task starts from the resulting clean integration commit, never from an older integration

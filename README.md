@@ -26,21 +26,11 @@ final QA with identical required quality policy. It is not implemented.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
-3. [`STATUS-HISTORY.md`](STATUS-HISTORY.md) — archived verification and completed-increment evidence.
-4. [`specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md`](specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
-   — the completed compact gate-context and owner-routed rework specification.
-5. [`specs/TSQH-MVP-006-provider-aware-agent-selection.md`](specs/TSQH-MVP-006-provider-aware-agent-selection.md)
-   — the completed provider-aware model and effort selection specification.
-6. [`specs/TSQH-MVP-005-self-contained-workflow-packs.md`](specs/TSQH-MVP-005-self-contained-workflow-packs.md)
-   — the completed self-contained workflow-pack specification.
-7. [`specs/TSQH-MVP-004-unified-typescript-configuration.md`](specs/TSQH-MVP-004-unified-typescript-configuration.md)
-   — the completed unified TypeScript configuration specification.
-8. [`specs/TSQH-MVP-003-discovered-project-configuration.md`](specs/TSQH-MVP-003-discovered-project-configuration.md)
-   — the completed discovered partial configuration specification.
-9. [`specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md`](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md)
-   — the completed quality and bounded Swarm Forge Lite specification.
-10. [`specs/TSQH-MVP-001-configurable-sequential-controller.md`](specs/TSQH-MVP-001-configurable-sequential-controller.md)
-   — the completed version 0 controller contract.
+3. The active specification named by `STATUS.md`.
+4. The local design provenance referenced by this README.
+
+`STATUS-HISTORY.md` and superseded specifications are archived reference material. Do not read them
+for an ordinary task unless the active assignment explicitly requires historical evidence.
 
 ## Product slice
 

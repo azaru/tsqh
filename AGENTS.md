@@ -2,8 +2,10 @@
 
 ## Read order
 
-Before coding, read `README.md`, `STATUS.md`, the active specification named by `STATUS.md`, and the
-local design provenance referenced by `README.md`.
+Before coding, read the current project overview in `README.md`, `STATUS.md`, the active specification
+named by `STATUS.md`, and the local design provenance referenced by `README.md`. Do not read
+`STATUS-HISTORY.md` or superseded specifications unless the active assignment explicitly requires
+historical evidence.
 
 ## Development contract
 

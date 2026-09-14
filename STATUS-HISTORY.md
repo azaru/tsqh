@@ -631,3 +631,15 @@ repair or integration. No candidate files were manually edited and no Task 01 ac
 claimed. The next simple-pack policy returns quick failures to the tester for bounded generic
 test-suite review. Prompt composition now exposes initial versus gate-failure re-entry mode; this
 policy is committed in `3ec470b` plus the subsequent workflow/docs change.
+
+## 2026-09-14 — Task 01 attempt 12 stopped during tester baseline mutation
+
+Attempt 12 run `27582bb0-c72f-4d5f-b655-a328a6d2e835` was created from `6f5a281` with the generic
+tester re-entry policy. The tester remained in visit 1 for roughly twelve minutes and changed the
+pre-existing `test/quality/cli.test.ts` and `test/quality/gates.test.ts`, while creating
+`test/package/`. Those paths were technically inside the broad `test/` allowance, but changing
+baseline expectations to accommodate the new implementation violates the intended TDD boundary.
+The run was stopped before implementer dispatch; no candidate acceptance or integration is claimed.
+The next prompt revision preserves baseline tests, permits changes only to tests created by the
+assignment during re-entry, and reduces initial context by omitting archived history from the
+required read order and empty diagnostic sections from generated prompts.

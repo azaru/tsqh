@@ -43,12 +43,7 @@ export function composeAssignmentPrompt(input: AssignmentPromptInput): string {
     "",
     "## Allowed path prefixes",
     renderAllowedPaths(input.allowedPathPrefixes),
-    "",
-    "## Previous completed agent handoff",
-    renderAgentHandoff(input.mostRecentAgentHandoff, input.mostRecentGateFailure),
-    "",
-    "## Most recent gate failure",
-    renderGateFailure(input.mostRecentGateFailure),
+    ...renderContextSections(input),
     "",
     "## Workflow authority",
     "Perform only this assignment. Report results through process output and exit status.",
@@ -71,6 +66,25 @@ function renderInvocationMode(input: AssignmentPromptInput): readonly string[] {
     ];
   }
   return ["Initial assignment execution."];
+}
+
+function renderContextSections(input: AssignmentPromptInput): readonly string[] {
+  const sections: string[] = [];
+  if (input.mostRecentAgentHandoff !== null || input.mostRecentGateFailure !== null) {
+    sections.push(
+      "",
+      "## Previous completed agent handoff",
+      renderAgentHandoff(input.mostRecentAgentHandoff, input.mostRecentGateFailure),
+    );
+  }
+  if (input.mostRecentGateFailure !== null) {
+    sections.push(
+      "",
+      "## Most recent gate failure",
+      renderGateFailure(input.mostRecentGateFailure),
+    );
+  }
+  return sections;
 }
 
 function renderAllowedPaths(prefixes: readonly string[]): string {

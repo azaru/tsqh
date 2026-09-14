@@ -25,12 +25,15 @@ Updated: 2026-09-14
 
 ## Current blocker and next action
 
-Task 01 attempt 02 from `1f3048f` ended with TSQH exit 1, `visit-limit-exceeded` after three
-implementer and three quick visits. Each quick failed with 829 passed/2 failed tests and no
-candidate-path changes. Repairs 2 and 3 made no changes. No campaign task is integrated.
+Task 01 attempt 03 passed TSQH: `tester -> implementer -> quick -> passed`, exit 0, with
+857/857 tests in 30 files and no gate candidate mutations. Tester files stayed unchanged.
+Release acceptance remains blocked: `pnpm quality:full` exited 2 at CRAP. Five installation
+functions have source coverage zero and CRAP 42/20/132/20/110; two have complexity 11 and 10.
+A separate Knip diagnosis exited 1 with five unused provisioned tool dependencies. Mutation and
+Sonar were not reached for this candidate. No campaign task is integrated.
 
-The two tests called the raw dependency CLI, so TSQH resolver changes could not affect their
-ancestor-engine fallback result. Task 01 now explicitly tests TSQH's own guarded installed-engine
-resolution/launch, preserving real identity, missing-engine, no-fallback and no-download checks.
-Create a fresh tester-first attempt from the verified harness commit; never edit or reuse the
-exhausted candidate's implementation. Evidence is retained under `tmp/codex-mvp008-01/attempt-02/`.
+Evidence is retained under `tmp/codex-mvp008-01/attempt-03/acceptance-full/` and
+`acceptance-outcome.json`. Task 01 now requires in-process public API behavior coverage in addition
+to installed-consumer tests, bounded function complexity and genuine recognized tool usage.
+Create a fresh tester-first TSQH attempt from integration; do not edit or copy the previous
+candidate, weaken the failed gates or advance Task 02 before release acceptance passes.

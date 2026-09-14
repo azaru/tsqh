@@ -587,3 +587,19 @@ Approved Sonar analysis `255c63e4-ab3a-4d21-a2e5-db36b85d1cff` computed gate OK 
 remote policy. The tracked integration diff remained unchanged during full. Exact commands,
 logs and copied evidence remain under `tmp/codex-mvp008-provider-timeout/`. This is harness
 verification, not candidate acceptance. A fresh affected worktree is required.
+
+## 2026-09-14 — Task 01 attempt 05 exhausted
+
+Base 785a526. TSQH run 343e69a6-b232-4ff8-85ae-6763a2c2bb57 exited 1 with visit-limit-exceeded.
+Trace: tester completed -> implementer 1 -> quick failed -> implementer 2 -> quick failed ->
+implementer 3 -> quick failed -> blocked. Every agent exited 0; every quick exited 1 with
+864/865 tests completed and one worker heap OOM. Gates changed no candidate paths; repairs 2/3
+changed no files and tester hashes stayed unchanged. Tester red: 77 failed/2 passed (79), exit 1;
+typecheck exit 0. Native diagnostics locate OOM at a 21,324,882-byte Buffer deep-equality assertion;
+Knip exit 1 reports only unused exported test-helper OwnedTool. Independent engine restoration
+record verifies identical bytes and native version 8.30.1. Agent coverage/CRAP exited 1; a separate
+CRAP diagnostic (exit 0, maximum 6) is explicitly not passing gate evidence. Candidate full,
+mutation, Sonar and independent final consumer acceptance were not run. No task is integrated.
+All paths and native evidence remain under tmp/codex-mvp008-01/attempt-05/, including
+outcome-evidence.json. Task-only clarifications require bounded exact binary equality and clean
+helper exports, preserving every acceptance requirement. No old candidate was manually changed.

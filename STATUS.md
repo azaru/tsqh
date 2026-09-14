@@ -8,10 +8,11 @@ Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-secu
 not implemented. MVP-001 through MVP-007 remain the completed baseline. No campaign task is
 integrated. Fresh task inputs are ignored under `specs/tasks/`; previous candidates remain evidence.
 
-Task 01 attempt 03 passed the real Codex-backed TSQH trace `tester -> implementer -> quick -> passed`
-(exit 0; 857 tests), but release full failed at CRAP (exit 2); separate Knip diagnosis failed
-(exit 1). Attempt 04 timed out in tester at 900000 ms (TSQH exit 1), before implementer/gates.
-Neither candidate is approved for integration. Detailed evidence is in the ignored campaign plan.
+Task 01 attempt 05 exhausted all three implementer/quick visits (TSQH exit 1). Each quick exited 1:
+864/865 tests completed, with worker heap exhaustion in a tester-owned native-buffer comparison.
+Separate Knip verification exited 1 for a test-helper type exported without external use. Tester
+files remained unchanged; every gate reported no candidate mutation. No candidate full, mutation
+or Sonar ran. Exact trace and outcomes: `tmp/codex-mvp008-01/attempt-05/outcome-evidence.json`.
 
 ## Current verification
 
@@ -31,8 +32,7 @@ Earlier evidence belongs in [STATUS-HISTORY.md](STATUS-HISTORY.md).
 
 ## Next action
 
-Commit the verified harness correction and create Task 01 attempt 05 from that clean integration
-commit. Execute the exact freshly authored task through the checked-in simple workflow. Do not
-copy or manually repair previous candidates; require installed-consumer acceptance and full before
-integration. Task 01 must address meaningful source coverage, bounded complexity and genuine tool
-usage while preserving its installed-package acceptance requirements.
+Task 01 instructions now require efficient exact native-byte comparison, private unused helper
+types, and tester Knip verification. Create attempt 06 from the clean integration commit and use
+the checked-in simple workflow with that exact ignored task. Do not copy or manually repair prior
+candidates. Require controller success, installed-consumer acceptance and full before integration.

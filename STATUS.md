@@ -11,10 +11,11 @@ MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated
 package-distribution slice, and its ignored task file is now an implementation brief only.
 
 No candidate implementation, successful TSQH campaign task, installed-consumer acceptance result,
-or Task 01 integration is retained. Attempts 11 through 13 were stopped before acceptance and their
-task-owned temporary artifacts have been cleaned. Attempt 12 was stopped during tester visit 1
-after it modified baseline quality tests instead of adding only task tests. Attempt 13 was stopped
-during tester visit 1 after prolonged startup exploration; its candidate was clean at the stop. The
+or Task 01 integration is retained. Attempts 11 through 14 were stopped before acceptance and
+their task-owned temporary artifacts remain only as run evidence. Attempt 12 was stopped during
+tester visit 1 after it modified baseline quality tests instead of adding only task tests. Attempt
+13 was stopped during tester visit 1 after prolonged startup exploration; its candidate was clean at
+the stop. Attempt 14 timed out in implementer visit 1 at the 30-minute provider limit. The
 pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy commit.
 
 ## Harness diagnosis
@@ -36,6 +37,7 @@ required.
 
 - Harness realignment: workflow load exit 0 with the configured tester re-entry edge.
 - Prompt re-entry behavior: targeted prompt/controller tests passed, 57 tests in 2 files.
+- Simple provider timeout: configured at 3,600,000 ms for the next candidate.
 - `CI=true pnpm build`: exit 0.
 - `CI=true pnpm typecheck`: exit 0.
 - `CI=true pnpm quality:quick`: exit 0, 793 tests in 29 files; architecture inspected 7 entries.
@@ -48,7 +50,8 @@ Task 01 remains unaccepted. Attempt 11 quick reached 803 passed and 2 failed tes
 were the same unsatisfiable relocated-root assertion in the tester-created suite. Attempt 12 was
 stopped during tester visit 1 after changes to `test/quality/cli.test.ts`,
 `test/quality/gates.test.ts`, and new `test/package/` files. Attempt 13 was stopped during tester
-visit 1 with no candidate changes observed. The next action is a fresh candidate from the committed
-context-reduction and baseline-test-protection changes, with the simple pack returning quick
-failures to the tester. Detailed historical notes remain in [STATUS-HISTORY.md](STATUS-HISTORY.md);
-the old task-owned attempt artifacts have been removed.
+visit 1 with no candidate changes observed. Attempt 14 was stopped after the implementer exhausted
+its 1,800,000 ms timeout before `quick`. The next action is a fresh candidate from the committed
+context-reduction and baseline-test-protection changes, with the simple provider timeout raised to
+3,600,000 ms. Detailed historical notes remain in [STATUS-HISTORY.md](STATUS-HISTORY.md); the old
+task-owned attempt artifacts have been removed.

@@ -653,6 +653,15 @@ files. Unlike Attempt 12, no candidate changes were observed at the stop and no 
 started. The run was stopped to avoid spending another long provider step before the startup
 instructions are reduced further. No Task 01 acceptance or integration is claimed.
 
+## 2026-09-14 — Task 01 attempt 14 timed out in implementer
+
+Attempt 14 run `a845ca41-eab1-4bf6-9d17-72adfcc42eef` was created from `9449a33`. The tester
+completed visit 1 after creating only `test/package/distribution.test.ts` (491 lines, four
+expected-red tests); no baseline tests were modified. The implementer then changed package and
+quality runtime files but exhausted the configured 1,800,000 ms provider timeout before `quick`.
+The run ended blocked with `agent-timeout`; no acceptance or integration is claimed. The simple
+Codex provider timeout is raised to 3,600,000 ms for the next fresh candidate.
+
 ## 2026-09-14 — Previous Task 01 attempt artifacts cleaned
 
 At the user's request, the task-owned temporary artifacts for Attempts 12 and 13 were removed

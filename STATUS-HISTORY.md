@@ -668,3 +668,16 @@ At the user's request, the task-owned temporary artifacts for Attempts 12 and 13
 before starting the next candidate. The already-missing Attempts 07–11 worktree registrations were
 pruned. No candidate implementation or acceptance evidence was removed from the repository; the
 historical summaries above remain as the record of those stopped runs.
+
+## 2026-09-14 — Task 01 attempt 15 completed simple workflow with re-entry
+
+Attempt 15 run `6d972b9c-234e-449c-a080-581be279231f` completed with exit 0 and terminal state
+`passed`. The demonstrated controller trace was `tester 1 -> implementer 1 -> quick 1 failed ->
+tester 2 -> implementer 2 -> quick 2 passed -> passed`. The tester created only
+`test/package/distribution.test.ts`; its initial focused run had five tests with one passing and
+four expected-red failures. The quick failure was caused by three test type/fixture defects; the
+tester corrected only that assignment-owned test on re-entry, and its focused run then passed all
+five tests. The implementer changed package metadata, lockfile, README and STATUS; it reported a
+passing npm packed install, manual pnpm bin/export invocation, and Gitleaks engine `8.30.1`.
+Quick passed 798 tests in 30 files with no native candidate changes. The candidate remains
+isolated and no MVP-008 acceptance or integration is claimed.

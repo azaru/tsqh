@@ -682,6 +682,18 @@ passing npm packed install, manual pnpm bin/export invocation, and Gitleaks engi
 Quick passed 798 tests in 30 files with no native candidate changes. The candidate remains
 isolated and no MVP-008 acceptance or integration is claimed.
 
+## 2026-09-14 — system-owned task acceptance coverage gate
+
+The simple pack now routes `quick` through a built-in `task-acceptance` gate before `passed`.
+Tasks use product-only `AC-*` labels in their `## Acceptance` section, and the generic tester
+prompt requires each label to appear in an assignment-owned test marker. The controller supplies
+only test paths changed during agent steps, so baseline harness tests cannot satisfy a campaign
+criterion. The gate writes bounded `task-acceptance.json` evidence, fails on missing or unknown
+markers, and blocks malformed tasks; it does not validate workflow examples or use agent output to
+select a transition. Targeted acceptance/controller/configuration checks passed 48 tests in four
+files. Full `CI=true pnpm quality:quick` passed 803 tests in 31 files and the architecture check
+inspected 7 entries.
+
 ## 2026-09-14 — Task 01 attempt 15 review rejected integration
 
 The isolated Attempt 15 candidate was reviewed after its simple workflow passed. The package test

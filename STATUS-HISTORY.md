@@ -643,3 +643,12 @@ The run was stopped before implementer dispatch; no candidate acceptance or inte
 The next prompt revision preserves baseline tests, permits changes only to tests created by the
 assignment during re-entry, and reduces initial context by omitting archived history from the
 required read order and empty diagnostic sections from generated prompts.
+
+## 2026-09-14 — Task 01 attempt 13 stopped during tester startup exploration
+
+Attempt 13 run `0a88e91c-dd23-4956-8ee6-e4c467d649bc` was created from `497239a`, which included
+the reduced read order, compact initial prompt, and baseline-test protection. The tester remained
+in visit 1 for roughly twelve minutes while inspecting the active candidate and relevant package
+files. Unlike Attempt 12, no candidate changes were observed at the stop and no implementer step
+started. The run was stopped to avoid spending another long provider step before the startup
+instructions are reduced further. No Task 01 acceptance or integration is claimed.

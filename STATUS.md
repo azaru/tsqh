@@ -11,10 +11,11 @@ MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated
 package-distribution slice, and its ignored task file is now an implementation brief only.
 
 No candidate implementation, successful TSQH campaign task, installed-consumer acceptance result,
-or Task 01 integration is retained. Attempts 11 and 12 were stopped before acceptance; their
+or Task 01 integration is retained. Attempts 11 through 13 were stopped before acceptance; their
 candidates and evidence remain under the task-owned temporary path. Attempt 12 was stopped during
-tester visit 1 after it modified baseline quality tests instead of adding only task tests. The
-pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy commit.
+tester visit 1 after it modified baseline quality tests instead of adding only task tests. Attempt
+13 was stopped during tester visit 1 after prolonged startup exploration; its candidate was clean at
+the stop. The pre-existing `CONTRIBUTING.md` deletion remains part of the harness-policy commit.
 
 ## Harness diagnosis
 
@@ -47,7 +48,8 @@ required.
 Task 01 remains unaccepted. Attempt 11 quick reached 803 passed and 2 failed tests; both failures
 were the same unsatisfiable relocated-root assertion in the tester-created suite. Attempt 12 was
 stopped during tester visit 1 after changes to `test/quality/cli.test.ts`,
-`test/quality/gates.test.ts`, and new `test/package/` files. The next action is a fresh candidate
-from the committed context-reduction and baseline-test-protection changes, with the simple pack
-returning quick failures to the tester. Detailed attempts and evidence remain under the ignored
-task-owned temporary paths and [STATUS-HISTORY.md](STATUS-HISTORY.md).
+`test/quality/gates.test.ts`, and new `test/package/` files. Attempt 13 was stopped during tester
+visit 1 with no candidate changes observed. The next action is a fresh candidate from the committed
+context-reduction and baseline-test-protection changes, with the simple pack returning quick
+failures to the tester. Detailed attempts and evidence remain under the ignored task-owned
+temporary paths and [STATUS-HISTORY.md](STATUS-HISTORY.md).

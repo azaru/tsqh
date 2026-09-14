@@ -756,3 +756,13 @@ architecture, lint, secrets, optional stages, and demo. The former final accepta
 complete-spec verification is campaign completion. `specs/task-authoring.md` now documents the
 planning/execution boundary and soft size/scope heuristics, and `specs/dogfooding-workflow.md` only
 requires an external consumer check when the task's product boundary needs one.
+
+## 2026-09-14 — Task 01 reduced candidate 19 completed the configured workflow
+
+Run `9af39f18-d000-4b06-b082-a70e6a41db4e` was created from `cd9d47f` with the reduced public
+package-boundary brief. Its trace completed `tester 1 -> implementer 1 -> quick 1 -> acceptance 1
+-> passed`. The tester changed only `test/acceptance.json` and `test/package-boundary.test.ts`
+(four local requirements, 237 lines); the implementer changed only `package.json`, `README.md`, and
+`STATUS.md`. Quick exited 0 with 807 tests in 32 files and 7 architecture entries. The system-owned
+acceptance report covered all four requirements with one test each. The candidate is not integrated:
+the task-scoped external consumer check and independent package review remain outstanding.

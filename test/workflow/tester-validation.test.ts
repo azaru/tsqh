@@ -35,7 +35,7 @@ describe("simple workflow tester validation", () => {
     expect(loaded.configuration.profiles.full).toBeUndefined();
   });
 
-  it("accepts assertion-only expected-red evidence without launching Knip", async () => {
+  it("accepts nested-suite expected-red evidence without launching Knip", async () => {
     const fixture = await createFixture("valid");
 
     try {
@@ -134,8 +134,10 @@ function fakeGitSource(mode: string): string {
 function fakePnpmSource(mode: string, log: string): string {
   const report = JSON.stringify({
     success: false,
+    numTotalTestSuites: 2,
+    numPassedTestSuites: 0,
     numTotalTests: 1,
-    numFailedTestSuites: 1,
+    numFailedTestSuites: 2,
     numFailedTests: 1,
     testResults: [{
       name: "fixture-test-file",

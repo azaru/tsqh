@@ -173,7 +173,10 @@ async function validateExpectedRed(result, reportPath, workspace, testFiles) {
     reportedPaths.size !== expectedPaths.size ||
     failedSuites === 0 ||
     failedAssertions === 0 ||
-    report.numFailedTestSuites !== failedSuites ||
+    !isNonNegativeInteger(report.numTotalTestSuites) ||
+    !isNonNegativeInteger(report.numFailedTestSuites) ||
+    report.numFailedTestSuites < failedSuites ||
+    report.numFailedTestSuites > report.numTotalTestSuites ||
     report.numFailedTests !== failedAssertions
   ) {
     throw new Error("Vitest expected-red report does not contain complete assertion-failure evidence.");
@@ -317,6 +320,10 @@ function compareStrings(left, right) {
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value) {
+  return Number.isInteger(value) && value >= 0;
 }
 
 function errorMessage(error) {

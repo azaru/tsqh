@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { composeAssignmentPrompt } from "./prompt.js";
-import { runTaskAcceptanceGate } from "./task-acceptance.js";
+import { ACCEPTANCE_MANIFEST_PATH, runTaskAcceptanceGate } from "./task-acceptance.js";
 import type { CleanWorkspace, GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
 import { renderAgentArguments, resolveAgentSelection } from "../domain/agent-selection.js";
 import { planNextAction } from "../domain/planner.js";
@@ -200,10 +200,9 @@ async function executeGate(
   const execution = isTaskAcceptanceProfile(profile)
     ? await runTaskAcceptanceGate({
         stepId: action.stepId,
-        taskPath: context.input.taskPath,
         workspacePath: context.workspace.path,
         runDirectory: context.trace.runDirectory,
-        testPaths: acceptanceTestPaths(context.events),
+        testPaths: acceptanceEvidencePaths(context.events),
       })
     : {
         process: await context.services.commandRunner.run({
@@ -226,14 +225,17 @@ function isTaskAcceptanceProfile(profile: QualityProfile): profile is Extract<Qu
   return "type" in profile && profile.type === "task-acceptance";
 }
 
-function acceptanceTestPaths(events: readonly RunEvent[]): readonly string[] {
+function acceptanceEvidencePaths(events: readonly RunEvent[]): readonly string[] {
   const paths = new Set<string>();
   for (const event of events) {
     if (event.type !== "step-finished" || event.stepType !== "agent") {
       continue;
     }
     for (const path of event.changedPaths) {
-      if (path.startsWith("test/") && /\.(?:cjs|cts|js|mjs|mts|ts|tsx)$/u.test(path)) {
+      if (
+        path === ACCEPTANCE_MANIFEST_PATH ||
+        (path.startsWith("test/") && /\.(?:cjs|cts|js|mjs|mts|ts|tsx)$/u.test(path))
+      ) {
         paths.add(path);
       }
     }

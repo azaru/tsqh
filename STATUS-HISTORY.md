@@ -716,3 +716,18 @@ consumer name, PATH, npm hoisting, and pnpm layout. The candidate package test e
 tools or validate a Gitleaks wrapper/engine preflight, and the implementer reported five unused
 provisioned future-stage tool packages. The candidate is therefore not integrated; a bounded
 implementation repair is required.
+
+## 2026-09-14 — decouple task authoring from acceptance evidence
+
+The first acceptance-coverage implementation still coupled verification to task Markdown: it
+required a `## Acceptance` heading, consecutive numbering, and generated `[criterion-N]` markers.
+That was removed. The simple tester now creates a test-owned `test/acceptance.json` manifest with
+local requirement identifiers and marks one or more test titles with `[acceptance:<id>]`. The
+system-owned gate validates only the manifest, changed test paths, and marker coverage; it does not
+read or parse the task document. Missing or malformed evidence is a normal gate failure and returns
+through the configured tester re-entry. This remains structural evidence rather than semantic proof
+that free-form product prose was fully interpreted. The change passed `CI=true pnpm build`,
+`CI=true pnpm typecheck`, 8 targeted acceptance/controller tests, and `CI=true pnpm quality:quick`
+with 803 tests in 31 files and 7 architecture entries. Attempt 17 was stopped during implementer
+visit 1 before quick because it had started under the superseded contract; its candidate remains
+isolated and is not accepted.

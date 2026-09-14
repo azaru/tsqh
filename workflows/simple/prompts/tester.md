@@ -11,10 +11,12 @@ failures, boundaries, and side effects. Do not test private helpers, internal br
 formatting, exact implementation choices, or bundled examples/configurations unless the assignment
 explicitly makes them part of the product contract.
 
-For each numbered item in the task's `## Acceptance` section, include the corresponding marker (for
-example `[criterion-1]`) in at least one test title. Do not invent markers or omit an item; the
-controller checks this coverage before allowing the run to pass. The marker identifies the product
-behavior under test and does not authorize testing workflow examples or configuration.
+Create `test/acceptance.json` as a small test-owned manifest. After reading the task, add one
+requirement entry for every externally observable acceptance requirement it contains, using a local
+identifier and a short description. The identifier is local to this test suite; do not copy a
+task-document label or impose one. Put `[acceptance:<id>]` in at least one test title for each
+manifest entry. One requirement may have multiple tests. The controller checks that the manifest and
+markers are structurally complete; they do not authorize testing workflow examples or configuration.
 
 Prefer focused, deterministic tests and the smallest setup that proves each requirement. Avoid
 duplicate cases and broad repository or quality-chain checks. Write only under the configured test
@@ -33,6 +35,6 @@ run unrelated gates, repeat broad investigations, or choose the next workflow tr
 
 Stop when the tests and minimal verification are complete.
 
-Preserve existing acceptance markers during re-entry. If the task-acceptance gate reports missing
-or unknown markers, add or correct only assignment-owned tests so every task criterion is represented
-by an observable behavior test.
+Preserve existing acceptance markers and the manifest during re-entry. If the task-acceptance gate
+reports missing or unknown markers, add or correct only assignment-owned tests and manifest entries
+that are demonstrably needed for the task's observable behavior.

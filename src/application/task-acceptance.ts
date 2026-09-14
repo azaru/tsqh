@@ -2,14 +2,15 @@ import { lstat, readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { Blocker, ProcessArtifact } from "../domain/types.js";
 
-const MAX_TASK_BYTES = 1_048_576;
+export const ACCEPTANCE_MANIFEST_PATH = "test/acceptance.json";
+
+const MAX_MANIFEST_BYTES = 262_144;
+const MAX_DESCRIPTION_BYTES = 4_096;
 const MAX_TEST_FILE_BYTES = 1_048_576;
 const MAX_TEST_FILES = 4_096;
 const MAX_TEST_BYTES = 16_777_216;
-const CRITERION_LINE = /^\s*(\d+)[.)]\s+\S.*$/gmu;
-const ACCEPTANCE_HEADING = /^##\s+Acceptance\b.*$/imu;
-const NEXT_SECTION_HEADING = /^##\s+/gmu;
-const TEST_TITLE_MARKER = /\[(criterion-[1-9][0-9]*)\]/gu;
+const ACCEPTANCE_ID = /^[A-Za-z][A-Za-z0-9._-]{0,63}$/u;
+const TEST_TITLE_MARKER = /\[acceptance:([A-Za-z][A-Za-z0-9._-]{0,63})\]/gu;
 const TEST_FILE_EXTENSIONS = new Set([".cjs", ".cts", ".js", ".mjs", ".mts", ".ts", ".tsx"]);
 
 export interface AcceptanceTestSource {
@@ -17,21 +18,29 @@ export interface AcceptanceTestSource {
   readonly content: string;
 }
 
-export interface AcceptanceCriterionCoverage {
+export interface AcceptanceRequirement {
   readonly id: string;
+  readonly description: string;
+}
+
+export interface AcceptanceManifest {
+  readonly schemaVersion: 1;
+  readonly requirements: readonly AcceptanceRequirement[];
+}
+
+export interface AcceptanceRequirementCoverage extends AcceptanceRequirement {
   readonly testCount: number;
   readonly testFiles: readonly string[];
 }
 
 export interface AcceptanceCoverage {
-  readonly criteria: readonly AcceptanceCriterionCoverage[];
+  readonly requirements: readonly AcceptanceRequirementCoverage[];
   readonly missingIds: readonly string[];
   readonly unknownIds: readonly string[];
 }
 
 export interface TaskAcceptanceGateInput {
   readonly stepId: string;
-  readonly taskPath: string;
   readonly workspacePath: string;
   readonly runDirectory: string;
   readonly testPaths: readonly string[];
@@ -45,7 +54,8 @@ export interface TaskAcceptanceGateResult {
 interface TaskAcceptanceReport {
   readonly schemaVersion: 1;
   readonly status: "passed" | "failed";
-  readonly criteria: readonly AcceptanceCriterionCoverage[];
+  readonly manifestPath: string;
+  readonly requirements: readonly AcceptanceRequirementCoverage[];
   readonly missingIds: readonly string[];
   readonly unknownIds: readonly string[];
 }
@@ -54,23 +64,34 @@ export async function runTaskAcceptanceGate(
   input: TaskAcceptanceGateInput,
 ): Promise<TaskAcceptanceGateResult> {
   try {
-    const task = await readBoundedText(input.taskPath, MAX_TASK_BYTES, "task");
-    const criteria = parseAcceptanceCriteria(task);
-    if (criteria.length === 0) {
-      return invalidTaskBlocker(input.stepId, "The task declares no numbered acceptance criteria.");
+    const manifestPaths = input.testPaths.filter((path) => path === ACCEPTANCE_MANIFEST_PATH);
+    if (manifestPaths.length !== 1) {
+      return evidenceFailure(
+        input.stepId,
+        `Exactly one '${ACCEPTANCE_MANIFEST_PATH}' must be created by the tester.`,
+      );
     }
 
+    const manifestPath = manifestPaths[0]!;
+    const manifest = parseAcceptanceManifest(
+      await readBoundedText(
+        resolve(input.workspacePath, manifestPath),
+        MAX_MANIFEST_BYTES,
+        "acceptance manifest",
+      ),
+    );
     const sources = await readTestSources(input.workspacePath, input.testPaths);
-    const coverage = inspectAcceptanceCoverage(criteria, sources);
+    const coverage = inspectAcceptanceCoverage(manifest.requirements, sources);
     const report: TaskAcceptanceReport = {
       schemaVersion: 1,
       status: coverage.missingIds.length === 0 && coverage.unknownIds.length === 0 ? "passed" : "failed",
-      criteria: coverage.criteria,
+      manifestPath,
+      requirements: coverage.requirements,
       missingIds: coverage.missingIds,
       unknownIds: coverage.unknownIds,
     };
     await writeFile(
-      join(input.runDirectory, "task-acceptance.json"),
+      join(input.runDirectory, "acceptance-coverage.json"),
       `${JSON.stringify(report, null, 2)}\n`,
       "utf8",
     );
@@ -82,59 +103,64 @@ export async function runTaskAcceptanceGate(
       };
     }
     return {
-      process: validationProcess(0, acceptanceSuccessMessage(criteria)),
+      process: validationProcess(0, acceptanceSuccessMessage(manifest.requirements)),
       blocker: null,
     };
   } catch (error) {
-    return invalidTaskBlocker(input.stepId, errorMessage(error));
+    return evidenceFailure(input.stepId, errorMessage(error));
   }
 }
 
-export function parseAcceptanceCriteria(task: string): readonly string[] {
-  const numbers: number[] = [];
-  const seen = new Set<number>();
-  const section = acceptanceSection(task);
-  CRITERION_LINE.lastIndex = 0;
-  for (const match of section.matchAll(CRITERION_LINE)) {
-    const numberText = match[1];
-    if (numberText === undefined) {
-      continue;
-    }
-    const number = Number(numberText);
-    if (!Number.isSafeInteger(number) || number < 1) {
-      throw new Error("The task acceptance criterion number '" + numberText + "' is invalid.");
-    }
-    if (seen.has(number)) {
-      throw new Error("The task declares acceptance criterion '" + numberText + "' more than once.");
-    }
-    seen.add(number);
-    numbers.push(number);
+export function parseAcceptanceManifest(content: string): AcceptanceManifest {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content) as unknown;
+  } catch (error) {
+    throw new Error(`The acceptance manifest is not valid JSON: ${errorMessage(error)}`);
   }
-  numbers.sort((left, right) => left - right);
-  numbers.forEach((number, index) => {
-    if (number !== index + 1) {
-      throw new Error("The task acceptance criteria must be numbered consecutively from 1.");
+  if (
+    !isRecord(parsed) ||
+    !hasOnlyKeys(parsed, ["schemaVersion", "requirements"]) ||
+    parsed.schemaVersion !== 1 ||
+    !Array.isArray(parsed.requirements)
+  ) {
+    throw new Error("The acceptance manifest must contain only schemaVersion 1 and a requirements array.");
+  }
+  if (parsed.requirements.length === 0 || parsed.requirements.length > MAX_TEST_FILES) {
+    throw new Error(`The acceptance manifest must contain between 1 and ${String(MAX_TEST_FILES)} requirements.`);
+  }
+
+  const seen = new Set<string>();
+  const requirements = parsed.requirements.map((value, index) => {
+    if (!isRecord(value) || !hasOnlyKeys(value, ["id", "description"])) {
+      throw new Error(`Acceptance requirement ${String(index + 1)} must contain only id and description.`);
     }
+    const id = value.id;
+    const description = value.description;
+    if (typeof id !== "string" || !ACCEPTANCE_ID.test(id)) {
+      throw new Error(`Acceptance requirement ${String(index + 1)} has an invalid id.`);
+    }
+    if (seen.has(id)) {
+      throw new Error(`The acceptance manifest declares requirement '${id}' more than once.`);
+    }
+    if (
+      typeof description !== "string" ||
+      description.trim().length === 0 ||
+      Buffer.byteLength(description, "utf8") > MAX_DESCRIPTION_BYTES
+    ) {
+      throw new Error(`Acceptance requirement '${id}' has an invalid description.`);
+    }
+    seen.add(id);
+    return { id, description };
   });
-  return numbers.map((number) => "criterion-" + String(number));
-}
-
-function acceptanceSection(task: string): string {
-  const heading = ACCEPTANCE_HEADING.exec(task);
-  if (heading === null || heading.index === undefined) {
-    return "";
-  }
-  const contentStart = heading.index + heading[0].length;
-  NEXT_SECTION_HEADING.lastIndex = contentStart;
-  const nextHeading = NEXT_SECTION_HEADING.exec(task);
-  return task.slice(contentStart, nextHeading?.index ?? task.length);
+  return { schemaVersion: 1, requirements };
 }
 
 export function inspectAcceptanceCoverage(
-  criteria: readonly string[],
+  requirements: readonly AcceptanceRequirement[],
   sources: readonly AcceptanceTestSource[],
 ): AcceptanceCoverage {
-  const criterionIds = new Set(criteria);
+  const requirementIds = new Set(requirements.map(({ id }) => id));
   const filesById = new Map<string, Set<string>>();
   const testCounts = new Map<string, number>();
   const unknownIds = new Set<string>();
@@ -145,7 +171,7 @@ export function inspectAcceptanceCoverage(
       if (id === undefined) {
         continue;
       }
-      if (!criterionIds.has(id)) {
+      if (!requirementIds.has(id)) {
         unknownIds.add(id);
         continue;
       }
@@ -156,13 +182,14 @@ export function inspectAcceptanceCoverage(
     }
   }
 
-  const coverage = criteria.map((id) => ({
+  const coverage = requirements.map(({ id, description }) => ({
     id,
+    description,
     testCount: testCounts.get(id) ?? 0,
     testFiles: [...(filesById.get(id) ?? [])].sort(compareStrings),
   }));
   return {
-    criteria: coverage,
+    requirements: coverage,
     missingIds: coverage.filter(({ testCount }) => testCount === 0).map(({ id }) => id),
     unknownIds: [...unknownIds].sort(compareStrings),
   };
@@ -229,8 +256,8 @@ function validationProcess(exitCode: number, message: string): ProcessArtifact {
   };
 }
 
-function acceptanceSuccessMessage(criteria: readonly string[]): string {
-  return `Acceptance test coverage is present for ${criteria.join(", ")}.`;
+function acceptanceSuccessMessage(requirements: readonly AcceptanceRequirement[]): string {
+  return `Acceptance test coverage is present for ${requirements.map(({ id }) => id).join(", ")}.`;
 }
 
 function acceptanceFailureMessage(coverage: AcceptanceCoverage): string {
@@ -241,14 +268,10 @@ function acceptanceFailureMessage(coverage: AcceptanceCoverage): string {
   return `Acceptance test coverage failed: ${details.join("; ")}.`;
 }
 
-function invalidTaskBlocker(stepId: string, message: string): TaskAcceptanceGateResult {
+function evidenceFailure(stepId: string, message: string): TaskAcceptanceGateResult {
   return {
-    process: null,
-    blocker: {
-      code: "task-acceptance-invalid",
-      message: `Task acceptance validation failed: ${message}`,
-      stepId,
-    },
+    process: validationProcess(1, `Acceptance evidence validation failed at '${stepId}': ${message}`),
+    blocker: null,
   };
 }
 
@@ -268,6 +291,15 @@ async function readBoundedText(path: string, maximumBytes: number, label: string
     }
     throw error;
   }
+}
+
+function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const allowed = new Set(keys);
+  return Object.keys(value).every((key) => allowed.has(key)) && keys.every((key) => key in value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function compareStrings(left: string, right: string): number {

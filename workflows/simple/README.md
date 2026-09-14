@@ -2,10 +2,11 @@
 
 This self-contained pack demonstrates a small TDD workflow. A `tester` first writes the complete
 behavioral test suite, including relevant edge cases, an `implementer` makes it pass, and the
-configured `quick` quality gate validates and executes the candidate. The task-acceptance gate then
-verifies that every numbered acceptance item in the task has a tagged test. A failed gate returns to the
-tester for a bounded review of the existing suite before implementation rework; there is no generic
-repair step.
+configured `quick` quality gate validates and executes the candidate. The system-owned acceptance
+gate then verifies the tester-owned `test/acceptance.json` manifest and one or more tagged tests per
+manifest requirement. It does not parse the task document or impose a task authoring format. A failed
+gate returns to the tester for a bounded review of the existing suite before implementation rework;
+there is no generic repair step.
 
 ```text
 tester -> implementer -> quick -> acceptance -> passed
@@ -20,8 +21,10 @@ additional package, schema, script, pack, or documentation paths while keeping w
 task authority, prompts, credentials, reports, and temporary paths protected. On re-entry, the
 tester preserves valid tests and changes only tests proven invalid, contradictory, or outside the
 assignment. The controller validates Git-visible changes after every agent step. The
-task-acceptance gate is system-owned; it does not validate this workflow's example configuration or
-trust a tester summary to select a transition.
+acceptance gate is system-owned; it does not validate this workflow's example configuration or trust
+a tester summary to select a transition. Its result is structural evidence; it cannot judge whether
+free-form product prose was interpreted semantically, which remains a tester/reviewer
+responsibility.
 Gates must not mutate the candidate. Gate-driven assignments omit the prior agent handoff and
 include at most 8 KiB from each failed native output stream. The JSON workflow is the controller's
 execution policy; task and README prose does not add steps or gates.

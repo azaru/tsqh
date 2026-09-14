@@ -106,10 +106,11 @@ gates to regenerate ignored quality reports.
 
 Two self-contained packs live under [`workflows/`](workflows/). The
 [`simple`](workflows/simple/README.md) pack demonstrates a tester-first TDD flow: the tester creates
-a suite, the implementer makes it pass, `quick` validates repository health, and the system-owned
-acceptance gate checks that every task acceptance criterion is represented by a tagged test. A gate
-failure returns to the tester for a bounded review before implementation rework. It intentionally
-excludes the `full` chain and its individual release gates. The
+a suite and its acceptance manifest, the implementer makes it pass, `quick` validates repository
+health, and the system-owned acceptance gate checks that the manifest has one or more tagged tests
+per requirement without parsing the task document. A gate failure returns to the tester for a bounded
+review before implementation rework. It intentionally excludes the `full` chain and its individual
+release gates. The
 [`tdd-pipeline`](workflows/tdd-pipeline/README.md) pack uses the sequential
 `specifier -> tester -> implementer -> cleaner -> architect -> hardener` spine, quick after each
 phase, and one final full gate. Its original paraphrased prompts are informed by the upstream

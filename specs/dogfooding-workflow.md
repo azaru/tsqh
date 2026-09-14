@@ -16,10 +16,10 @@ Before implementation:
    required order.
 2. Identify the existing quality policy and workflow pack.
 
-Create one task specification under `specs/tasks/` for each independently verifiable slice. Task
-brief authoring is defined separately in [`specs/task-authoring.md`](task-authoring.md); this
-workflow consumes the resulting product brief and does not add implementation or orchestration
-instructions to it. A task may not depend on uncommitted changes from another task.
+Create one task specification under `specs/tasks/` for each independently verifiable slice. The
+task is the product contract supplied to the workflow; its authoring format and content rules are
+owned by the specification/task layer, not by this operational document. This workflow does not
+interpret or prescribe that format. A task may not depend on uncommitted changes from another task.
 
 Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
 task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
@@ -74,7 +74,7 @@ task specification
   -> configured TSQH workflow
   -> path/evidence validation
   -> required gates
-  -> task-acceptance coverage
+  -> acceptance evidence validation
        | pass -> integrate and use this commit as the next integration state
        | fail -> configured finite repair -> rerun from its restart point
        | blocker/exhaustion -> stop with an exact diagnosis
@@ -85,16 +85,20 @@ report outcomes. A bounded, sanitized handoff may reach the next configured agen
 context, but it cannot select a transition, widen write authority, change the task, or alter the
 visit budget.
 
-The simple pack's initial tester step writes the task's behavioral tests and then hands to the
-implementer. Each acceptance test title includes the system's `[criterion-N]` marker for its
-numbered task item. The system-owned task-acceptance gate checks that every item has a tagged test
-after `quick` has executed the suite successfully; the tester's expected-red result remains agent
-evidence, not acceptance. A failed `quick` or
-task-acceptance gate returns to the tester for bounded re-entry: the tester reviews the existing
-suite and failure evidence, preserves valid tests, and changes only tests that are demonstrably
-outside the assignment, contradictory, or unsatisfiable. The task-acceptance gate does not validate
-the simple pack's example configuration; configuration and workflow semantics are tested separately
-with synthetic policy where the active specification requires them.
+The simple pack's initial tester step writes the task's behavioral tests and a test-owned
+`test/acceptance.json` manifest, then hands to the implementer. The manifest gives each product
+requirement a local identifier and the suite marks one or more test titles with
+`[acceptance:<id>]`. The system-owned acceptance gate checks the manifest, changed test paths, and
+marker coverage after `quick` has executed the suite successfully. It never reads or parses the
+task document, so task authoring and verification remain separate. This is structural evidence,
+not semantic proof that a free-form requirement was interpreted correctly; that judgment belongs to
+the tester (or a future review policy). The tester's expected-red result remains agent evidence, not
+acceptance. A failed `quick` or acceptance gate returns to the tester for bounded re-entry: the
+tester reviews the existing suite and failure evidence, preserves valid tests, and changes only
+tests or evidence that are demonstrably outside the assignment, contradictory, or unsatisfiable.
+The acceptance gate does not validate the simple pack's example configuration; configuration and
+workflow semantics are tested separately with synthetic policy where the active specification
+requires them.
 
 Agents may write only within their configured role and task paths. After every writing step,
 compare Git state with the pre-step snapshot and block tracked, untracked, deleted, or renamed
@@ -127,10 +131,10 @@ Choose verification by behavioral surface, not file extension:
 Do not skip, weaken, relabel, or reorder required gates. Preserve checker-rejected TypeScript
 `CompileError` mutation evidence and require every runnable mutant to be `Killed`.
 
-Integrate only when the controller reaches its success terminal, the system-owned task-acceptance
-gate reports coverage for every numbered acceptance item, the external-consumer check has passed for
-implementation tasks, every gate configured by that workflow passes, and all candidate changes are
-authorized. A command not represented in the workflow cannot invalidate a passed dogfooding task.
+Integrate only when the controller reaches its success terminal, the system-owned acceptance gate
+reports valid manifest coverage, the external-consumer check has passed for implementation tasks,
+every gate configured by that workflow passes, and all candidate changes are authorized. A command
+not represented in the workflow cannot invalidate a passed dogfooding task.
 The next task starts from the resulting clean integration commit, never from an older integration
 state.
 

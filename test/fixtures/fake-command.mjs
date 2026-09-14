@@ -28,7 +28,26 @@ if (mode.startsWith("agent-")) {
     await writeFile("workflow.json", "{}\n", "utf8");
   } else if (mode === "agent-acceptance") {
     await mkdir("test", { recursive: true });
-    await writeFile("test/acceptance.test.ts", 'it("[criterion-1] tagged behavior", () => {});\n', "utf8");
+    await writeFile(
+      "test/acceptance.json",
+      JSON.stringify({
+        schemaVersion: 1,
+        requirements: [{ id: "tagged-behavior", description: "The tagged behavior passes." }],
+      }) + "\n",
+      "utf8",
+    );
+    await writeFile("test/acceptance.test.ts", 'it("[acceptance:tagged-behavior] tagged behavior", () => {});\n', "utf8");
+  } else if (mode === "agent-acceptance-missing") {
+    await mkdir("test", { recursive: true });
+    await writeFile(
+      "test/acceptance.json",
+      JSON.stringify({
+        schemaVersion: 1,
+        requirements: [{ id: "tagged-behavior", description: "The tagged behavior passes." }],
+      }) + "\n",
+      "utf8",
+    );
+    await writeFile("test/acceptance.test.ts", 'it("[acceptance:unlisted] unrelated behavior", () => {});\n', "utf8");
   } else if (
     mode !== "agent-workflow" ||
     !new Set(["specifier", "architect", "qa"]).has(step)

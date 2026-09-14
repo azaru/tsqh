@@ -8,8 +8,9 @@ Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-secu
 MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated. The current
 `dogfooding` branch contains the harness realignment that restores the simple pack to
 `tester -> implementer -> quick -> acceptance -> passed`. Task 01 remains the current unintegrated
-package-distribution slice. Task briefs stay product-only; their separate authoring contract uses a
-numbered `## Acceptance` list, and the system derives internal criterion markers for tester coverage.
+package-distribution slice. Task briefs stay product-only and opaque to acceptance verification. The
+tester now owns a test acceptance manifest; the system validates that manifest and its one-or-more
+test markers without parsing the task's authoring format.
 
 No candidate implementation or Task 01 integration is retained on the branch. Attempt 15 completed
 the simple dogfooding trace, but review found missing package-root tool resolution and Gitleaks
@@ -29,13 +30,15 @@ simple TDD flow. Attempts 08–10 were interrupted before a complete tester tran
 produced implementation or acceptance evidence.
 
 The simple pack no longer has `tester-validation` or `validate-tester.mjs`; tester output remains
-agent evidence. `quick` is followed by a system-owned `task-acceptance` gate that reads the active
-task's numbered acceptance list and checks tagged tests changed during the run. A missing or unknown
-marker returns to the tester; a task without criteria blocks. The current policy sends a failed `quick`
+agent evidence. `quick` is followed by a system-owned `task-acceptance` gate that reads the tester's
+changed `test/acceptance.json` manifest and checks one or more tagged tests per manifest requirement.
+It does not parse the task document or impose its authoring format. A missing, malformed,
+missing-marker, or unknown-marker manifest returns a normal gate failure to the tester; the gate
+cannot prove semantic coverage of free-form product prose. The current policy sends a failed `quick`
 result back to the tester for a bounded test-suite review before implementation rework. The prompt
 composer identifies initial versus gate-failure re-entry invocations and omits empty diagnostic
-sections. The tester prompt preserves baseline tests. No controller transition logic change was
-required beyond the configured acceptance gate execution.
+sections. The tester prompt preserves baseline tests. No controller transition logic was required
+beyond the configured acceptance gate execution.
 
 ## Verification
 
@@ -46,8 +49,9 @@ required beyond the configured acceptance gate execution.
   tester re-entry.
 - `CI=true pnpm build`: exit 0.
 - `CI=true pnpm typecheck`: exit 0.
-- Acceptance gate targeted checks: 40 tests in 3 files passed, including pass, missing-marker,
-  unknown-marker, invalid-task, and controller-transition cases.
+- Acceptance evidence targeted checks: 8 tests in 2 files passed, including arbitrary task-format,
+  manifest validation, one-or-more marker coverage, missing/unknown markers, and controller
+  re-entry cases.
 - `CI=true pnpm quality:quick`: exit 0, 803 tests in 31 files; architecture inspected 7 entries.
 - Candidate 15 review remains negative: no changes under `src/` or `scripts/`; its distribution
   suite did not exercise installed quality tools or the Gitleaks engine.
@@ -65,7 +69,9 @@ its 1,800,000 ms timeout before `quick`. Attempt 15 completed the configured sim
 tester re-entry and `quick` exit 0, but review found that the candidate does not satisfy Task 01
 acceptance for package-root tool resolution, installed Gitleaks preflight, or genuine use of all
 provisioned runtime tools. It is not integrated. Attempt 16 was stopped before tester changes while
-the task-authoring/verification separation was corrected. The next action is a fresh Task 01
-candidate from the new harness commit; do not resume the old candidate.
+the first task-authoring/verification separation was corrected. Attempt 17 was stopped during
+implementer visit 1 after the remaining coupling was identified; its candidate remains isolated.
+The next action is to commit and preflight this manifest-based harness correction, then create a
+fresh Task 01 candidate; do not resume attempts 16 or 17.
 Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

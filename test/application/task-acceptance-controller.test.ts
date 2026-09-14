@@ -33,7 +33,7 @@ describe("task acceptance controller gate", () => {
         },
       },
     });
-    await writeFile(scenario.taskPath, "## Acceptance\n\n1. The tagged behavior passes.\n", "utf8");
+    await writeFile(scenario.taskPath, "The task uses a product-specific document format.\n", "utf8");
     const configuration = JSON.parse(await readFile(scenario.configPath, "utf8")) as {
       profiles: Record<string, unknown>;
     };
@@ -68,14 +68,15 @@ describe("task acceptance controller gate", () => {
     expect(result.state.terminalState).toBe("passed");
     expect(result.events.filter((event) => event.type === "step-started").map((event) => event.stepId))
       .toEqual(["tester", "quick", "acceptance", "passed"]);
-    await expect(access(join(result.runDirectory, "task-acceptance.json"))).resolves.toBeUndefined();
-    await expect(readFile(join(result.runDirectory, "task-acceptance.json"), "utf8"))
+    await expect(access(join(result.runDirectory, "acceptance-coverage.json"))).resolves.toBeUndefined();
+    await expect(readFile(join(result.runDirectory, "acceptance-coverage.json"), "utf8"))
       .resolves.toContain('"status": "passed"');
   });
 
   it("returns an acceptance failure to the tester instead of passing by inference", async () => {
     const scenario = await createScenario({
       entryStepId: "tester",
+      providerMode: "agent-acceptance-missing",
       steps: {
         tester: { type: "agent", role: "tester", maxVisits: 2, onCompleted: "quick" },
         quick: { type: "gate", profile: "quick", maxVisits: 2, onPassed: "acceptance", onFailed: "passed" },
@@ -92,11 +93,11 @@ describe("task acceptance controller gate", () => {
         tester: {
           provider: "shared",
           promptPath: "prompts/tester.md",
-          allowedPathPrefixes: ["src/"],
+          allowedPathPrefixes: ["test/"],
         },
       },
     });
-    await writeFile(scenario.taskPath, "## Acceptance\n\n1. Missing tagged behavior.\n", "utf8");
+    await writeFile(scenario.taskPath, "A different product-specific document format.\n", "utf8");
     const configuration = JSON.parse(await readFile(scenario.configPath, "utf8")) as {
       profiles: Record<string, unknown>;
     };

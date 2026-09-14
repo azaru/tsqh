@@ -603,3 +603,17 @@ mutation, Sonar and independent final consumer acceptance were not run. No task 
 All paths and native evidence remain under tmp/codex-mvp008-01/attempt-05/, including
 outcome-evidence.json. Task-only clarifications require bounded exact binary equality and clean
 helper exports, preserving every acceptance requirement. No old candidate was manually changed.
+
+## 2026-09-14 — simple pack harness realignment
+
+Attempt 07 exposed a harness defect: the added `tester-validation` gate rejected a genuine Vitest
+JSON expected-red report because Vitest counted nested suites in `numFailedTestSuites` while the
+validator counted top-level test files. Commit `8a9bf75` fixed the validator and its targeted
+verification passed 5/5 tests, but the gate was not part of the intended simple TDD flow.
+
+The campaign task was reduced to an implementation brief, and the simple pack now hands the tester
+directly to the implementer. `tester-validation` and its validator script were removed; the tester
+role prompt owns the expected-red run and stops after minimal verification. Attempt 08 was
+cancelled before tester completion, and Attempts 09 and 10 were also cancelled before a complete
+transition; none produced implementation or acceptance evidence. The current harness realignment
+passed workflow loading, build, typecheck, and quick verification with 793 tests in 29 files.

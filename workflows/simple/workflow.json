@@ -8,14 +8,7 @@
         "type": "agent",
         "role": "tester",
         "maxVisits": 1,
-        "onCompleted": "tester-validation"
-      },
-      "tester-validation": {
-        "type": "gate",
-        "profile": "tester-validation",
-        "maxVisits": 1,
-        "onPassed": "implementer",
-        "onFailed": "blocked"
+        "onCompleted": "implementer"
       },
       "implementer": {
         "type": "agent",
@@ -33,10 +26,6 @@
       "passed": {
         "type": "terminal",
         "outcome": "passed"
-      },
-      "blocked": {
-        "type": "terminal",
-        "outcome": "blocked"
       }
     }
   },
@@ -82,11 +71,6 @@
       "executable": "pnpm",
       "args": ["quality:quick"],
       "timeoutMs": 900000
-    },
-    "tester-validation": {
-      "executable": "node",
-      "args": ["workflows/simple/validate-tester.mjs"],
-      "timeoutMs": 1800000
     }
   }
 }

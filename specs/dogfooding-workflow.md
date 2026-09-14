@@ -16,10 +16,13 @@ Before implementation:
    required order.
 2. Identify the existing quality policy and workflow pack.
 
-Create one task specification under `specs/tasks/` for each independently verifiable slice. Each
-task must state its objective, scope, non-goals, dependencies, allowed and protected paths,
-acceptance criteria, tests/gates, failure and repair cases, required evidence, cleanup, and
-integration condition. A task may not depend on uncommitted changes from another task.
+Create one task specification under `specs/tasks/` for each independently verifiable slice. A task
+file is an implementation brief, not an agent prompt or a runbook. It contains only the objective,
+product scope, product non-goals, dependencies, and externally observable acceptance criteria. Its
+acceptance criteria may name required artifacts or behavior, but must not prescribe how an agent,
+provider, controller, gate, worktree, temporary directory, evidence record, or integration step is
+managed. Those mechanics are defined here, in `AGENTS.md`, and by the selected workflow pack. A
+task may not depend on uncommitted changes from another task.
 
 Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
 task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
@@ -27,6 +30,15 @@ pack's example task and must not replace the campaign task.
 
 `STATUS.md` is not a second task registry. Consult or update it only when the repository rules
 require it; the campaign plan and evidence belong to the campaign/task artifacts.
+
+Before the first real provider dispatch, and after any harness or workflow-policy fix, perform a
+small harness preflight. Load and validate the selected workflow, verify its configured entry and
+terminal edges, and run the existing targeted controller/adapter checks that cover the changed
+harness surface. Inspect the resulting event stream and provider log before starting a campaign
+task. A provider that is still live with no `step-finished` event is a wait, not a reason to start
+another run. If a run blocks, classify the cause from its process result, changed paths, and native
+evidence; do not repair the candidate or repeat the same attempt without a concrete harness or task
+hypothesis. After a harness fix, commit it and create a new candidate worktree from that commit.
 
 ## 2. Use every implementation worktree as an external consumer
 
@@ -74,6 +86,12 @@ Run only one action at a time. The controller selects transitions; agents and na
 report outcomes. A bounded, sanitized handoff may reach the next configured agent as untrusted
 context, but it cannot select a transition, widen write authority, change the task, or alter the
 visit budget.
+
+The simple pack's tester step writes the task's behavioral tests and then hands directly to the
+implementer. A tester's expected-red test result is agent evidence, not a second workflow gate. The
+simple pack does not validate its own example configuration as part of a task run; configuration
+and workflow semantics are tested separately with synthetic policy where the active specification
+requires them.
 
 Agents may write only within their configured role and task paths. After every writing step,
 compare Git state with the pre-step snapshot and block tracked, untracked, deleted, or renamed

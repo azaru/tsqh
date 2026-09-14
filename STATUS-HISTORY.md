@@ -743,3 +743,16 @@ independently verifiable concerns: package publication, runtime dependency provi
 preflight, package-root resolution, npm/pnpm relocation, and public APIs. No Task 01 acceptance or
 integration evidence is claimed. The campaign is paused to split the task into smaller product
 slices before another candidate is launched.
+
+## 2026-09-14 — MVP-008 task plan rebuilt around atomic product slices
+
+The task plan was rebuilt after comparing the failed simple-pack attempts with the local OpenSpec
+version in the sibling `os-tsqh` project. The important distinction is that OpenSpec keeps a larger
+planning graph and selects one pending item for execution; the simple workflow receives one product
+brief, not a proposal, design, campaign plan, or implementation checklist. MVP-008 now has twelve
+ignored product-only briefs: public package boundary, consumer installation, runtime toolchain,
+package-root resolution, Gitleaks engine, consumer preflight, portable existing chain,
+architecture, lint, secrets, optional stages, and demo. The former final acceptance task was removed;
+complete-spec verification is campaign completion. `specs/task-authoring.md` now documents the
+planning/execution boundary and soft size/scope heuristics, and `specs/dogfooding-workflow.md` only
+requires an external consumer check when the task's product boundary needs one.

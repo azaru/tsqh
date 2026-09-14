@@ -19,7 +19,9 @@ Before implementation:
 Create one task specification under `specs/tasks/` for each independently verifiable slice. The
 task is the product contract supplied to the workflow; its authoring format and content rules are
 owned by the specification/task layer, not by this operational document. This workflow does not
-interpret or prescribe that format. A task may not depend on uncommitted changes from another task.
+interpret or prescribe that format. Use [`specs/task-authoring.md`](task-authoring.md) for the
+brief-size and scope heuristics, and split an oversized brief before dispatch. A task may not depend
+on uncommitted changes from another task.
 
 Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
 task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
@@ -37,11 +39,11 @@ another run. If a run blocks, classify the cause from its process result, change
 evidence; do not repair the candidate or repeat the same attempt without a concrete harness or task
 hypothesis. After a harness fix, commit it and create a new candidate worktree from that commit.
 
-## 2. Use every implementation worktree as an external consumer
+## 2. Use an external consumer when the task requires it
 
-An implementation worktree is both the package source and the candidate under test. Before
-integrating its task, exercise the candidate through a clean consumer fixture as an installed
-package:
+An implementation worktree is both the package source and the candidate under test. For tasks whose
+product scope includes package publication, installation, package-owned tool resolution, or the
+installed demo, exercise the candidate through a clean consumer fixture as an installed package:
 
 1. Start from a clean worktree and build/package the candidate through its public package boundary.
 2. Create an invocation-owned consumer fixture under
@@ -55,9 +57,10 @@ package:
 6. Remove only paths owned by that invocation after evidence is captured.
 
 Do not use `pnpm link`, workspace links, sibling checkouts, source imports, consumer scripts in
-place of package-owned commands, or an unbuilt source path to satisfy this boundary. If the current
-implementation cannot yet produce an installable artifact, make package-boundary bootstrap the
-first task and require the external-consumer check for every subsequent implementation task.
+place of package-owned commands, or an unbuilt source path to satisfy this boundary. If a task does
+not change or exercise the installed package boundary, do not add a package-install matrix merely
+because the worktree happens to be a package repository. The package-boundary tasks establish the
+installed baseline for later tasks that explicitly depend on it.
 
 Documentation-only tasks do not need a package installation unless they change a tool-consumed
 input. Markdown prompts, task files, workflow instructions, schemas, configuration, package
@@ -70,7 +73,7 @@ For each task, create a new worktree from the current integration state and run 
 ```text
 task specification
   -> clean task worktree
-  -> external-package consumer check
+  -> task-required consumer check
   -> configured TSQH workflow
   -> path/evidence validation
   -> required gates
@@ -132,9 +135,9 @@ Do not skip, weaken, relabel, or reorder required gates. Preserve checker-reject
 `CompileError` mutation evidence and require every runnable mutant to be `Killed`.
 
 Integrate only when the controller reaches its success terminal, the system-owned acceptance gate
-reports valid manifest coverage, the external-consumer check has passed for implementation tasks,
-every gate configured by that workflow passes, and all candidate changes are authorized. A command
-not represented in the workflow cannot invalidate a passed dogfooding task.
+reports valid manifest coverage, any consumer check required by the task's product boundary has
+passed, every gate configured by that workflow passes, and all candidate changes are authorized. A
+command not represented in the workflow cannot invalidate a passed dogfooding task.
 The next task starts from the resulting clean integration commit, never from an older integration
 state.
 

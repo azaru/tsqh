@@ -7,11 +7,11 @@ Updated: 2026-09-14
 Active specification: [TSQH-MVP-008](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md).
 MVP-001 through MVP-007 remain the completed baseline; MVP-008 is not integrated. The current
 `dogfooding` branch contains the harness realignment that restores the simple pack to
-`tester -> implementer -> quick -> acceptance -> passed`. Task 01 remains the current unintegrated
-package-distribution slice, but it is too broad for one simple-pack implementation visit and must be
-split before another candidate is launched. Task briefs stay product-only and opaque to acceptance
-verification. The tester owns a test acceptance manifest; the system validates that manifest and its
-one-or-more test markers without parsing the task's authoring format.
+`tester -> implementer -> quick -> acceptance -> passed`. MVP-008 is now decomposed into twelve
+product-only task slices under `specs/tasks/`; Task 01 is the next public-package-boundary slice.
+Task briefs stay opaque to acceptance verification. The tester owns a test acceptance manifest; the
+system validates that manifest and its one-or-more test markers without parsing the task's authoring
+format. The task-authoring guide now contains soft size/scope heuristics for the simple workflow.
 
 No candidate implementation or Task 01 integration is retained on the branch. Attempt 15 completed
 the simple dogfooding trace, but review found missing package-root tool resolution and Gitleaks
@@ -73,8 +73,8 @@ provisioned runtime tools. It is not integrated. Attempt 16 was stopped before t
 the first task-authoring/verification separation was corrected. Attempt 17 was stopped during
 implementer visit 1 after the remaining coupling was identified; its candidate remains isolated.
 Attempt 18 was stopped during implementer visit 1 for a scope reset after the tester produced a
-six-requirement distribution suite; no quick, acceptance, or integration evidence exists. Do not
-launch another candidate until Task 01 is divided into independently verifiable slices; do not
-resume attempts 16 through 18.
+six-requirement distribution suite; no quick, acceptance, or integration evidence exists. The task
+set has now been rewritten into smaller slices; preflight the new Task 01 before launching it. Do
+not resume attempts 16 through 18.
 Detailed historical notes remain in
 [STATUS-HISTORY.md](STATUS-HISTORY.md); old attempts 12 and 13 were cleaned before attempt 14.

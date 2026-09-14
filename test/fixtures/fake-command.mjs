@@ -26,6 +26,9 @@ if (mode.startsWith("agent-")) {
     await writeFile("workflow-policy.json", "{}\n", "utf8");
   } else if (mode === "agent-protected-config") {
     await writeFile("workflow.json", "{}\n", "utf8");
+  } else if (mode === "agent-acceptance") {
+    await mkdir("test", { recursive: true });
+    await writeFile("test/acceptance.test.ts", 'it("[AC-1] tagged behavior", () => {});\n', "utf8");
   } else if (
     mode !== "agent-workflow" ||
     !new Set(["specifier", "architect", "qa"]).has(step)

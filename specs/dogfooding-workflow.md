@@ -18,11 +18,13 @@ Before implementation:
 
 Create one task specification under `specs/tasks/` for each independently verifiable slice. A task
 file is an implementation brief, not an agent prompt or a runbook. It contains only the objective,
-product scope, product non-goals, dependencies, and externally observable acceptance criteria. Its
-acceptance criteria may name required artifacts or behavior, but must not prescribe how an agent,
-provider, controller, gate, worktree, temporary directory, evidence record, or integration step is
-managed. Those mechanics are defined here, in `AGENTS.md`, and by the selected workflow pack. A
-task may not depend on uncommitted changes from another task.
+product scope, product non-goals, dependencies, and externally observable acceptance criteria. Label
+each criterion with a unique-in-task `AC-*` identifier so the system can require tester coverage
+without interpreting its prose; use the form `- AC-1: observable behavior`. Its acceptance criteria
+may name required artifacts or behavior, but
+must not prescribe how an agent, provider, controller, gate, worktree, temporary directory, evidence
+record, or integration step is managed. Those mechanics are defined here, in `AGENTS.md`, and by the
+selected workflow pack. A task may not depend on uncommitted changes from another task.
 
 Execute every campaign task with the checked-in `workflows/simple/workflow.json` pack. Pass the
 task's own specification under `specs/tasks/` to `--task`; `workflows/simple/task.md` is only the
@@ -77,6 +79,7 @@ task specification
   -> configured TSQH workflow
   -> path/evidence validation
   -> required gates
+  -> task-acceptance coverage
        | pass -> integrate and use this commit as the next integration state
        | fail -> configured finite repair -> rerun from its restart point
        | blocker/exhaustion -> stop with an exact diagnosis
@@ -87,13 +90,16 @@ report outcomes. A bounded, sanitized handoff may reach the next configured agen
 context, but it cannot select a transition, widen write authority, change the task, or alter the
 visit budget.
 
-The simple pack's initial tester step writes the task's behavioral tests and then hands directly to
-the implementer. A failed `quick` gate returns to the tester for a bounded re-entry: the tester
-reviews the existing suite and the failure evidence, preserves valid tests, and changes only tests
-that are demonstrably outside the assignment, contradictory, or unsatisfiable. A tester's
-expected-red result is agent evidence, not a second workflow gate. The simple pack does not validate
-its own example configuration as part of a task run; configuration and workflow semantics are tested
-separately with synthetic policy where the active specification requires them.
+The simple pack's initial tester step writes the task's behavioral tests and then hands to the
+implementer. Each acceptance test title includes the exact `[AC-*]` marker from the task. The
+system-owned task-acceptance gate checks that every criterion has a tagged test after `quick` has
+executed the suite successfully; the tester's expected-red result remains agent evidence, not
+acceptance. A failed `quick` or
+task-acceptance gate returns to the tester for bounded re-entry: the tester reviews the existing
+suite and failure evidence, preserves valid tests, and changes only tests that are demonstrably
+outside the assignment, contradictory, or unsatisfiable. The task-acceptance gate does not validate
+the simple pack's example configuration; configuration and workflow semantics are tested separately
+with synthetic policy where the active specification requires them.
 
 Agents may write only within their configured role and task paths. After every writing step,
 compare Git state with the pre-step snapshot and block tracked, untracked, deleted, or renamed
@@ -126,11 +132,12 @@ Choose verification by behavioral surface, not file extension:
 Do not skip, weaken, relabel, or reorder required gates. Preserve checker-rejected TypeScript
 `CompileError` mutation evidence and require every runnable mutant to be `Killed`.
 
-Integrate only when the controller reaches its success terminal, acceptance evidence exists, the
-external-consumer check has passed for implementation tasks, every gate configured by that
-workflow passes, and all candidate changes are authorized. A command not represented in the
-workflow cannot invalidate a passed dogfooding task. The next task starts from the resulting clean
-integration commit, never from an older integration state.
+Integrate only when the controller reaches its success terminal, the system-owned task-acceptance
+gate reports coverage for every `AC-*` criterion, the external-consumer check has passed for
+implementation tasks, every gate configured by that workflow passes, and all candidate changes are
+authorized. A command not represented in the workflow cannot invalidate a passed dogfooding task.
+The next task starts from the resulting clean integration commit, never from an older integration
+state.
 
 ## 5. Finish the campaign
 

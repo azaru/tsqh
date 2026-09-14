@@ -37,7 +37,11 @@ describe("built-in project configuration expansion", () => {
     expect(Object.keys(configuration.roles)).toEqual(["implementer"]);
     expect(Object.isFrozen(configuration)).toBe(true);
     expect(Object.isFrozen(configuration.workflow.steps)).toBe(true);
-    expect(Object.isFrozen(configuration.profiles.sonar?.environmentKeys)).toBe(true);
+    const sonar = configuration.profiles.sonar;
+    expect(sonar !== undefined && "environmentKeys" in sonar).toBe(true);
+    if (sonar !== undefined && "environmentKeys" in sonar) {
+      expect(Object.isFrozen(sonar.environmentKeys)).toBe(true);
+    }
   });
 
   it("treats an empty partial object as the unchanged default", () => {

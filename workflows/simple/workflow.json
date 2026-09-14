@@ -20,6 +20,13 @@
         "type": "gate",
         "profile": "quick",
         "maxVisits": 2,
+        "onPassed": "acceptance",
+        "onFailed": "tester"
+      },
+      "acceptance": {
+        "type": "gate",
+        "profile": "task-acceptance",
+        "maxVisits": 2,
         "onPassed": "passed",
         "onFailed": "tester"
       },
@@ -71,6 +78,9 @@
       "executable": "pnpm",
       "args": ["quality:quick"],
       "timeoutMs": 900000
+    },
+    "task-acceptance": {
+      "type": "task-acceptance"
     }
   }
 }

@@ -117,6 +117,9 @@ function validateProviders(configuration: Configuration, issues: string[]): void
 function validateProfiles(configuration: Configuration, issues: string[]): void {
   for (const [profileId, profile] of Object.entries(configuration.profiles)) {
     validateId(profileId, `profiles key '${profileId}'`, issues);
+    if ("type" in profile) {
+      continue;
+    }
     validateCommand(profile.executable, profile.args, profile.timeoutMs, `profile '${profileId}'`, issues);
     for (const key of profile.environmentKeys ?? []) {
       if (!/^[A-Z][A-Z0-9_]{0,63}$/.test(key)) {

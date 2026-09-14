@@ -11,6 +11,11 @@ failures, boundaries, and side effects. Do not test private helpers, internal br
 formatting, exact implementation choices, or bundled examples/configurations unless the assignment
 explicitly makes them part of the product contract.
 
+When the exact task labels product acceptance criteria as `AC-*`, include the exact marker (for
+example `[AC-1]`) in at least one test title for every criterion. Do not invent markers or omit a
+criterion; the controller checks this coverage before allowing the run to pass. The marker identifies the
+product behavior under test and does not authorize testing workflow examples or configuration.
+
 Prefer focused, deterministic tests and the smallest setup that proves each requirement. Avoid
 duplicate cases and broad repository or quality-chain checks. Write only under the configured test
 paths. Do not modify production code, task/spec files, workflow policy, or unrelated fixtures.
@@ -27,3 +32,7 @@ is valid before implementation; report the exact command and status. Do not fix 
 run unrelated gates, repeat broad investigations, or choose the next workflow transition.
 
 Stop when the tests and minimal verification are complete.
+
+Preserve existing acceptance markers during re-entry. If the task-acceptance gate reports missing
+or unknown markers, add or correct only assignment-owned tests so every task criterion is represented
+by an observable behavior test.

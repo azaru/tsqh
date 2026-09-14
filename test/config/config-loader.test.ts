@@ -103,6 +103,27 @@ describe("strict configuration loading", () => {
     expect(loaded.prompts.worker).toHaveLength(262_144);
   });
 
+  it("accepts the built-in task-acceptance profile", async () => {
+    const value = validConfiguration();
+    (value.profiles as Record<string, unknown>).acceptance = { type: "task-acceptance" };
+
+    const loaded = await loadConfiguration(await writeConfiguration(value));
+
+    expect(loaded.configuration.profiles.acceptance).toEqual({ type: "task-acceptance" });
+  });
+
+  it("rejects unknown task-acceptance profile properties", async () => {
+    const value = validConfiguration();
+    (value.profiles as Record<string, unknown>).acceptance = {
+      type: "task-acceptance",
+      command: "vitest",
+    };
+
+    await expect(loadConfiguration(await writeConfiguration(value))).rejects.toThrow(
+      /additional properties/u,
+    );
+  });
+
   it("rejects oversized configuration and prompt files", async () => {
     const oversizedConfiguration = await writeRawConfiguration(Buffer.alloc(1_048_577, 32));
     await expect(loadConfiguration(oversizedConfiguration)).rejects.toThrow(

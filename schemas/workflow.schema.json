@@ -158,7 +158,7 @@
       "propertyNames": { "$ref": "#/$defs/id" },
       "additionalProperties": { "$ref": "#/$defs/provider" }
     },
-    "profile": {
+    "nativeProfile": {
       "type": "object",
       "additionalProperties": false,
       "required": ["executable", "args"],
@@ -177,6 +177,20 @@
         },
         "timeoutMs": { "$ref": "#/$defs/timeout" }
       }
+    },
+    "taskAcceptanceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "task-acceptance" }
+      }
+    },
+    "profile": {
+      "oneOf": [
+        { "$ref": "#/$defs/nativeProfile" },
+        { "$ref": "#/$defs/taskAcceptanceProfile" }
+      ]
     },
     "profiles": {
       "type": "object",

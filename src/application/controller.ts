@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { composeAssignmentPrompt } from "./prompt.js";
+import { runTaskAcceptanceGate } from "./task-acceptance.js";
 import type { CleanWorkspace, GitSnapshot, RuntimeServices, TraceWriter } from "./ports.js";
 import { renderAgentArguments, resolveAgentSelection } from "../domain/agent-selection.js";
 import { planNextAction } from "../domain/planner.js";
@@ -196,17 +197,48 @@ async function executeGate(
     await appendGateResult(context, action, null, [], before.blocker);
     return;
   }
-  const process = await context.services.commandRunner.run({
-    executable: profile.executable,
-    args: profile.args,
-    cwd: context.workspace.path,
-    stdin: null,
-    timeoutMs: profile.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS,
-    environmentKeys: profile.environmentKeys ?? [],
-  });
+  const execution = isTaskAcceptanceProfile(profile)
+    ? await runTaskAcceptanceGate({
+        stepId: action.stepId,
+        taskPath: context.input.taskPath,
+        workspacePath: context.workspace.path,
+        runDirectory: context.trace.runDirectory,
+        testPaths: acceptanceTestPaths(context.events),
+      })
+    : {
+        process: await context.services.commandRunner.run({
+          executable: profile.executable,
+          args: profile.args,
+          cwd: context.workspace.path,
+          stdin: null,
+          timeoutMs: profile.timeoutMs ?? DEFAULT_GATE_TIMEOUT_MS,
+          environmentKeys: profile.environmentKeys ?? [],
+        }),
+        blocker: null,
+      };
   const inspection = await inspectAfterGate(context, action.stepId, before.snapshot);
-  const blocker = inspection.blocker ?? gateBlocker(action.stepId, process);
-  await appendGateResult(context, action, process, inspection.changedPaths, blocker);
+  const blocker = inspection.blocker ?? execution.blocker ??
+    (execution.process === null ? null : gateBlocker(action.stepId, execution.process));
+  await appendGateResult(context, action, execution.process, inspection.changedPaths, blocker);
+}
+
+function isTaskAcceptanceProfile(profile: QualityProfile): profile is Extract<QualityProfile, { readonly type: "task-acceptance" }> {
+  return "type" in profile && profile.type === "task-acceptance";
+}
+
+function acceptanceTestPaths(events: readonly RunEvent[]): readonly string[] {
+  const paths = new Set<string>();
+  for (const event of events) {
+    if (event.type !== "step-finished" || event.stepType !== "agent") {
+      continue;
+    }
+    for (const path of event.changedPaths) {
+      if (path.startsWith("test/") && /\.(?:cjs|cts|js|mjs|mts|ts|tsx)$/u.test(path)) {
+        paths.add(path);
+      }
+    }
+  }
+  return [...paths].sort();
 }
 
 async function inspectBeforeGate(

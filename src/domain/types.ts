@@ -49,12 +49,18 @@ export interface CommandProvider {
   readonly timeoutMs?: number;
 }
 
-export interface QualityProfile {
+export interface NativeQualityProfile {
   readonly executable: string;
   readonly args: readonly string[];
   readonly environmentKeys?: readonly string[];
   readonly timeoutMs?: number;
 }
+
+export interface TaskAcceptanceProfile {
+  readonly type: "task-acceptance";
+}
+
+export type QualityProfile = NativeQualityProfile | TaskAcceptanceProfile;
 
 export interface Configuration {
   readonly schemaVersion: 1;

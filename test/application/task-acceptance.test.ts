@@ -34,13 +34,16 @@ describe("task acceptance criteria", () => {
     expect(inspectAcceptanceCoverage(
       ["AC-1", "AC-2"],
       [
-        { path: "test/first.test.ts", content: 'it("[AC-1] first", () => {});' },
+        {
+          path: "test/first.test.ts",
+          content: 'it("[AC-1] first", () => {});\nit("[AC-1] second", () => {});',
+        },
         { path: "test/unknown.test.ts", content: 'it("[AC-9] unknown", () => {});' },
       ],
     )).toEqual({
       criteria: [
-        { id: "AC-1", testFiles: ["test/first.test.ts"] },
-        { id: "AC-2", testFiles: [] },
+        { id: "AC-1", testCount: 2, testFiles: ["test/first.test.ts"] },
+        { id: "AC-2", testCount: 0, testFiles: [] },
       ],
       missingIds: ["AC-2"],
       unknownIds: ["AC-9"],

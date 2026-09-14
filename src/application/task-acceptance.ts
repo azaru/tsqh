@@ -23,6 +23,7 @@ export interface AcceptanceTestSource {
 
 export interface AcceptanceCriterionCoverage {
   readonly id: string;
+  readonly testCount: number;
   readonly testFiles: readonly string[];
 }
 
@@ -129,6 +130,7 @@ export function inspectAcceptanceCoverage(
 ): AcceptanceCoverage {
   const criterionIds = new Set(criteria);
   const filesById = new Map<string, Set<string>>();
+  const testCounts = new Map<string, number>();
   const unknownIds = new Set<string>();
 
   for (const source of sources) {
@@ -144,16 +146,18 @@ export function inspectAcceptanceCoverage(
       const files = filesById.get(id) ?? new Set<string>();
       files.add(source.path);
       filesById.set(id, files);
+      testCounts.set(id, (testCounts.get(id) ?? 0) + 1);
     }
   }
 
   const coverage = criteria.map((id) => ({
     id,
+    testCount: testCounts.get(id) ?? 0,
     testFiles: [...(filesById.get(id) ?? [])].sort(compareStrings),
   }));
   return {
     criteria: coverage,
-    missingIds: coverage.filter(({ testFiles }) => testFiles.length === 0).map(({ id }) => id),
+    missingIds: coverage.filter(({ testCount }) => testCount === 0).map(({ id }) => id),
     unknownIds: [...unknownIds].sort(compareStrings),
   };
 }

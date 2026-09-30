@@ -199,7 +199,7 @@ The approved target for this increment is the local SonarQube service at
 `infra/sonar/compose.yaml` owns the reproducible local SonarQube/PostgreSQL service definition. It
 may reuse the already-running `tsqh-sonar` Compose project. Credentials remain environment-only
 and must never be copied into Git. Provisioning must be idempotent and scoped to the identities
-above; it must not alter `azaru_tsqh` or any profile or gate assigned to another project.
+above; it must not alter any profile or gate assigned to another project.
 
 The repository must contain non-secret Sonar configuration for `src/` as production, `test/` as
 tests, UTF-8 source, and the current `coverage/lcov.info`. Generated `dist/`, coverage, report,

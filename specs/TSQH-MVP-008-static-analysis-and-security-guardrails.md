@@ -125,7 +125,7 @@ failure statuses and evidence-validation failures remain failures.
 Remove the package's private-only marker and publish the compiled CLI, required schemas, prompts,
 workflow assets, and the demo fixture through an explicit `files`/exports manifest. `npm pack` is
 the local distribution boundary; a clean fixture must install the tarball with both npm and pnpm
-and execute the `tsqh` binary without the source checkout, repository scripts, or a sibling path.
+and execute the `tsqh` binary without the source checkout, repository scripts, or a path outside the fixture.
 The package must be usable as a host project's `devDependency`; its runtime dependency graph may be
 larger than the current repository graph because it owns the quality toolchain.
 

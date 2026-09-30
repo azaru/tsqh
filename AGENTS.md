@@ -3,7 +3,7 @@
 ## Read order
 
 Before coding, read the current project overview in `README.md`, `STATUS.md`, the active specification
-named by `STATUS.md`, and the local design provenance referenced by `README.md`. Do not read
+named by `STATUS.md`, and the design provenance section of `README.md`. Do not read
 `STATUS-HISTORY.md` or superseded specifications unless the active assignment explicitly requires
 historical evidence.
 
@@ -12,7 +12,7 @@ historical evidence.
 - Work only on the local active specification. Do not inherit provisional APIs from another
   checkout.
 - Treat external design material recorded in local provenance as read-only evidence. This
-  repository must remain self-contained and must not require a sibling checkout.
+  repository must remain self-contained and must not require another checkout.
 - Keep every repository file, identifier, prompt, comment, test, and generated artifact in English.
 - Use pnpm exclusively and keep one `pnpm-lock.yaml`.
 - Target Node.js 22 or newer, ESM, and strict TypeScript.

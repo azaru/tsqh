@@ -15,7 +15,7 @@ explicitly selected local profile and activate additional configured specialists
 failure facts. The controller retains transition authority throughout the run.
 
 This is a planned successor to MVP-009, after MVP-008. Creating this document does not activate or
-implement any of those increments. Local specifications remain authoritative; sibling designs do
+implement any of those increments. Local specifications remain authoritative; external designs do
 not import concurrency, managed worktrees, recovery, merge, or provisional APIs.
 
 This increment explicitly extends MVP-009's fixed specialist workflow and MVP-008's single
@@ -375,7 +375,7 @@ necessary dependency, and prefer existing modules and Node built-ins over framew
 Temporary data and tool scratch space must use exclusively owned paths under
 `<project-root>/tmp/codex-<task>/` and be removed after success, failure, cancellation or setup error.
 Do not remove pre-existing temporary files or quality reports. Preserve configured durable run
-evidence. Keep all repository artifacts English and never modify the sibling repository.
+evidence. Keep all repository artifacts English.
 
 Completion requires all acceptance scenarios, real native-wrapper fixtures, legacy compatibility,
 profile policy equivalence, and a successful real full chain with current evidence. Existing mutation
@@ -388,4 +388,3 @@ benchmark is claimed unless it actually runs and is recorded with its exact scop
 - [MVP-008 native gates and owner intervention](TSQH-MVP-008-static-analysis-and-security-guardrails.md)
 - [MVP-007 failure context and repair ownership](TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
 - [MVP-006 provider-aware selection](TSQH-MVP-006-provider-aware-agent-selection.md)
-- [Swarm Forge provenance](../workflows/swarm-forge/PROVENANCE.md)

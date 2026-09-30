@@ -1,16 +1,25 @@
+# Dependencies and build output
 node_modules/
 .pnpm-store/
 dist/
+*.tsbuildinfo
+
+# Quality reports and tool caches
 coverage/
 reports/
 .scannerwork/
 .stryker-tmp/
-tmp/codex-quality-mutation/
-.tsqh/*
-*.tsbuildinfo
+
+# Local secrets (only .env.example is versioned)
 .env
 .env.*
 !.env.example
+
+# Local runtime and dogfooding state
+.tsqh/*
 .codex
 specs/tasks/
 tmp/codex-*/
+
+# OS
+.DS_Store

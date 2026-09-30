@@ -4,33 +4,37 @@ TSQH MVP is a deliberately small, configurable, sequential multi-step and multi-
 It proves one claim: project configuration, not an agent, selects every next step, required quality
 gate, repair transition, and terminal result.
 
-This repository is a clean implementation experiment. It does not copy implementation or
-provisional APIs from external projects.
+This is a personal side project for learning and experimenting with AI-assisted development, and it
+is largely built by dogfooding itself: coding agents run under the controller and are checked by its
+native quality gates. It is a work in progress, not a released product.
+
+## Project status
+
+| Area | State |
+| --- | --- |
+| Controller, planner, trace, `run` / `status` CLI | Implemented (MVP-001 to MVP-007) |
+| Quality chain: `quick -> coverage -> crap -> knip -> mutation -> sonar` | Implemented as configurable gates |
+| `tsqh.config.ts` discovery and workflow packs (`simple`, `tdd-pipeline`) | Implemented |
+| Self-contained package distribution ([MVP-008](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md)) | In progress: public package boundary done, remaining task slices pending |
+| Secret scanning, typed lint, architecture gate, `tsqh demo` (MVP-008) | Planned, not implemented |
+| Approved work orders and OpenSpec adapter ([MVP-009](specs/TSQH-MVP-009-approved-work-orders-and-openspec-adapter.md)) | Planned, not implemented |
+| Execution profiles and deterministic escalation ([MVP-010](specs/TSQH-MVP-010-execution-profiles-and-deterministic-escalation.md)) | Planned, not implemented |
+| npm release | Not published; install from a local checkout |
+
+Everything described in the sections below is implemented unless it is explicitly marked as planned.
+The exact current position and next action live in [`STATUS.md`](STATUS.md); the specifications in
+[`specs/`](specs/) are authoritative for behavior.
 
 ## Read first
-
-Active planned increment: [`TSQH-MVP-008`](specs/TSQH-MVP-008-static-analysis-and-security-guardrails.md)
-defines optional secret scanning, typed lint with lightweight security rules, and a dependency-graph
-architecture check inside `quick`. It also plans a self-contained package distribution and a
-no-credentials `tsqh demo` command. Dependency-vulnerability scanning remains out of scope.
-Read it after `STATUS.md` before implementing new work. The runtime described below still reflects
-the completed MVP-001 through MVP-007 implementation.
-
-Next planned increment: [`TSQH-MVP-009`](specs/TSQH-MVP-009-approved-work-orders-and-openspec-adapter.md)
-defines approved immutable work orders, a preparation-only OpenSpec adapter, and candidate-bound
-requirement evidence. It depends on MVP-008 and does not change the active specification or runtime.
-
-Following MVP-009, [`TSQH-MVP-010`](specs/TSQH-MVP-010-execution-profiles-and-deterministic-escalation.md)
-plans explicit compact/reviewed/specialized profiles, classified native-failure routing, and fresh
-final QA with identical required quality policy. It is not implemented.
 
 1. [`AGENTS.md`](AGENTS.md) — contribution and implementation contract.
 2. [`STATUS.md`](STATUS.md) — current state and exact next action.
 3. The active specification named by `STATUS.md`.
-4. The local design provenance referenced by this README.
+4. [Design provenance](#design-provenance) below.
 
-`STATUS-HISTORY.md` and superseded specifications are archived reference material. Do not read them
-for an ordinary task unless the active assignment explicitly requires historical evidence.
+[`STATUS-HISTORY.md`](STATUS-HISTORY.md) is a chronological development log with evidence from
+completed increments and failed dogfooding attempts. Superseded specifications and that log are
+archived reference material; read them only when historical evidence is needed.
 
 ## Product slice
 
@@ -91,12 +95,13 @@ Luna/max defaults for its agent dispatches.
 `TSQH-MVP-007` is complete. Failed native-gate output is reduced deterministically to a bounded
 `GateFailureContext`, while passed-gate output is not sent to the next model prompt. The simple
 policy reuses its implementation owner for rework; the TDD Pipeline policy routes quick failures to
-the phase owner and full failures to hardener. It does not adapt the upstream Troubleshooter into a
+the phase owner and full failures to hardener. It does not adapt the upstream Swarm Forge Troubleshooter into a
 universal product repairer.
 
-`TSQH-MVP-007` is the latest completed specification. `TSQH-MVP-008` is the active planned
-specification; it is not implemented. The current position is summarized in [`STATUS.md`](STATUS.md);
-completed increments and historical evidence are archived in [`STATUS-HISTORY.md`](STATUS-HISTORY.md).
+`TSQH-MVP-007` is the latest completed specification. `TSQH-MVP-008` is in progress and later
+increments are planned (see [Project status](#project-status)). The current position is summarized in
+[`STATUS.md`](STATUS.md); completed increments and historical evidence are archived in
+[`STATUS-HISTORY.md`](STATUS-HISTORY.md).
 
 The completed controller includes the smallest useful specialist-pipeline collaboration primitive:
 bounded output from one successfully completed agent becomes untrusted context for the next
@@ -120,8 +125,13 @@ daemon, or per-role worktree.
 
 ## Design provenance
 
-The local specifications are authoritative for this repository. The implementation keeps its own
-workflow behavior and does not depend on a sibling checkout or import another project's runtime.
+The local specifications are authoritative for this repository, which is self-contained and does not
+depend on any other checkout. The `tdd-pipeline` workflow pack and its role prompts are original,
+paraphrased adaptations of ideas from the Swarm Forge multi-agent workflow branches; no upstream
+code, runtime, or prompt text is included, and TSQH does not import another project's runtime.
+Rationale and the upstream design comparison are recorded in the local specifications, mainly
+[MVP-002](specs/TSQH-MVP-002-quality-hardening-and-role-catalog.md) and
+[MVP-007](specs/TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md).
 
 ## Requirements and setup
 
@@ -133,6 +143,9 @@ pnpm install --frozen-lockfile
 ```
 
 ### Installing TSQH in a consumer project
+
+> The package is not published to npm yet. The commands below describe the intended flow; until
+> release, build this checkout (`pnpm build`) and run `pnpm tsqh` from it.
 
 Install TSQH as a development dependency with either package manager:
 
@@ -155,7 +168,7 @@ install TSQH as a `devDependency` and run its quality stages without installing 
 The repository itself continues to use the single pnpm lockfile, and the declared Node.js floor is
 22.12.0.
 
-Once MVP-008 is implemented, the fastest package trial will be:
+Planned for MVP-008 (not implemented): the fastest package trial will be:
 
 ```sh
 pnpm dlx tsqh-mvp demo
@@ -184,7 +197,7 @@ provisioned with those identities. Workflows that configure the Sonar gate provi
 invocation.
 
 Do not commit an environment file or token. A fresh server must reproduce the exact identities in
-the completed specification and must not modify the sibling `azaru_tsqh` project.
+the completed specification.
 
 ## Public repository checklist
 

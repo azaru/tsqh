@@ -12,11 +12,12 @@ mechanics. `AGENTS.md` and other repository instructions take precedence.
 
 Before implementation:
 
-1. Read the repository instructions, active specification, and local design provenance in the
-   required order.
+1. Read the repository instructions, active specification, and the README design provenance
+   section in the required order.
 2. Identify the existing quality policy and workflow pack.
 
-Create one task specification under `specs/tasks/` for each independently verifiable slice. The
+Create one task specification under `specs/tasks/` for each independently verifiable slice. This directory is a local working area and is
+not versioned, so task briefs do not appear in the repository history. The
 task is the product contract supplied to the workflow; its authoring format and content rules are
 owned by the specification/task layer, not by this operational document. This workflow does not
 interpret or prescribe that format. Use [`specs/task-authoring.md`](task-authoring.md) for the
@@ -56,7 +57,7 @@ installed demo, exercise the candidate through a clean consumer fixture as an in
 5. Record the package version, artifact identity, install command, consumer trace, and result.
 6. Remove only paths owned by that invocation after evidence is captured.
 
-Do not use `pnpm link`, workspace links, sibling checkouts, source imports, consumer scripts in
+Do not use `pnpm link`, workspace links, other checkouts, source imports, consumer scripts in
 place of package-owned commands, or an unbuilt source path to satisfy this boundary. If a task does
 not change or exercise the installed package boundary, do not add a package-install matrix merely
 because the worktree happens to be a package repository. The package-boundary tasks establish the

@@ -16,7 +16,7 @@ transitions, bounded repair, native verification, and the execution result.
 
 This is the planned increment after MVP-008. It does not activate itself, implement MVP-008, or
 resolve existing release blockers. MVP-001 through MVP-008 remain normative except for the explicit
-changes below. The local specification is authoritative; sibling design documents provide rationale
+changes below. The local specification is authoritative; external design material provides rationale
 without importing their runtime, milestone, APIs, or evidence DAG.
 
 The first adapter uses a project-local OpenSpec schema. The runtime contract is independent of
@@ -478,7 +478,7 @@ the single lockfile. OpenSpec is a preparation tool, never an execution runtime 
 All implementation/fixture artifacts remain English. Temporary paths and redirected tool scratch
 space belong under `<project-root>/tmp/codex-<task>/` with exclusive ownership and cleanup on all
 exit paths. Durable run evidence is preserved in the configured run store. Never delete existing
-temporary paths, start unrelated services, expose credentials, or modify the sibling repository.
+temporary paths, start unrelated services, expose credentials,.
 
 Completion requires every acceptance scenario, the real preparation/evidence fixtures, compatible
 legacy behavior, and a zero-exit real full delivery chain. Unresolved mutation findings, rejected
@@ -494,7 +494,6 @@ contract. Implementation must record the exact OpenSpec release and prove the us
 - [OpenSpec canonical specs, deltas and archive](https://github.com/Fission-AI/OpenSpec/blob/main/docs/concepts.md)
 - [Local MVP-008 prerequisite](TSQH-MVP-008-static-analysis-and-security-guardrails.md)
 - [Local MVP-007 repair ownership](TSQH-MVP-007-compact-gate-failure-context-and-owned-rework.md)
-- [Swarm Forge adaptation provenance](../workflows/swarm-forge/PROVENANCE.md)
 
 The custom DAG organizes authoring dependencies; artifact existence is not semantic approval.
 OpenSpec templates supply guidance, while TSQH's independent validation and explicit local approval

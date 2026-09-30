@@ -93,8 +93,9 @@ the TSQH controller and had to get through its own quality gates.
 
 ## Quick start
 
-Requires Node.js 22.12.0 or newer, pnpm, and Git. The bundled workflow packs also need the
-[Codex CLI](https://github.com/openai/codex) as their agent provider.
+Requires Node.js 22.12.0 or newer, pnpm, and Git. The built-in workflow and the bundled packs use
+the [Codex CLI](https://github.com/openai/codex) as their agent provider. Any other agent CLI that
+reads a prompt from stdin can be configured under `providers`.
 
 ```sh
 pnpm install --frozen-lockfile

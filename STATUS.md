@@ -11,8 +11,8 @@ MVP-008 is decomposed into twelve product-only task briefs. The briefs are local
 `specs/tasks/` and are intentionally not versioned (see [dogfooding workflow](specs/dogfooding-workflow.md)
 and [task authoring](specs/task-authoring.md)); a public checkout will not contain them.
 
-- Task 01 (public package boundary) is integrated: `c9f755a`, with a deterministic-build fix at
-  `1da88fc`.
+- Task 01 (public package boundary) is integrated: `6520b9d`, with a deterministic-build fix at
+  `8a655d4`.
 - Task 02 (package installation) is next, from a fresh candidate on the current integration state.
 - The `simple` pack runs `tester -> implementer -> quick -> acceptance -> passed`. The system-owned
   acceptance gate checks the tester's `test/acceptance.json` manifest without parsing the task

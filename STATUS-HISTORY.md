@@ -590,7 +590,7 @@ verification, not candidate acceptance. A fresh affected worktree is required.
 
 ## 2026-09-14 — Task 01 attempt 05 exhausted
 
-Base 4a8e7e7. TSQH run 343e69a6-b232-4ff8-85ae-6763a2c2bb57 exited 1 with visit-limit-exceeded.
+Base f91f732. TSQH run 343e69a6-b232-4ff8-85ae-6763a2c2bb57 exited 1 with visit-limit-exceeded.
 Trace: tester completed -> implementer 1 -> quick failed -> implementer 2 -> quick failed ->
 implementer 3 -> quick failed -> blocked. Every agent exited 0; every quick exited 1 with
 864/865 tests completed and one worker heap OOM. Gates changed no candidate paths; repairs 2/3
@@ -608,7 +608,7 @@ helper exports, preserving every acceptance requirement. No old candidate was ma
 
 Attempt 07 exposed a harness defect: the added `tester-validation` gate rejected a genuine Vitest
 JSON expected-red report because Vitest counted nested suites in `numFailedTestSuites` while the
-validator counted top-level test files. Commit `f32a4fd` fixed the validator and its targeted
+validator counted top-level test files. Commit `195f7af` fixed the validator and its targeted
 verification passed 5/5 tests, but the gate was not part of the intended simple TDD flow.
 
 The campaign task was reduced to an implementation brief, and the simple pack now hands the tester
@@ -630,11 +630,11 @@ The controller dispatched implementer visit 2; the run was then explicitly stopp
 repair or integration. No candidate files were manually edited and no Task 01 acceptance is
 claimed. The next simple-pack policy returns quick failures to the tester for bounded generic
 test-suite review. Prompt composition now exposes initial versus gate-failure re-entry mode; this
-policy is committed in `9a99d03` plus the subsequent workflow/docs change.
+policy is committed in `fc28aa1` plus the subsequent workflow/docs change.
 
 ## 2026-09-14 — Task 01 attempt 12 stopped during tester baseline mutation
 
-Attempt 12 run `27582bb0-c72f-4d5f-b655-a328a6d2e835` was created from `70c83a4` with the generic
+Attempt 12 run `27582bb0-c72f-4d5f-b655-a328a6d2e835` was created from `5b98fef` with the generic
 tester re-entry policy. The tester remained in visit 1 for roughly twelve minutes and changed the
 pre-existing `test/quality/cli.test.ts` and `test/quality/gates.test.ts`, while creating
 `test/package/`. Those paths were technically inside the broad `test/` allowance, but changing
@@ -646,7 +646,7 @@ required read order and empty diagnostic sections from generated prompts.
 
 ## 2026-09-14 — Task 01 attempt 13 stopped during tester startup exploration
 
-Attempt 13 run `0a88e91c-dd23-4956-8ee6-e4c467d649bc` was created from `74ed56e`, which included
+Attempt 13 run `0a88e91c-dd23-4956-8ee6-e4c467d649bc` was created from `43bb169`, which included
 the reduced read order, compact initial prompt, and baseline-test protection. The tester remained
 in visit 1 for roughly twelve minutes while inspecting the active candidate and relevant package
 files. Unlike Attempt 12, no candidate changes were observed at the stop and no implementer step
@@ -655,7 +655,7 @@ instructions are reduced further. No Task 01 acceptance or integration is claime
 
 ## 2026-09-14 — Task 01 attempt 14 timed out in implementer
 
-Attempt 14 run `a845ca41-eab1-4bf6-9d17-72adfcc42eef` was created from `ef1d598`. The tester
+Attempt 14 run `a845ca41-eab1-4bf6-9d17-72adfcc42eef` was created from `08d99e1`. The tester
 completed visit 1 after creating only `test/package/distribution.test.ts` (491 lines, four
 expected-red tests); no baseline tests were modified. The implementer then changed package and
 quality runtime files but exhausted the configured 1,800,000 ms provider timeout before `quick`.
@@ -734,7 +734,7 @@ isolated and is not accepted.
 
 ## 2026-09-14 — Task 01 attempt 18 stopped for scope reset
 
-Attempt 18 was created from `603ec7f` after the acceptance-evidence decoupling. Its tester finished
+Attempt 18 was created from `d6438eb` after the acceptance-evidence decoupling. Its tester finished
 visit 1 with only `test/acceptance.json` and `test/package/distribution.test.ts`, covering six local
 requirements without modifying baseline tests. The implementer then began the package/toolchain
 changes and reached eight tracked candidate files plus a 1,138-line lockfile expansion before the
@@ -759,7 +759,7 @@ requires an external consumer check when the task's product boundary needs one.
 
 ## 2026-09-14 — Task 01 reduced candidate 19 completed the configured workflow
 
-Run `9af39f18-d000-4b06-b082-a70e6a41db4e` was created from `9bef504` with the reduced public
+Run `9af39f18-d000-4b06-b082-a70e6a41db4e` was created from `44861b8` with the reduced public
 package-boundary brief. Its trace completed `tester 1 -> implementer 1 -> quick 1 -> acceptance 1
 -> passed`. The tester changed only `test/acceptance.json` and `test/package-boundary.test.ts`
 (four local requirements, 237 lines); the implementer changed only `package.json`, `README.md`, and
@@ -781,11 +781,11 @@ recorded evidence, but remains unintegrated pending explicit integration.
 
 ## 2026-09-14 — Task 01 integrated
 
-The reviewed Task 01 package-boundary changes were cherry-picked as `6520b9d`, including the public
+The reviewed Task 01 package-boundary changes were cherry-picked as `6bd46e4`, including the public
 package metadata, explicit files/exports boundary, installation documentation, and the four-test
 package-boundary suite plus acceptance manifest. Post-integration `quality:quick` initially exposed
 stale ignored `dist/quality/secrets.*` artifacts and a test filename pattern that classified a
-legitimate `secrets.js` module as credential material. The integration correction `8a655d4` makes
+legitimate `secrets.js` module as credential material. The integration correction `5cae0d9` makes
 the build clean `dist/` before compilation and narrows that test pattern. The final integrated
 quick verification exited 0 with 807 tests in 32 files and 7 architecture entries. Task 01 is
 complete; no Task 02 implementation or full MVP-008 acceptance is claimed.

@@ -45,6 +45,51 @@ historical evidence.
   evidence and superseded snapshots belong in `STATUS-HISTORY.md` and must not be treated as
   current evidence.
 
+## Maintainer operations
+
+### Local SonarQube
+
+The checked-in [`infra/sonar/compose.yaml`](infra/sonar/compose.yaml) reproduces the localhost-only
+SonarQube/PostgreSQL service and intentionally uses the shared Compose project name `tsqh-sonar`.
+Its database values and scanner token are environment-only. Start or inspect it with values from a
+private environment file:
+
+```sh
+docker compose --env-file /path/to/private-sonar.env --file infra/sonar/compose.yaml up --detach
+curl --fail --silent http://127.0.0.1:9000/api/system/status
+```
+
+[`sonar-project.properties`](sonar-project.properties) selects project `azaru_tsqh_mvp`, while
+[`sonar-policy.json`](sonar-policy.json) pins the approved host, dedicated strict gate, TypeScript
+profile, and `PREVIOUS_VERSION` new-code identity. Workflows that configure the Sonar gate provide
+its scanner invocation. Do not commit an environment file or token. A fresh server must reproduce
+the exact identities in the completed specification.
+
+The fail-closed Sonar wrapper checks three distinct kinds of remote evidence: `project_status`
+proves the computed result is `OK` with ignored conditions disabled; the assigned gate and its
+definition prove the exact eight approved conditions; and the project `main` branch response proves
+its explicit `PREVIOUS_VERSION` new-code assignment. Conditions without computed measures may be
+absent from `project_status`; they remain mandatory in the gate definition.
+
+### Manual local Codex smoke
+
+The simple workflow task deliberately writes only under `src/` and `test/`. Run the smoke only when
+`codex --version` succeeds and `codex login status` confirms authentication. Use a disposable,
+clean Git copy of this repository so the example agents cannot touch the development checkout:
+
+```sh
+pnpm tsqh run \
+  --config workflows/simple/workflow.json \
+  --workspace /absolute/path/to/disposable-clean-tsqh-copy \
+  --task workflows/simple/task.md \
+  --runs-root /absolute/path/to/disposable-run-store \
+  --json
+```
+
+The disposable copy needs its dependencies installed, and its initial `git status --porcelain`
+must be empty. Record the real result of the latest local smoke, including whether it ran, in
+`STATUS.md`.
+
 ## Delivery report
 
 Report exact changed files, commands, exit statuses, test totals, the demonstrated workflow trace,
